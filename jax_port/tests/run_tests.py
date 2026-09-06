@@ -11,6 +11,7 @@ CASES = [
     ("parity", "jax_port.tests.test_parity", "test_env_parity", True),
     ("zoo", "jax_port.tests.test_zoo", "test_zoo", True),
     ("smoke", "jax_port.tests.test_smoke", "test_smoke_train", True),
+    ("marl", "jax_port.tests.test_marl", "test_losses", True),
 ]
 
 

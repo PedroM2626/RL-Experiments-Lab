@@ -34,8 +34,10 @@ from procgen import ProcgenGym3Env
 from jax_port.augment import make_augment, requantize
 from jax_port.backbones import BACKBONES
 from jax_port.exploration import Exploration
-from jax_port.networks import ActorCritic, preprocess
+from jax_port.networks import ActorCritic, ActorCriticXL, preprocess
 from jax_port.ppo import compute_gae, make_optimizer, make_update_fn
+from jax_port.stack_env import StackVec
+from jax_port.temporal import MEM_DIM, MEM_LEN, TEMPORAL, make_mem_fns
 
 
 def backbone_params(params):
@@ -64,6 +66,8 @@ def to_vector(rgb):
 
 
 def get_obs(obs_d, mode):
+    if isinstance(obs_d, dict) and "rgb_stacked" in obs_d:
+        return obs_d["rgb_stacked"]  # (N,64,64,12) uint8, via StackVec
     rgb = obs_d["rgb"] if isinstance(obs_d, dict) else obs_d
     return to_vector(rgb) if mode == "vector" else rgb
 
@@ -77,45 +81,91 @@ def train(args):
     mode = args.obs or ("vector" if args.extractor == "mlp" else "pixels")
     assert (args.extractor == "mlp") == (mode == "vector"), \
         "mlp<->vector, demais<->pixels"
-    oshape = (256,) if mode == "vector" else (64, 64, 3)
+    temporal = args.extractor in TEMPORAL
+    if temporal and args.stack == 1:
+        args.stack = 4
+        print("stack=4 automatico p/ backbone temporal", flush=True)
+    assert args.stack == 1 or (temporal and args.stack == 4), \
+        "stack>1 so com backbone temporal (estudo: frame_stack=1)"
+    oshape = (256,) if mode == "vector" else (64, 64, 3 * args.stack)
     print(f"jax={jax.__version__} device={device} game={args.game} "
-          f"extractor={args.extractor} obs={mode}")
+          f"extractor={args.extractor} obs={mode} stack={args.stack}")
 
-    env = ProcgenGym3Env(num=args.num_envs, env_name=args.game,
-                         num_levels=200, distribution_mode=args.distribution,
-                         rand_seed=args.seed)
+    if args.stack > 1:
+        env = StackVec(args.game, num_envs=args.num_envs, num_levels=200,
+                       seed=args.seed, k=args.stack)
+    else:
+        env = ProcgenGym3Env(num=args.num_envs, env_name=args.game,
+                             num_levels=200, distribution_mode=args.distribution,
+                             rand_seed=args.seed)
     n_actions = 15
     stoch = args.extractor == "vae"
     a2c = args.algo == "a2c"
     epochs = 1 if a2c else 3
     lam = 1.0 if a2c else 0.95  # defaults SB3: A2C 1.0, PPO 0.95 (estudo)
-    model = ActorCritic(backbone=BACKBONES[args.extractor](), n_actions=n_actions,
-                        stochastic=stoch)
+    mem_mode = temporal and args.extractor == "transformer_xl"
+    if temporal:
+        assert not stoch and not a2c, "temporal: PPO deterministico por ora"
+        assert args.augment == "none" and args.explore == "none" \
+            and args.aux == "none", "temporal: sem augment/explore/aux (fase 1)"
+        if mem_mode:
+            model = ActorCriticXL(backbone=TEMPORAL[args.extractor](),
+                                  n_actions=n_actions)
+        else:
+            model = ActorCritic(backbone=TEMPORAL[args.extractor](),
+                                n_actions=n_actions)
+    else:
+        model = ActorCritic(backbone=BACKBONES[args.extractor](), n_actions=n_actions,
+                            stochastic=stoch)
     key, k0 = jax.random.split(key)
-    params = model.init(k0, jnp.zeros((1,) + oshape, jnp.float32),
-                        jax.random.PRNGKey(0) if stoch else None)
+    if mem_mode:
+        params = model.init(
+            k0, jnp.zeros((1,) + oshape, jnp.float32),
+            jnp.zeros((1, MEM_LEN, MEM_DIM), jnp.float32))
+    else:
+        params = model.init(k0, jnp.zeros((1,) + oshape, jnp.float32),
+                            jax.random.PRNGKey(0) if stoch else None)
     opt = make_optimizer(lr=3e-4, kind="rmsprop" if a2c else "adam")
     opt_state = opt.init(params)
-    update_fn, rollout_fn, forward_fn, norm_fn = make_update_fn(
-        model, opt, clip_range=None if a2c else 0.2,
-        ent_coef=0.0 if a2c else 0.01)
+    if mem_mode:
+        update_fn, rollout_fn, forward_fn = make_mem_fns(model, opt)
+    else:
+        update_fn, rollout_fn, forward_fn, norm_fn = make_update_fn(
+            model, opt, clip_range=None if a2c else 0.2,
+            ent_coef=0.0 if a2c else 0.01)
     state = (params, opt_state)
     N, T = args.num_envs, args.rollout
+    stacked = args.stack > 1
+    mem0 = jnp.zeros((N, MEM_LEN, MEM_DIM), jnp.float32)
 
     # warmup do JIT fora da medida (update uint8 + rollout uint8)
     key, kw, ku = jax.random.split(key, 3)
-    (state, _) = update_fn(
-        state, jnp.zeros((args.minibatch,) + oshape, jnp.uint8),
-        jnp.zeros((args.minibatch,), jnp.int32),
-        jnp.zeros((args.minibatch,), jnp.float32),
-        jnp.zeros((args.minibatch,), jnp.float32),
-        jnp.zeros((args.minibatch,), jnp.float32), ku)
-    _, _, _, key = rollout_fn(
-        state[0], jnp.zeros((N,) + oshape, jnp.uint8), kw)
+    if mem_mode:
+        (state, _) = update_fn(
+            state, jnp.zeros((args.minibatch,) + oshape, jnp.uint8),
+            jnp.zeros((args.minibatch, MEM_LEN, MEM_DIM), jnp.float32),
+            jnp.zeros((args.minibatch,), jnp.int32),
+            jnp.zeros((args.minibatch,), jnp.float32),
+            jnp.zeros((args.minibatch,), jnp.float32),
+            jnp.zeros((args.minibatch,), jnp.float32))
+        _, _, _, _, key = rollout_fn(
+            state[0], jnp.zeros((N,) + oshape, jnp.uint8), mem0, kw)
+    else:
+        (state, _) = update_fn(
+            state, jnp.zeros((args.minibatch,) + oshape, jnp.uint8),
+            jnp.zeros((args.minibatch,), jnp.int32),
+            jnp.zeros((args.minibatch,), jnp.float32),
+            jnp.zeros((args.minibatch,), jnp.float32),
+            jnp.zeros((args.minibatch,), jnp.float32), ku)
+        _, _, _, key = rollout_fn(
+            state[0], jnp.zeros((N,) + oshape, jnp.uint8), kw)
     jax.block_until_ready(jax.tree_util.tree_leaves(state[0])[0])
 
-    _, obs_d, _ = env.observe()
-    obs = get_obs(obs_d, mode)  # (N,64,64,3) uint8 NHWC ou (N,256) uint8
+    if stacked:
+        obs = env.reset()
+    else:
+        _, obs_d, _ = env.observe()
+        obs = get_obs(obs_d, mode)  # uint8: (N,64,64,C) NHWC ou (N,256)
     aug = make_augment(args.augment)
     if args.augment != "none" or args.explore != "none":
         assert mode == "pixels", "augment/exploracao sao so-pixels (estudo)"
@@ -159,6 +209,10 @@ def train(args):
         b_obs = np.empty((T, N) + oshape, np.uint8)
         b_obs2 = (np.empty((T, N) + oshape, np.uint8) if spr is not None
                   else None)
+        b_mem = (np.zeros((T, N, MEM_LEN, MEM_DIM), np.float32)
+                 if mem_mode else None)
+        mems = (np.zeros((N, MEM_LEN, MEM_DIM), np.float32)
+                if mem_mode else None)
         b_act = np.empty((T, N), np.int32)
         b_rew = np.empty((T, N), np.float32)
         b_done = np.empty((T, N), bool)
@@ -170,8 +224,15 @@ def train(args):
             if aug is not None:
                 key, ka = jax.random.split(key)
                 pin = requantize(aug(preprocess(pin), ka))
-            act_d, logp_d, val_d, key = rollout_fn(state[0], pin, key)
-            jax.block_until_ready((act_d, logp_d, val_d))
+            if mem_mode:
+                act_d, logp_d, val_d, mem_d, key = rollout_fn(
+                    state[0], pin, jnp.asarray(mems, device=device), key)
+                jax.block_until_ready((act_d, logp_d, val_d, mem_d))
+                mems = np.asarray(mem_d)
+                b_mem[t] = mems
+            else:
+                act_d, logp_d, val_d, key = rollout_fn(state[0], pin, key)
+                jax.block_until_ready((act_d, logp_d, val_d))
             act, logp, value = (np.asarray(act_d), np.asarray(logp_d),
                                 np.asarray(val_d))
             b_obs[t], b_act[t] = obs, act
@@ -190,11 +251,17 @@ def train(args):
                 ep_rets.append(float(cur_ret[i]))
                 ep_lens.append(int(cur_len[i]))
                 cur_ret[i], cur_len[i] = 0.0, 0
+            if mem_mode:
+                mems[b_done[t]] = 0.0
         ph["rollout"] += time.perf_counter() - t_roll0
         t_gae0 = time.perf_counter()
         ob = preprocess(jnp.asarray(obs, device=device))
         key, kf = jax.random.split(key)
-        _, last_v = forward_fn(state[0], ob, kf)
+        if mem_mode:
+            _, last_v, _ = forward_fn(
+                state[0], ob, jnp.asarray(mems, device=device))
+        else:
+            _, last_v = forward_fn(state[0], ob, kf)
         adv, ret = compute_gae(b_rew, b_val, b_done, np.asarray(last_v),
                                lam=lam)
         ph["gae"] += time.perf_counter() - t_gae0
@@ -214,13 +281,23 @@ def train(args):
                 if aug is not None:
                     key, ka = jax.random.split(key)
                     mo = requantize(aug(preprocess(mo), ka))
-                key, kz = jax.random.split(key)
-                state, _ = update_fn(
-                    state, mo,
-                    jnp.asarray(F[1][mb], device=device),
-                    jnp.asarray(F[2][mb], device=device),
-                    jnp.asarray(adv_n[mb], device=device),
-                    jnp.asarray(F[4][mb], device=device), kz)
+                if mem_mode:
+                    state, _ = update_fn(
+                        state, mo, jnp.asarray(
+                            b_mem.reshape(T * N, MEM_LEN, MEM_DIM)[mb],
+                            device=device),
+                        jnp.asarray(F[1][mb], device=device),
+                        jnp.asarray(F[2][mb], device=device),
+                        jnp.asarray(adv_n[mb], device=device),
+                        jnp.asarray(F[4][mb], device=device))
+                else:
+                    key, kz = jax.random.split(key)
+                    state, _ = update_fn(
+                        state, mo,
+                        jnp.asarray(F[1][mb], device=device),
+                        jnp.asarray(F[2][mb], device=device),
+                        jnp.asarray(adv_n[mb], device=device),
+                        jnp.asarray(F[4][mb], device=device), kz)
         ph["update"] += time.perf_counter() - t_upd0
         spr_loss = None
         if spr is not None:
@@ -257,7 +334,7 @@ def train(args):
 
     dt = time.perf_counter() - t0
     out = {"game": args.game, "seed": args.seed, "algo": args.algo,
-           "extractor": args.extractor,
+           "extractor": args.extractor, "stack": args.stack,
            "obs_mode": mode, "augment": args.augment, "explore": args.explore,
            "aux": args.aux,
            "timesteps": done_steps,
@@ -295,20 +372,34 @@ def evaluate(state, forward_fn, args, device, mode, num_levels, seed,
              deterministic, n_eps):
     """Eval generico: unseen (0, seed+1000) ou train (200, seed);
     deterministic=argmax, senao categorical (extrator VAE segue amostrado,
-    como no estudo)."""
-    ev = ProcgenGym3Env(num=args.eval_envs, env_name=args.game,
-                        num_levels=num_levels,
-                        distribution_mode=args.distribution, rand_seed=seed)
-    _, obs_d, _ = ev.observe()
-    obs = get_obs(obs_d, mode)
+    como no estudo). Stack>1 usa StackVec; XL carrega mems proprias."""
+    from jax_port.temporal import MEM_DIM, MEM_LEN
+    xl = args.extractor == "transformer_xl"
+    if args.stack > 1:
+        ev = StackVec(args.game, num_envs=args.eval_envs,
+                      num_levels=num_levels, seed=seed, k=args.stack)
+        obs = ev.reset()
+    else:
+        ev = ProcgenGym3Env(num=args.eval_envs, env_name=args.game,
+                            num_levels=num_levels,
+                            distribution_mode=args.distribution, rand_seed=seed)
+        _, obs_d, _ = ev.observe()
+        obs = get_obs(obs_d, mode)
     key = jax.random.PRNGKey(seed)
     rets = np.zeros(args.eval_envs)
     all_rets = []
+    mems = np.zeros((args.eval_envs, MEM_LEN, MEM_DIM), np.float32)
     key, ks = jax.random.split(key)
     while len(all_rets) < n_eps:
         ob = preprocess(jnp.asarray(obs, device=device))
         key, kf = jax.random.split(key)
-        logits, _ = forward_fn(state[0], ob, kf)
+        if xl:
+            (logits, _), mems = _eval_xl_step(
+                forward_fn, state[0], ob,
+                jnp.asarray(mems, device=device), kf)
+            mems = np.asarray(mems)
+        else:
+            logits, _ = forward_fn(state[0], ob, kf)
         jax.block_until_ready(logits)
         if deterministic:
             act = np.asarray(jnp.argmax(logits, axis=1))
@@ -318,20 +409,31 @@ def evaluate(state, forward_fn, args, device, mode, num_levels, seed,
         ev.act(act)
         rew, obs_d, first = ev.observe()
         obs = get_obs(obs_d, mode)
+        fin = np.asarray(first)
         rets += np.asarray(rew)
-        for i in np.where(np.asarray(first))[0]:
+        for i in np.where(fin)[0]:
             all_rets.append(float(rets[i]))
             rets[i] = 0.0
+        if xl:
+            mems[fin] = 0.0
     sel = all_rets[:n_eps]
     return {"mean": round(float(np.mean(sel)), 3), "eps": len(sel)}
+
+
+def _eval_xl_step(forward_fn, params, ob, mems, key):
+    (logits, value, new_mem) = forward_fn(params, ob, mems)
+    jax.block_until_ready((logits, new_mem))
+    return (logits, value), np.asarray(new_mem)
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--game", default="coinrun")
-    ap.add_argument("--distribution", default="easy", choices=["easy", "hard"])
     ap.add_argument("--algo", default="ppo", choices=["ppo", "a2c"])
-    ap.add_argument("--extractor", default="classic", choices=sorted(BACKBONES))
+    ap.add_argument("--extractor", default="classic",
+                    choices=sorted(set(BACKBONES) | set(TEMPORAL)))
+    ap.add_argument("--stack", type=int, default=1,
+                    help="frames empilhados (1=estudo; temporal usa 4)")
     ap.add_argument("--obs", default=None, choices=[None, "pixels", "vector"])
     ap.add_argument("--augment", default="none",
                     choices=["none", "crop", "color", "noise"])

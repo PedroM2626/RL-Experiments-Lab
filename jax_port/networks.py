@@ -57,3 +57,19 @@ class ActorCritic(nn.Module):
         logits = nn.Dense(self.n_actions)(feat)
         value = nn.Dense(1)(feat).squeeze(-1)
         return logits, value
+
+
+class ActorCriticXL(nn.Module):
+    """Heads sobre backbone com memoria (transformer_xl).
+
+    backbone(x, mem) -> (feat, new_mem). Unico com estado entre steps.
+    """
+    backbone: nn.Module
+    n_actions: int = 15
+
+    @nn.compact
+    def __call__(self, x, mem):
+        feat, new_mem = self.backbone(x, mem)
+        logits = nn.Dense(self.n_actions)(feat)
+        value = nn.Dense(1)(feat).squeeze(-1)
+        return logits, value, new_mem

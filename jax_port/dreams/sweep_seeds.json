@@ -1,0 +1,41 @@
+{
+  "s42": {
+    "ok": true,
+    "eval": {
+      "mean": 2.0,
+      "eps": 30
+    },
+    "eval_det": {
+      "mean": 0.0,
+      "eps": 30
+    },
+    "ret": 2.0,
+    "sps": 1427.1
+  },
+  "s43": {
+    "ok": true,
+    "eval": {
+      "mean": 4.667,
+      "eps": 30
+    },
+    "eval_det": {
+      "mean": 0.0,
+      "eps": 30
+    },
+    "ret": 3.5,
+    "sps": 2105.5
+  },
+  "s44": {
+    "ok": true,
+    "eval": {
+      "mean": 0.333,
+      "eps": 30
+    },
+    "eval_det": {
+      "mean": 0.0,
+      "eps": 30
+    },
+    "ret": 0.5,
+    "sps": 2181.5
+  }
+}

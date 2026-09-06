@@ -36,6 +36,11 @@ BUDGET_GAMES = ["starpilot", "dodgeball"]
 HARD_CONFIGS = ["classic", "cbam", "spatial", "mlp", "vae", "ae", "recon",
                 "contrastive", "aug_crop", "aug_color", "aug_noise"]
 PILOT_CONFIGS = ["classic", "cbam", "spatial", "mlp"]
+MARL_CONFIGS = ["ippo", "mappo", "vdn", "qmix", "mapoca", "cte", "tarmac"]
+MARL_MAPS = ["3m"]
+TEMPORAL_CONFIGS = ["mlp", "cnn1d", "tcn", "lstm", "gru", "transformer",
+                    "transformer_xl", "mamba", "s4", "s5"]
+TEMPORAL_GAMES = ["heist", "maze", "jumper"]
 
 AUG_OF = {"aug_crop": "crop", "aug_color": "color", "aug_noise": "noise"}
 
@@ -163,6 +168,27 @@ def cells(args):
                                         "timesteps": t, "extractor": "classic",
                                         "augment": "none", "explore": "none",
                                         "aux": cfg})
+        elif suite == "marl":
+            # EXTENSAO: MARL sobre SMAX (fora do estudo ProcGen).
+            for cfg in MARL_CONFIGS:
+                for game in (args.maps or MARL_MAPS):
+                    for s in args.seeds:
+                        for t in args.timesteps:
+                            out.append({"suite": suite, "cfg": cfg,
+                                        "kind": cfg, "game": game, "seed": s,
+                                        "timesteps": t})
+        elif suite == "temporal":
+            # EXTENSAO: bake-off de memoria (frame_stack=4) em jogos que
+            # pedem temporalidade (heist/maze/jumper).
+            for cfg in TEMPORAL_CONFIGS:
+                for game in (args.games or TEMPORAL_GAMES):
+                    for s in args.seeds:
+                        for t in args.timesteps:
+                            out.append({"suite": suite, "cfg": cfg,
+                                        "kind": "ppo", "game": game, "seed": s,
+                                        "timesteps": t, "extractor": cfg,
+                                        "augment": "none", "explore": "none",
+                                        "stack": 4})
     return out
 
 
@@ -170,6 +196,9 @@ def run_cell(cell, args):
     from jax_port import train as T
     from jax_port import train_dqn as D
     from jax_port import train_hrl as H
+    from jax_port.marl import ppo_marl as MP
+    from jax_port.marl import train_paradigms as MPA
+    from jax_port.marl import train_ql as MQ
     tag = f"{cell['cfg']}__{cell['game']}__seed{cell['seed']}__{cell['timesteps']//1000}k"
     path = os.path.join(args.out_dir, cell["suite"], tag + ".json")
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -180,10 +209,31 @@ def run_cell(cell, args):
     if cell["kind"] == "hrl":
         ns = types.SimpleNamespace(
             game=cell["game"], arm=cell["arm"], frames=cell["timesteps"],
-            seed=cell["seed"], num_envs=args.num_envs, rollout=args.rollout,
-            minibatch=args.minibatch, eval_eps=ee[0], eval_det_eps=ee[1],
+            seed=cell["seed"], num_envs=args.num_envs, rollout=128,
+            minibatch=1024, eval_eps=ee[0], eval_det_eps=ee[1],
             eval_train_eps=ee[2], eval_envs=8, out=path)
         return H.train(ns)
+    if cell["kind"] in ("ippo", "mappo"):
+        ns = types.SimpleNamespace(
+            algo=cell["kind"], map=cell["game"], timesteps=cell["timesteps"],
+            seed=cell["seed"], num_envs=args.num_envs, rollout=args.rollout,
+            minibatch=args.minibatch, recurrent=args.recurrent, lr=args.lr,
+            ent=args.ent, no_walls=args.no_walls,
+            eval_eps=ee[0], eval_envs=8, out=path)
+        return MP.train(ns)
+    if cell["kind"] in ("vdn", "qmix"):
+        ns = types.SimpleNamespace(
+            algo=cell["kind"], map=cell["game"], timesteps=cell["timesteps"],
+            seed=cell["seed"], num_envs=32, lr=args.ql_lr,
+            recurrent=args.recurrent,
+            eval_eps=ee[0], eval_envs=8, out=path)
+        return MQ.train(ns)
+    if cell["kind"] in ("mapoca", "cte", "tarmac"):
+        ns = types.SimpleNamespace(
+            algo=cell["kind"], map=cell["game"], timesteps=cell["timesteps"],
+            seed=cell["seed"], num_envs=args.num_envs, rollout=128,
+            minibatch=1024, eval_eps=ee[0], eval_envs=8, out=path)
+        return MPA.train(ns)
     if cell["kind"] in ("dqn", "qrdqn"):
         ns = types.SimpleNamespace(
             game=cell["game"], algo=cell["kind"], extractor="classic",
@@ -197,6 +247,7 @@ def run_cell(cell, args):
         distribution=cell.get("distribution", "easy"),
         obs=None, augment=cell.get("augment", "none"),
         explore=cell.get("explore", "none"), aux=cell.get("aux", "none"),
+        stack=cell.get("stack", 1),
         timesteps=cell["timesteps"],
         seed=cell["seed"], num_envs=args.num_envs, rollout=args.rollout,
         minibatch=args.minibatch, eval_eps=ee[0], eval_det_eps=ee[1],
@@ -209,8 +260,11 @@ def main():
     ap.add_argument("--suite", nargs="+",
                     default=["main"],
                     choices=["main", "exploration", "algo", "hrl", "budget",
-                             "hard", "pilot", "spr", "gnn", "aux"])
+                             "hard", "pilot", "spr", "gnn", "aux", "marl",
+                             "temporal"])
     ap.add_argument("--games", nargs="*", default=None)
+    ap.add_argument("--maps", nargs="*", default=None,
+                    help="mapas SMAX p/ suite marl (default: 3m)")
     ap.add_argument("--seeds", type=int, nargs="+", default=[42])
     ap.add_argument("--timesteps", type=int, nargs="+", default=[100000])
     ap.add_argument("--budget-steps", type=int, nargs="+", default=None,
@@ -218,6 +272,13 @@ def main():
     ap.add_argument("--num-envs", type=int, default=64)
     ap.add_argument("--rollout", type=int, default=128)
     ap.add_argument("--minibatch", type=int, default=1024)
+    ap.add_argument("--recurrent", action="store_true",
+                    help="IPPO recorrente GRU-128 (padrao JaxMARL p/ SMAX)")
+    ap.add_argument("--lr", type=float, default=3e-4)
+    ap.add_argument("--ql-lr", type=float, default=1e-4,
+                    help="lr p/ vdn/qmix (estudo; paper usa 5e-5)")
+    ap.add_argument("--ent", type=float, default=0.01)
+    ap.add_argument("--no-walls", action="store_true")
     ap.add_argument("--eval-eps", type=int, default=10)
     ap.add_argument("--eval-det-eps", type=int, default=0)
     ap.add_argument("--eval-train-eps", type=int, default=0)

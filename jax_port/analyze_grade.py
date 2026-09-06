@@ -77,6 +77,22 @@ def main():
         key = (d["_cfg"], d["game"])
         curves.setdefault(key, []).append((d["timesteps"], d["eval_unseen"]["mean"]))
     rep["budget"] = {f"{c}/{g}": sorted(v) for (c, g), v in curves.items()}
+    # marl: win-rate por (algo, mapa) nas seeds (chave diferente: "map" nao "game")
+    mg = {}
+    for f in sorted(glob.glob(os.path.join(GRADE, "marl", "*.json"))):
+        try:
+            d = json.load(open(f))
+        except Exception:
+            continue
+        mg.setdefault((d["algo"], d["map"]), []).append(
+            (d.get("eval") or {}).get("winrate", 0.0))
+    rep["marl"] = {}
+    for (algo, mp), vals in sorted(mg.items()):
+        key = f"{algo}__{mp}"
+        rep["marl"][key] = {
+            "winrate_mean": round(sum(vals) / len(vals), 3),
+            "winrate_by_seed": vals, "n_seeds": len(vals),
+            "solved": round(sum(vals) / len(vals), 3) >= 0.5}
     # AUC por celula com curva
     n_auc = 0
     for suite in ("main", "exploration", "algo", "hrl", "budget", "hard",
@@ -98,6 +114,9 @@ def main():
             print(f"  {game}: {top}")
     g = rep["main"]["global"]["ranking"]
     print("GLOBAL:", [(x["cell"], round(x["mean"], 2)) for x in g[:6]])
+    print("== marl ==")
+    for k, v in rep["marl"].items():
+        print(f"  {k}: winrate={v['winrate_mean']} n={v['n_seeds']} solved={v['solved']}")
     print("wrote", OUT)
 
 

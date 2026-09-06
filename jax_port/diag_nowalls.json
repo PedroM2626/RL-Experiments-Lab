@@ -1,0 +1,998 @@
+{
+  "algo": "ippo",
+  "map": "3m",
+  "seed": 42,
+  "timesteps": 1003520,
+  "wall_s": 577.1,
+  "sps": 1739.0,
+  "train_episodes": 61701,
+  "winrate_train": 0.0,
+  "train_ret_mean": 1.12,
+  "curve": [
+    {
+      "steps": 4096,
+      "winrate": 0.0
+    },
+    {
+      "steps": 8192,
+      "winrate": 0.0
+    },
+    {
+      "steps": 12288,
+      "winrate": 0.0
+    },
+    {
+      "steps": 16384,
+      "winrate": 0.0
+    },
+    {
+      "steps": 20480,
+      "winrate": 0.0
+    },
+    {
+      "steps": 24576,
+      "winrate": 0.0
+    },
+    {
+      "steps": 28672,
+      "winrate": 0.0
+    },
+    {
+      "steps": 32768,
+      "winrate": 0.0
+    },
+    {
+      "steps": 36864,
+      "winrate": 0.0
+    },
+    {
+      "steps": 40960,
+      "winrate": 0.0
+    },
+    {
+      "steps": 45056,
+      "winrate": 0.0
+    },
+    {
+      "steps": 49152,
+      "winrate": 0.0
+    },
+    {
+      "steps": 53248,
+      "winrate": 0.0
+    },
+    {
+      "steps": 57344,
+      "winrate": 0.0
+    },
+    {
+      "steps": 61440,
+      "winrate": 0.0
+    },
+    {
+      "steps": 65536,
+      "winrate": 0.0
+    },
+    {
+      "steps": 69632,
+      "winrate": 0.0
+    },
+    {
+      "steps": 73728,
+      "winrate": 0.0
+    },
+    {
+      "steps": 77824,
+      "winrate": 0.0
+    },
+    {
+      "steps": 81920,
+      "winrate": 0.0
+    },
+    {
+      "steps": 86016,
+      "winrate": 0.0
+    },
+    {
+      "steps": 90112,
+      "winrate": 0.0
+    },
+    {
+      "steps": 94208,
+      "winrate": 0.0
+    },
+    {
+      "steps": 98304,
+      "winrate": 0.0
+    },
+    {
+      "steps": 102400,
+      "winrate": 0.0
+    },
+    {
+      "steps": 106496,
+      "winrate": 0.0
+    },
+    {
+      "steps": 110592,
+      "winrate": 0.0
+    },
+    {
+      "steps": 114688,
+      "winrate": 0.0
+    },
+    {
+      "steps": 118784,
+      "winrate": 0.0
+    },
+    {
+      "steps": 122880,
+      "winrate": 0.0
+    },
+    {
+      "steps": 126976,
+      "winrate": 0.0
+    },
+    {
+      "steps": 131072,
+      "winrate": 0.0
+    },
+    {
+      "steps": 135168,
+      "winrate": 0.0
+    },
+    {
+      "steps": 139264,
+      "winrate": 0.0
+    },
+    {
+      "steps": 143360,
+      "winrate": 0.0
+    },
+    {
+      "steps": 147456,
+      "winrate": 0.0
+    },
+    {
+      "steps": 151552,
+      "winrate": 0.0
+    },
+    {
+      "steps": 155648,
+      "winrate": 0.0
+    },
+    {
+      "steps": 159744,
+      "winrate": 0.0
+    },
+    {
+      "steps": 163840,
+      "winrate": 0.0
+    },
+    {
+      "steps": 167936,
+      "winrate": 0.0
+    },
+    {
+      "steps": 172032,
+      "winrate": 0.0
+    },
+    {
+      "steps": 176128,
+      "winrate": 0.0
+    },
+    {
+      "steps": 180224,
+      "winrate": 0.0
+    },
+    {
+      "steps": 184320,
+      "winrate": 0.0
+    },
+    {
+      "steps": 188416,
+      "winrate": 0.0
+    },
+    {
+      "steps": 192512,
+      "winrate": 0.0
+    },
+    {
+      "steps": 196608,
+      "winrate": 0.0
+    },
+    {
+      "steps": 200704,
+      "winrate": 0.0
+    },
+    {
+      "steps": 204800,
+      "winrate": 0.0
+    },
+    {
+      "steps": 208896,
+      "winrate": 0.0
+    },
+    {
+      "steps": 212992,
+      "winrate": 0.0
+    },
+    {
+      "steps": 217088,
+      "winrate": 0.0
+    },
+    {
+      "steps": 221184,
+      "winrate": 0.0
+    },
+    {
+      "steps": 225280,
+      "winrate": 0.0
+    },
+    {
+      "steps": 229376,
+      "winrate": 0.0
+    },
+    {
+      "steps": 233472,
+      "winrate": 0.0
+    },
+    {
+      "steps": 237568,
+      "winrate": 0.0
+    },
+    {
+      "steps": 241664,
+      "winrate": 0.0
+    },
+    {
+      "steps": 245760,
+      "winrate": 0.0
+    },
+    {
+      "steps": 249856,
+      "winrate": 0.0
+    },
+    {
+      "steps": 253952,
+      "winrate": 0.0
+    },
+    {
+      "steps": 258048,
+      "winrate": 0.0
+    },
+    {
+      "steps": 262144,
+      "winrate": 0.0
+    },
+    {
+      "steps": 266240,
+      "winrate": 0.0
+    },
+    {
+      "steps": 270336,
+      "winrate": 0.0
+    },
+    {
+      "steps": 274432,
+      "winrate": 0.0
+    },
+    {
+      "steps": 278528,
+      "winrate": 0.0
+    },
+    {
+      "steps": 282624,
+      "winrate": 0.0
+    },
+    {
+      "steps": 286720,
+      "winrate": 0.0
+    },
+    {
+      "steps": 290816,
+      "winrate": 0.0
+    },
+    {
+      "steps": 294912,
+      "winrate": 0.0
+    },
+    {
+      "steps": 299008,
+      "winrate": 0.0
+    },
+    {
+      "steps": 303104,
+      "winrate": 0.0
+    },
+    {
+      "steps": 307200,
+      "winrate": 0.0
+    },
+    {
+      "steps": 311296,
+      "winrate": 0.0
+    },
+    {
+      "steps": 315392,
+      "winrate": 0.0
+    },
+    {
+      "steps": 319488,
+      "winrate": 0.0
+    },
+    {
+      "steps": 323584,
+      "winrate": 0.0
+    },
+    {
+      "steps": 327680,
+      "winrate": 0.0
+    },
+    {
+      "steps": 331776,
+      "winrate": 0.0
+    },
+    {
+      "steps": 335872,
+      "winrate": 0.0
+    },
+    {
+      "steps": 339968,
+      "winrate": 0.0
+    },
+    {
+      "steps": 344064,
+      "winrate": 0.0
+    },
+    {
+      "steps": 348160,
+      "winrate": 0.0
+    },
+    {
+      "steps": 352256,
+      "winrate": 0.0
+    },
+    {
+      "steps": 356352,
+      "winrate": 0.0
+    },
+    {
+      "steps": 360448,
+      "winrate": 0.0
+    },
+    {
+      "steps": 364544,
+      "winrate": 0.0
+    },
+    {
+      "steps": 368640,
+      "winrate": 0.0
+    },
+    {
+      "steps": 372736,
+      "winrate": 0.0
+    },
+    {
+      "steps": 376832,
+      "winrate": 0.0
+    },
+    {
+      "steps": 380928,
+      "winrate": 0.0
+    },
+    {
+      "steps": 385024,
+      "winrate": 0.0
+    },
+    {
+      "steps": 389120,
+      "winrate": 0.0
+    },
+    {
+      "steps": 393216,
+      "winrate": 0.0
+    },
+    {
+      "steps": 397312,
+      "winrate": 0.0
+    },
+    {
+      "steps": 401408,
+      "winrate": 0.0
+    },
+    {
+      "steps": 405504,
+      "winrate": 0.0
+    },
+    {
+      "steps": 409600,
+      "winrate": 0.0
+    },
+    {
+      "steps": 413696,
+      "winrate": 0.0
+    },
+    {
+      "steps": 417792,
+      "winrate": 0.0
+    },
+    {
+      "steps": 421888,
+      "winrate": 0.0
+    },
+    {
+      "steps": 425984,
+      "winrate": 0.0
+    },
+    {
+      "steps": 430080,
+      "winrate": 0.0
+    },
+    {
+      "steps": 434176,
+      "winrate": 0.0
+    },
+    {
+      "steps": 438272,
+      "winrate": 0.0
+    },
+    {
+      "steps": 442368,
+      "winrate": 0.0
+    },
+    {
+      "steps": 446464,
+      "winrate": 0.0
+    },
+    {
+      "steps": 450560,
+      "winrate": 0.0
+    },
+    {
+      "steps": 454656,
+      "winrate": 0.0
+    },
+    {
+      "steps": 458752,
+      "winrate": 0.0
+    },
+    {
+      "steps": 462848,
+      "winrate": 0.0
+    },
+    {
+      "steps": 466944,
+      "winrate": 0.0
+    },
+    {
+      "steps": 471040,
+      "winrate": 0.0
+    },
+    {
+      "steps": 475136,
+      "winrate": 0.0
+    },
+    {
+      "steps": 479232,
+      "winrate": 0.0
+    },
+    {
+      "steps": 483328,
+      "winrate": 0.0
+    },
+    {
+      "steps": 487424,
+      "winrate": 0.0
+    },
+    {
+      "steps": 491520,
+      "winrate": 0.0
+    },
+    {
+      "steps": 495616,
+      "winrate": 0.0
+    },
+    {
+      "steps": 499712,
+      "winrate": 0.0
+    },
+    {
+      "steps": 503808,
+      "winrate": 0.0
+    },
+    {
+      "steps": 507904,
+      "winrate": 0.0
+    },
+    {
+      "steps": 512000,
+      "winrate": 0.0
+    },
+    {
+      "steps": 516096,
+      "winrate": 0.0
+    },
+    {
+      "steps": 520192,
+      "winrate": 0.0
+    },
+    {
+      "steps": 524288,
+      "winrate": 0.0
+    },
+    {
+      "steps": 528384,
+      "winrate": 0.0
+    },
+    {
+      "steps": 532480,
+      "winrate": 0.0
+    },
+    {
+      "steps": 536576,
+      "winrate": 0.0
+    },
+    {
+      "steps": 540672,
+      "winrate": 0.0
+    },
+    {
+      "steps": 544768,
+      "winrate": 0.0
+    },
+    {
+      "steps": 548864,
+      "winrate": 0.0
+    },
+    {
+      "steps": 552960,
+      "winrate": 0.0
+    },
+    {
+      "steps": 557056,
+      "winrate": 0.0
+    },
+    {
+      "steps": 561152,
+      "winrate": 0.0
+    },
+    {
+      "steps": 565248,
+      "winrate": 0.0
+    },
+    {
+      "steps": 569344,
+      "winrate": 0.0
+    },
+    {
+      "steps": 573440,
+      "winrate": 0.0
+    },
+    {
+      "steps": 577536,
+      "winrate": 0.0
+    },
+    {
+      "steps": 581632,
+      "winrate": 0.0
+    },
+    {
+      "steps": 585728,
+      "winrate": 0.0
+    },
+    {
+      "steps": 589824,
+      "winrate": 0.0
+    },
+    {
+      "steps": 593920,
+      "winrate": 0.0
+    },
+    {
+      "steps": 598016,
+      "winrate": 0.0
+    },
+    {
+      "steps": 602112,
+      "winrate": 0.0
+    },
+    {
+      "steps": 606208,
+      "winrate": 0.0
+    },
+    {
+      "steps": 610304,
+      "winrate": 0.0
+    },
+    {
+      "steps": 614400,
+      "winrate": 0.0
+    },
+    {
+      "steps": 618496,
+      "winrate": 0.0
+    },
+    {
+      "steps": 622592,
+      "winrate": 0.0
+    },
+    {
+      "steps": 626688,
+      "winrate": 0.0
+    },
+    {
+      "steps": 630784,
+      "winrate": 0.0
+    },
+    {
+      "steps": 634880,
+      "winrate": 0.0
+    },
+    {
+      "steps": 638976,
+      "winrate": 0.0
+    },
+    {
+      "steps": 643072,
+      "winrate": 0.0
+    },
+    {
+      "steps": 647168,
+      "winrate": 0.0
+    },
+    {
+      "steps": 651264,
+      "winrate": 0.0
+    },
+    {
+      "steps": 655360,
+      "winrate": 0.0
+    },
+    {
+      "steps": 659456,
+      "winrate": 0.0
+    },
+    {
+      "steps": 663552,
+      "winrate": 0.0
+    },
+    {
+      "steps": 667648,
+      "winrate": 0.0
+    },
+    {
+      "steps": 671744,
+      "winrate": 0.0
+    },
+    {
+      "steps": 675840,
+      "winrate": 0.0
+    },
+    {
+      "steps": 679936,
+      "winrate": 0.0
+    },
+    {
+      "steps": 684032,
+      "winrate": 0.0
+    },
+    {
+      "steps": 688128,
+      "winrate": 0.0
+    },
+    {
+      "steps": 692224,
+      "winrate": 0.0
+    },
+    {
+      "steps": 696320,
+      "winrate": 0.0
+    },
+    {
+      "steps": 700416,
+      "winrate": 0.0
+    },
+    {
+      "steps": 704512,
+      "winrate": 0.0
+    },
+    {
+      "steps": 708608,
+      "winrate": 0.0
+    },
+    {
+      "steps": 712704,
+      "winrate": 0.0
+    },
+    {
+      "steps": 716800,
+      "winrate": 0.0
+    },
+    {
+      "steps": 720896,
+      "winrate": 0.0
+    },
+    {
+      "steps": 724992,
+      "winrate": 0.0
+    },
+    {
+      "steps": 729088,
+      "winrate": 0.0
+    },
+    {
+      "steps": 733184,
+      "winrate": 0.0
+    },
+    {
+      "steps": 737280,
+      "winrate": 0.0
+    },
+    {
+      "steps": 741376,
+      "winrate": 0.0
+    },
+    {
+      "steps": 745472,
+      "winrate": 0.0
+    },
+    {
+      "steps": 749568,
+      "winrate": 0.0
+    },
+    {
+      "steps": 753664,
+      "winrate": 0.0
+    },
+    {
+      "steps": 757760,
+      "winrate": 0.0
+    },
+    {
+      "steps": 761856,
+      "winrate": 0.0
+    },
+    {
+      "steps": 765952,
+      "winrate": 0.0
+    },
+    {
+      "steps": 770048,
+      "winrate": 0.0
+    },
+    {
+      "steps": 774144,
+      "winrate": 0.0
+    },
+    {
+      "steps": 778240,
+      "winrate": 0.0
+    },
+    {
+      "steps": 782336,
+      "winrate": 0.0
+    },
+    {
+      "steps": 786432,
+      "winrate": 0.0
+    },
+    {
+      "steps": 790528,
+      "winrate": 0.0
+    },
+    {
+      "steps": 794624,
+      "winrate": 0.0
+    },
+    {
+      "steps": 798720,
+      "winrate": 0.0
+    },
+    {
+      "steps": 802816,
+      "winrate": 0.0
+    },
+    {
+      "steps": 806912,
+      "winrate": 0.0
+    },
+    {
+      "steps": 811008,
+      "winrate": 0.0
+    },
+    {
+      "steps": 815104,
+      "winrate": 0.0
+    },
+    {
+      "steps": 819200,
+      "winrate": 0.0
+    },
+    {
+      "steps": 823296,
+      "winrate": 0.0
+    },
+    {
+      "steps": 827392,
+      "winrate": 0.0
+    },
+    {
+      "steps": 831488,
+      "winrate": 0.0
+    },
+    {
+      "steps": 835584,
+      "winrate": 0.0
+    },
+    {
+      "steps": 839680,
+      "winrate": 0.0
+    },
+    {
+      "steps": 843776,
+      "winrate": 0.0
+    },
+    {
+      "steps": 847872,
+      "winrate": 0.0
+    },
+    {
+      "steps": 851968,
+      "winrate": 0.0
+    },
+    {
+      "steps": 856064,
+      "winrate": 0.0
+    },
+    {
+      "steps": 860160,
+      "winrate": 0.0
+    },
+    {
+      "steps": 864256,
+      "winrate": 0.0
+    },
+    {
+      "steps": 868352,
+      "winrate": 0.0
+    },
+    {
+      "steps": 872448,
+      "winrate": 0.0
+    },
+    {
+      "steps": 876544,
+      "winrate": 0.0
+    },
+    {
+      "steps": 880640,
+      "winrate": 0.0
+    },
+    {
+      "steps": 884736,
+      "winrate": 0.0
+    },
+    {
+      "steps": 888832,
+      "winrate": 0.0
+    },
+    {
+      "steps": 892928,
+      "winrate": 0.0
+    },
+    {
+      "steps": 897024,
+      "winrate": 0.0
+    },
+    {
+      "steps": 901120,
+      "winrate": 0.0
+    },
+    {
+      "steps": 905216,
+      "winrate": 0.0
+    },
+    {
+      "steps": 909312,
+      "winrate": 0.0
+    },
+    {
+      "steps": 913408,
+      "winrate": 0.0
+    },
+    {
+      "steps": 917504,
+      "winrate": 0.0
+    },
+    {
+      "steps": 921600,
+      "winrate": 0.0
+    },
+    {
+      "steps": 925696,
+      "winrate": 0.0
+    },
+    {
+      "steps": 929792,
+      "winrate": 0.0
+    },
+    {
+      "steps": 933888,
+      "winrate": 0.0
+    },
+    {
+      "steps": 937984,
+      "winrate": 0.0
+    },
+    {
+      "steps": 942080,
+      "winrate": 0.0
+    },
+    {
+      "steps": 946176,
+      "winrate": 0.0
+    },
+    {
+      "steps": 950272,
+      "winrate": 0.0
+    },
+    {
+      "steps": 954368,
+      "winrate": 0.0
+    },
+    {
+      "steps": 958464,
+      "winrate": 0.0
+    },
+    {
+      "steps": 962560,
+      "winrate": 0.0
+    },
+    {
+      "steps": 966656,
+      "winrate": 0.0
+    },
+    {
+      "steps": 970752,
+      "winrate": 0.0
+    },
+    {
+      "steps": 974848,
+      "winrate": 0.0
+    },
+    {
+      "steps": 978944,
+      "winrate": 0.0
+    },
+    {
+      "steps": 983040,
+      "winrate": 0.0
+    },
+    {
+      "steps": 987136,
+      "winrate": 0.0
+    },
+    {
+      "steps": 991232,
+      "winrate": 0.0
+    },
+    {
+      "steps": 995328,
+      "winrate": 0.0
+    },
+    {
+      "steps": 999424,
+      "winrate": 0.0
+    },
+    {
+      "steps": 1003520,
+      "winrate": 0.0
+    }
+  ],
+  "eval": {
+    "winrate": 0.0,
+    "episodes": 33,
+    "mean_return": 1.63
+  }
+}

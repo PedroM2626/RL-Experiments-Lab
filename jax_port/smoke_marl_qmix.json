@@ -1,0 +1,112 @@
+{
+  "algo": "qmix",
+  "map": "3m",
+  "seed": 7,
+  "timesteps": 8192,
+  "wall_s": 9.2,
+  "sps": 893.3,
+  "train_episodes": 447,
+  "winrate_train": 0.0,
+  "curve": [
+    {
+      "steps": 320,
+      "winrate": 0.0
+    },
+    {
+      "steps": 640,
+      "winrate": 0.0
+    },
+    {
+      "steps": 960,
+      "winrate": 0.0
+    },
+    {
+      "steps": 1280,
+      "winrate": 0.0
+    },
+    {
+      "steps": 1600,
+      "winrate": 0.0
+    },
+    {
+      "steps": 1920,
+      "winrate": 0.0
+    },
+    {
+      "steps": 2240,
+      "winrate": 0.0
+    },
+    {
+      "steps": 2560,
+      "winrate": 0.0
+    },
+    {
+      "steps": 2880,
+      "winrate": 0.0
+    },
+    {
+      "steps": 3200,
+      "winrate": 0.0
+    },
+    {
+      "steps": 3520,
+      "winrate": 0.0
+    },
+    {
+      "steps": 3840,
+      "winrate": 0.0
+    },
+    {
+      "steps": 4160,
+      "winrate": 0.0
+    },
+    {
+      "steps": 4480,
+      "winrate": 0.0
+    },
+    {
+      "steps": 4800,
+      "winrate": 0.0
+    },
+    {
+      "steps": 5120,
+      "winrate": 0.0
+    },
+    {
+      "steps": 5440,
+      "winrate": 0.0
+    },
+    {
+      "steps": 5760,
+      "winrate": 0.0
+    },
+    {
+      "steps": 6080,
+      "winrate": 0.0
+    },
+    {
+      "steps": 6400,
+      "winrate": 0.0
+    },
+    {
+      "steps": 6720,
+      "winrate": 0.0
+    },
+    {
+      "steps": 7040,
+      "winrate": 0.0
+    },
+    {
+      "steps": 7360,
+      "winrate": 0.0
+    },
+    {
+      "steps": 7680,
+      "winrate": 0.0
+    },
+    {
+      "steps": 8000,
+      "winrate": 0.0
+    }
+  ]
+}

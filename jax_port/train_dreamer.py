@@ -116,12 +116,71 @@ def make_wm_update(wm, opt, reward_mode="raw", w_dyn=0.5, w_rep=0.1):
     return update
 
 
+def evaluate_dreamer(wparams_w, astate, args, device, num_levels, seed,
+                     deterministic, n_eps, n_envs=8):
+    """Eval com estado recorrente carregado (actor puro, sem explorer)."""
+    from jax_port.dreamer import ActorCriticLatent, Encoder, RSSM
+    ev = ProcgenGym3Env(num=n_envs, env_name=args.game, num_levels=num_levels,
+                        distribution_mode="easy", rand_seed=seed)
+    _, d, _ = ev.observe()
+    obs = d["rgb"] if isinstance(d, dict) else d
+    actor = ActorCriticLatent()
+    key = jax.random.PRNGKey(seed)
+    h = jnp.zeros((n_envs, DET))
+    z = jnp.zeros((n_envs, STOCH))
+    a_prev = jnp.zeros((n_envs,), jnp.int32)
+    rets = np.zeros(n_envs)
+    all_rets = []
+
+    @jax.jit
+    def esteps(wp, ap, obs_f, h, z, a_prev, key):
+        # deterministic capturado por closure (estatico p/ o JIT).
+        feat = Encoder().apply({"params": wp["params"]["encoder"]}, obs_f)
+        post = RSSM().apply({"params": wp["params"]["rssm"]},
+                            {"h": h, "z": z}, a_prev, feat, key,
+                            method="observe")
+        f_ = jnp.concatenate([post["h"], post["z"]], -1)
+        logits, _ = actor.apply(ap, f_)
+        if deterministic:
+            act = jnp.argmax(logits, -1)
+        else:
+            act = jax.random.categorical(jax.random.split(key)[1], logits)
+        return post, act
+
+    while len(all_rets) < n_eps:
+        ob = jnp.asarray(obs, device=device).astype(jnp.float32) / 255.0
+        key, kf = jax.random.split(key)
+        post, act_d = esteps(wparams_w, astate[0], ob,
+                             jnp.asarray(h), jnp.asarray(z),
+                             jnp.asarray(a_prev), kf)
+        jax.block_until_ready((post["h"], act_d))
+        h, z = np.asarray(post["h"]), np.asarray(post["z"])
+        act = np.asarray(act_d)
+        a_prev = act.copy()
+        ev.act(act)
+        rew_d, d, first_d = ev.observe()
+        obs = d["rgb"] if isinstance(d, dict) else d
+        fin = np.asarray(first_d)
+        rets += np.asarray(rew_d)
+        h = np.where(fin[:, None], 0.0, h)
+        z = np.where(fin[:, None], 0.0, z)
+        a_prev = np.where(fin, 0, a_prev)
+        for i in np.where(fin)[0]:
+            all_rets.append(float(rets[i]))
+            rets[i] = 0.0
+    sel = all_rets[:n_eps]
+    return {"mean": round(float(np.mean(sel)), 3), "eps": len(sel)}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--game", default="coinrun")
     ap.add_argument("--frames", type=int, default=1000000)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--num-envs", type=int, default=16)
+    ap.add_argument("--eval-eps", type=int, default=0)
+    ap.add_argument("--eval-det-eps", type=int, default=0)
+    ap.add_argument("--eval-envs", type=int, default=8)
     ap.add_argument("--reward-mode", default="symlog", choices=["raw", "symlog"])
     ap.add_argument("--ent-coef", type=float, default=3e-4)
     ap.add_argument("--kl-dyn", type=float, default=0.5)
@@ -353,6 +412,14 @@ def main():
            "train_episodes": len(ep_rets),
            "train_ret_mean20": float(np.mean(ep_rets[-20:])) if ep_rets else 0.0,
            "curve": curve}
+    if args.eval_eps > 0:
+        out["eval_unseen"] = evaluate_dreamer(
+            wparams_w, astate, args, device, 0, args.seed + 1000, False,
+            args.eval_eps)
+    if args.eval_det_eps > 0:
+        out["eval_unseen_det"] = evaluate_dreamer(
+            wparams_w, astate, args, device, 0, args.seed + 1000, True,
+            args.eval_det_eps)
     # video imaginado: actor age no sonho, decoder mostra os frames
     oo, _, _, _ = buf_seq(8, 1)
     key, kf3 = jax.random.split(key)
