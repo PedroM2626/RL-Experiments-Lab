@@ -78,10 +78,13 @@ def train(args):
     rng = np.random.default_rng(args.seed)
     key = jax.random.PRNGKey(args.seed)
     device = jax.devices()[0]
-    mode = args.obs or ("vector" if args.extractor == "mlp" else "pixels")
-    assert (args.extractor == "mlp") == (mode == "vector"), \
-        "mlp<->vector, demais<->pixels"
     temporal = args.extractor in TEMPORAL
+    # "mlp" temporal (MlpStack) le frames empilhados, nao o modo vector
+    # do extractor mlp do estudo: pixels como os demais temporais.
+    mode = args.obs or ("vector" if args.extractor == "mlp" and not temporal
+                        else "pixels")
+    assert (args.extractor == "mlp") == (mode == "vector") or temporal, \
+        "mlp<->vector, demais<->pixels (temporal: mlp tambem usa pixels)"
     if temporal and args.stack == 1:
         args.stack = 4
         print("stack=4 automatico p/ backbone temporal", flush=True)
@@ -228,7 +231,7 @@ def train(args):
                 act_d, logp_d, val_d, mem_d, key = rollout_fn(
                     state[0], pin, jnp.asarray(mems, device=device), key)
                 jax.block_until_ready((act_d, logp_d, val_d, mem_d))
-                mems = np.asarray(mem_d)
+                mems = np.array(mem_d)  # copy: fallback JAX pode vir read-only
                 b_mem[t] = mems
             else:
                 act_d, logp_d, val_d, key = rollout_fn(state[0], pin, key)
@@ -397,7 +400,7 @@ def evaluate(state, forward_fn, args, device, mode, num_levels, seed,
             (logits, _), mems = _eval_xl_step(
                 forward_fn, state[0], ob,
                 jnp.asarray(mems, device=device), kf)
-            mems = np.asarray(mems)
+            mems = np.array(mems)  # copy: fallback JAX pode vir read-only
         else:
             logits, _ = forward_fn(state[0], ob, kf)
         jax.block_until_ready(logits)

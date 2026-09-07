@@ -19,6 +19,8 @@ import numpy as np
 import optax
 import time as _time
 
+from flax.serialization import from_bytes, to_bytes
+
 from jax_port.backbones import MlpBackbone
 from jax_port.marl.recurrent import RecurrentAC, make_ppo_seq_update
 from jax_port.marl.smax_vec import SmaxVec
@@ -131,6 +133,7 @@ def train_recurrent(args):
     lr/ent via flags (paper: 4e-3/0.0; sem annealing, documentado).
     """
     import os
+    from flax.serialization import msgpack_restore
     jax.config.update("jax_compilation_cache_dir",
                       os.environ.get("JAX_PORT_CACHE", "/tmp/jax_port_cache"))
     from jax_port.marl.recurrent import REC_H
@@ -150,6 +153,17 @@ def train_recurrent(args):
                         jnp.zeros((1, REC_H)), jnp.zeros((1, 1), bool))
     state = (params, opt.init(params))
     update = make_ppo_seq_update(model, opt, ent_coef=args.ent)
+    # ckpt/resume: salva (params, opt_state, done_steps) por iteracao;
+    # estado RNG nao e restaurado (aproximacao documentada: mesmo lr,
+    # nova amostragem; o treino e estocastico por design).
+    it0 = 0
+    if getattr(args, "resume", None):
+        with open(args.resume, "rb") as fh:
+            blob = msgpack_restore(fh.read())
+        state = (from_bytes(params, blob["params"]),
+                 from_bytes(opt.init(params), blob["opt"]))
+        it0 = int(blob["it"])
+        print(f"resumed {args.resume} it={it0}", flush=True)
 
     @jax.jit
     def rstep(params_, ob_, carry_, prev_done_, key_):
@@ -168,11 +182,11 @@ def train_recurrent(args):
 
     M = N * A
     carry = np.zeros((M, REC_H), np.float32)
-    done_steps = 0
+    done_steps = it0 * T * N  # alinhado com a retomada (cada it = T*N steps)
     ep_wins, ep_rets, cur, curve = [], [], np.zeros(N), []
     t0 = _time.perf_counter()
     n_iters = max(1, (args.timesteps + N * T - 1) // (N * T))
-    for it in range(n_iters):
+    for it in range(it0, n_iters):
         b_obs = np.empty((T, M, venv.obs_dim), np.float32)
         b_act = np.empty((T, M), np.int32)
         b_rew = np.empty((T, M), np.float32)
@@ -238,6 +252,8 @@ def train_recurrent(args):
         curve.append({"steps": done_steps, "winrate": wr})
         print(f"iter={it+1} steps={done_steps} sps={done_steps/el:.0f} "
               f"win20={wr:.2f} eps={len(ep_wins)}", flush=True)
+        if getattr(args, "ckpt", None) and (it + 1) % 10 == 0:
+            _save_ppo_ckpt(args.ckpt, state, it + 1)
         if done_steps >= args.timesteps:
             break
     dt = _time.perf_counter() - t0
@@ -255,6 +271,18 @@ def train_recurrent(args):
         _json.dump(out, fh, indent=2)
     print(_json.dumps({k: v for k, v in out.items() if k != "curve"}, indent=2))
     return out
+
+
+def _save_ppo_ckpt(path, state, it):
+    """Checkpoint atomico: (params, opt_state, it) em msgpack."""
+    from flax.serialization import msgpack_serialize
+    import os
+    blob = msgpack_serialize(
+        {"params": to_bytes(state[0]), "opt": to_bytes(state[1]), "it": it})
+    tmp = path + ".tmp"
+    with open(tmp, "wb") as fh:
+        fh.write(blob)
+    os.replace(tmp, path)
 
 
 def evaluate_recurrent(venv, args, state, model, NA, device, key):
@@ -514,6 +542,10 @@ def main():
     ap.add_argument("--eval-eps", type=int, default=32)
     ap.add_argument("--eval-envs", type=int, default=8)
     ap.add_argument("--out", default="jax_port/marl_train.json")
+    ap.add_argument("--ckpt", default=None,
+                    help="path p/ checkpoint (params+opt a cada it)")
+    ap.add_argument("--resume", default=None,
+                    help="retoma de checkpoint salvo (params+opt)")
     train(ap.parse_args())
 
 

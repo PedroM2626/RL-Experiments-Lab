@@ -18,7 +18,13 @@ OUT = "jax_port/analysis_full.json"
 
 def load_cells(suite):
     cells = []
-    for f in sorted(glob.glob(os.path.join(GRADE, suite, "*.json"))):
+    # nota: a suite temporal rodou com CWD=jax_port -> sai tambem em
+    # jax_port/jax_port/results_grade/temporal/ (movida p/ o lugar certo
+    # ao final; o glob duplo blinda a analise em ambos os casos).
+    paths = [os.path.join(GRADE, suite, "*.json"),
+             os.path.join("jax_port", GRADE, suite, "*.json")]
+    files = sorted({f for p in paths for f in glob.glob(p)})
+    for f in files:
         try:
             d = json.load(open(f))
         except Exception:
@@ -65,7 +71,7 @@ def main():
         for cfg in cfgs if all(s in gs.get((cfg, gm), {}) for gm in games
                                for s in seeds)})
     for suite in ("exploration", "algo", "hrl", "hard", "pilot", "spr",
-                  "gnn", "aux"):
+                  "gnn", "aux", "temporal"):
         gg = group(load_cells(suite))
         games = sorted(set(game for _, game in gg))
         rep[suite] = {game: rank_cells(
@@ -77,18 +83,22 @@ def main():
         key = (d["_cfg"], d["game"])
         curves.setdefault(key, []).append((d["timesteps"], d["eval_unseen"]["mean"]))
     rep["budget"] = {f"{c}/{g}": sorted(v) for (c, g), v in curves.items()}
-    # marl: win-rate por (algo, mapa) nas seeds (chave diferente: "map" nao "game")
+    # marl: win-rate por (algo, mapa, budget) nas seeds
+    # (chave "map" nao "game"; 1M feedforward vs 10M recorrente separados)
     mg = {}
     for f in sorted(glob.glob(os.path.join(GRADE, "marl", "*.json"))):
         try:
             d = json.load(open(f))
         except Exception:
             continue
-        mg.setdefault((d["algo"], d["map"]), []).append(
+        budget = 10000000 if d.get("timesteps", 0) >= 10000000 else 1000000
+        mg.setdefault((d["algo"], d["map"], budget), []).append(
             (d.get("eval") or {}).get("winrate", 0.0))
     rep["marl"] = {}
-    for (algo, mp), vals in sorted(mg.items()):
-        key = f"{algo}__{mp}"
+    for k3 in sorted(mg):
+        algo, mp, budget = k3
+        vals = mg[k3]
+        key = f"{algo}__{mp}__{budget // 1000000}M"
         rep["marl"][key] = {
             "winrate_mean": round(sum(vals) / len(vals), 3),
             "winrate_by_seed": vals, "n_seeds": len(vals),
@@ -96,11 +106,13 @@ def main():
     # AUC por celula com curva
     n_auc = 0
     for suite in ("main", "exploration", "algo", "hrl", "budget", "hard",
-                  "pilot", "spr", "gnn", "aux"):
-        for f in glob.glob(os.path.join(GRADE, suite, "*.json")):
-            d = json.load(open(f))
-            if d.get("curve"):
-                n_auc += 1
+                  "pilot", "spr", "gnn", "aux", "temporal"):
+        for pat in (os.path.join(GRADE, suite, "*.json"),
+                    os.path.join("jax_port", GRADE, suite, "*.json")):
+            for f in glob.glob(pat):
+                d = json.load(open(f))
+                if d.get("curve"):
+                    n_auc += 1
     rep["meta"] = {"cells_with_curve": n_auc}
     with open(OUT, "w") as fh:
         json.dump(rep, fh, indent=1)
@@ -117,6 +129,11 @@ def main():
     print("== marl ==")
     for k, v in rep["marl"].items():
         print(f"  {k}: winrate={v['winrate_mean']} n={v['n_seeds']} solved={v['solved']}")
+    if "temporal" in rep:
+        print("== temporal ==")
+        for game, r in rep["temporal"].items():
+            top = [(x["cell"], round(x["mean"], 2)) for x in r["ranking"][:5]]
+            print(f"  {game}: {top}")
     print("wrote", OUT)
 
 

@@ -66,6 +66,7 @@ class MARLBuffer:
 def train_recurrent_ql(args):
     """VDN/QMIX recorrente (GRU-128): rollout com carry, updates em
     sequencias L=32 (h0=zero, aproximacao documentada), resto identico."""
+    from flax.serialization import from_bytes, to_bytes
     from jax_port.marl.recurrent import REC_H, RecurrentQ, make_ql_seq_update
     jax.config.update("jax_compilation_cache_dir",
                       os.environ.get("JAX_PORT_CACHE", "/tmp/jax_port_cache"))
@@ -106,6 +107,27 @@ def train_recurrent_ql(args):
     buf = MARLBuffer(100000, A, venv.obs_dim, venv.state_dim)
     carry = np.zeros((N * A, REC_H), np.float32)
     steps, grads = 0, 0
+    if getattr(args, "resume", None):
+        with np.load(args.resume, allow_pickle=False) as zf:
+            params = {"q": from_bytes(params["q"], zf["p_q"].tobytes()),
+                      "mix": from_bytes(params["mix"], zf["p_m"].tobytes())}
+            tgt = {"q": from_bytes(params["q"], zf["t_q"].tobytes()),
+                   "mix": from_bytes(params["mix"], zf["t_m"].tobytes())}
+            opt_state = from_bytes(opt_state, zf["opt"].tobytes())
+            steps = int(zf["steps"])
+            grads = int(zf["grads"])
+            buf.i = int(zf["buf_i"])
+            buf.full = bool(zf["buf_full"])
+            n_b = int(zf["buf_n"])
+            buf.obs[:n_b] = zf["b_obs"]
+            buf.obs2[:n_b] = zf["b_obs2"]
+            buf.act[:n_b] = zf["b_act"]
+            buf.rew[:n_b] = zf["b_rew"]
+            buf.st[:n_b] = zf["b_st"]
+            buf.st2[:n_b] = zf["b_st2"]
+            buf.done[:n_b] = zf["b_done"]
+        print(f"resumed {args.resume} steps={steps} buf={len(buf)}",
+              flush=True)
     ep_wins, ep_rets, cur, curve = [], [], np.zeros(N), []
     eps_end = max(1, args.timesteps // 4)
     t0 = time.perf_counter()
@@ -150,6 +172,9 @@ def train_recurrent_ql(args):
             curve.append({"steps": steps, "winrate": wr})
             print(f"steps={steps} sps={steps/el:.0f} eps={eps:.2f} "
                   f"win20={wr:.2f} buf={len(buf)}", flush=True)
+        if (getattr(args, "ckpt", None) and steps % 250000 < N
+                and steps > 0):
+            _save_ckpt(args.ckpt, params, tgt, opt_state, buf, steps, grads)
     dt = time.perf_counter() - t0
     out = {"algo": args.algo + "-recurrent", "map": args.map, "seed": args.seed,
            "timesteps": steps, "wall_s": round(dt, 1),
@@ -163,6 +188,27 @@ def train_recurrent_ql(args):
         json.dump(out, fh, indent=2)
     print(json.dumps({k: v for k, v in out.items() if k != "curve"}, indent=2))
     return out
+
+
+def _save_ckpt(path, params, tgt, opt_state, buf, steps, grads):
+    """Checkpoint atomico (tmp+rename): params/tgt/opt em bytes + buffer."""
+    from flax.serialization import to_bytes
+    n_b = len(buf)
+    tmp = path + ".tmp.npz"
+    np.savez_compressed(
+        tmp,
+        p_q=np.frombuffer(to_bytes(params["q"]), np.uint8),
+        p_m=np.frombuffer(to_bytes(params["mix"]), np.uint8),
+        t_q=np.frombuffer(to_bytes(tgt["q"]), np.uint8),
+        t_m=np.frombuffer(to_bytes(tgt["mix"]), np.uint8),
+        opt=np.frombuffer(to_bytes(opt_state), np.uint8),
+        steps=np.int64(steps), grads=np.int64(grads),
+        buf_i=np.int64(buf.i), buf_full=np.bool_(buf.full),
+        buf_n=np.int64(n_b),
+        b_obs=buf.obs[:n_b], b_obs2=buf.obs2[:n_b], b_act=buf.act[:n_b],
+        b_rew=buf.rew[:n_b], b_st=buf.st[:n_b], b_st2=buf.st2[:n_b],
+        b_done=buf.done[:n_b])
+    os.replace(tmp, path)
 
 
 def evaluate_recurrent_ql(params, qnet, args):
@@ -213,6 +259,10 @@ def main():
     ap.add_argument("--eval-eps", type=int, default=32)
     ap.add_argument("--eval-envs", type=int, default=8)
     ap.add_argument("--out", default="jax_port/marl_ql.json")
+    ap.add_argument("--ckpt", default=None,
+                    help="path p/ checkpoint periodico (params+opt+buffer)")
+    ap.add_argument("--resume", default=None,
+                    help="retoma de checkpoint salvo")
     train(ap.parse_args())
 
 
