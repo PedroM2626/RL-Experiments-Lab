@@ -96,7 +96,8 @@ def train(args):
 
     if args.stack > 1:
         env = StackVec(args.game, num_envs=args.num_envs, num_levels=200,
-                       seed=args.seed, k=args.stack)
+                       seed=args.seed, k=args.stack,
+                       distribution=args.distribution)
     else:
         env = ProcgenGym3Env(num=args.num_envs, env_name=args.game,
                              num_levels=200, distribution_mode=args.distribution,
@@ -380,7 +381,8 @@ def evaluate(state, forward_fn, args, device, mode, num_levels, seed,
     xl = args.extractor == "transformer_xl"
     if args.stack > 1:
         ev = StackVec(args.game, num_envs=args.eval_envs,
-                      num_levels=num_levels, seed=seed, k=args.stack)
+                      num_levels=num_levels, seed=seed, k=args.stack,
+                      distribution=args.distribution)
         obs = ev.reset()
     else:
         ev = ProcgenGym3Env(num=args.eval_envs, env_name=args.game,
@@ -438,6 +440,9 @@ def main():
     ap.add_argument("--stack", type=int, default=1,
                     help="frames empilhados (1=estudo; temporal usa 4)")
     ap.add_argument("--obs", default=None, choices=[None, "pixels", "vector"])
+    ap.add_argument("--distribution", default="easy",
+                    choices=["easy", "hard", "extreme"],
+                    help="distribution_mode do Procgen (easy=estudo)")
     ap.add_argument("--augment", default="none",
                     choices=["none", "crop", "color", "noise"])
     ap.add_argument("--explore", default="none",

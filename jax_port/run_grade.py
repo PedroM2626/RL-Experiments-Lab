@@ -189,6 +189,20 @@ def cells(args):
                                         "timesteps": t, "extractor": cfg,
                                         "augment": "none", "explore": "none",
                                         "stack": 4})
+        elif suite == "temporal_hard":
+            # Segue a pergunta do bake-off: a 500k em jogos onde memoria
+            # importa de verdade (heist-hard, bossfight), transformer muda?
+            for cfg in TEMPORAL_CONFIGS:
+                for game in (args.games or ["heist", "bossfight"]):
+                    for s in args.seeds:
+                        for t in args.timesteps:
+                            out.append({"suite": suite, "cfg": cfg,
+                                        "kind": "ppo", "game": game,
+                                        "seed": s, "timesteps": t,
+                                        "extractor": cfg,
+                                        "augment": "none", "explore": "none",
+                                        "stack": 4,
+                                        "distribution": "hard"})
     return out
 
 
@@ -261,7 +275,7 @@ def main():
                     default=["main"],
                     choices=["main", "exploration", "algo", "hrl", "budget",
                              "hard", "pilot", "spr", "gnn", "aux", "marl",
-                             "temporal"])
+                             "temporal", "temporal_hard"])
     ap.add_argument("--games", nargs="*", default=None)
     ap.add_argument("--maps", nargs="*", default=None,
                     help="mapas SMAX p/ suite marl (default: 3m)")

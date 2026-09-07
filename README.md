@@ -756,6 +756,32 @@ A pergunta: em ProcGen com `stack=4`, faz diferença ter memória de verdade? Te
 
 **Veredito honesto.** (1) *Nenhuma arquitetura de memória se separa de uma convolução simples ou de um MLP stateless* na janela de 100k — a lição de §3.8 replica: com 5 seeds e esse budget, trocar o campeão é ruído, não conclusão. (2) Únicos perdedores consistentes: `transformer`/`transformer_xl` — os mais pesados (1M params) com atenção pura sofrem com só 100k steps (atenção exige mais orçamento, era esperado). (3) Os SSM (`s4`/`s5`/`mamba`) se comportam como a literatura promete: competitivos sem vencer nada claro. (4) O que NÃO foi testado: tarefas onde memória importa *de verdade* (exploração hard, bosses multi-fase) — hipótese natural de continuação seria uma suíte `heist-hard`/`bossfight` com 500k+.
 
+#### 15.4.6. A 500k em heist-hard/bossfight o transformer muda? (07/09/2026, suíte `temporal_hard`)
+
+Resposta direta: **não muda**. Rodei as mesmas 10 arquiteturas em `heist` (modo hard) e `bossfight`, 500k steps × 5 seeds × eval-full (suíte `temporal_hard`, 100/100 OK — com um fix crítico pelo caminho: o `StackVec` estava hardcoded em `distribution_mode="easy"`; adicionei plumbing de `distribution` em `stack_env.py`+`train.py` e um `--distribution` flag para não voltar a rodar em modo errado por engano).
+
+| heist hard | mean | bossfight hard | mean |
+|---|---:|---|---:|
+| s5 | 2,02 | s5 | 0,20 |
+| tcn | 1,98 | gru | 0,17 |
+| s4 | 1,92 | s4 | 0,15 |
+| gru | 1,70 | cnn1d | 0,14 |
+| mlp | 1,66 | tcn | 0,13 |
+| cnn1d | 1,60 | mamba | 0,07 |
+| lstm | 1,56 | lstm | 0,05 |
+| mamba | 1,50 | mlp | 0,05 |
+| **transformer** | **1,50** | transformer | 0,03 |
+| transformer_xl | 1,46 | transformer_xl | 0,01 |
+
+Leituras:
+
+1. **O transformer não sobe com budget.** Comparando com o baseline a 100k em heist easy (mesmo jogo, budget menor): `transformer` vai de 2,24→1,50 (mas o modo hard explica a queda para todos — o delta médio da turma é ~−0,8); o ponto é que *ele continua no fundo do ranking em heist-hard e em bossfight*, exatamente como a 100k. A hipótese "só falta budget" está descartada para 500k.
+2. **Os SSMs (`s5`, `s4`, `mamba`) lideram em heist-hard** — padrão consistente com o bake-off a 100k onde `s4` já vencia. Sugestivo (top-3 com IC separado do fundo), mas ainda não decisivo (ICs entre os tops se tocam).
+3. **`transformer_xl` (memória de segmento) fica em último nos dois jogos** — o XL não se paga neste budget/modo. Isso reforça o padrão da literatura: memória de longo prazo precisa de tarefas que a explorem (e mais de 500k de grad steps para mover).
+4. **bossfight trivializa todo mundo** (0,0–0,2): mesmo em modo hard, a 500k ninguém aprende nada útil — é o testemunho de que `bossfight` não separa arquitetura temporal; `heist` é o jogo informativo.
+
+**Resposta à pergunta do estudo:** "memória ajuda em ProcGen?" — **não em 100k, não em 500k, com estas 10 arquiteturas e estes 4 jogos**. O que aparece não é uma vantagem de memória, é que arquiteturas *mais pobres* (stateless MLP/CNN) batem de frente ou vencem as *mais ricas*. Se a intuição diz "deve importar", ela precisa de uma tarefa que a exija — ProcGen padrão (4 jogos testados) não é essa tarefa.
+
 
 ### 15.3. Benchmark pareado justo — mesma máquina, mesmo dia (05/09/2026, `coinrun`, 100k, seed 42)
 

@@ -10,11 +10,13 @@ import numpy as np
 
 
 class StackVec:
-    def __init__(self, game, num_envs, num_levels=200, seed=42, k=4):
+    def __init__(self, game, num_envs, num_levels=200, seed=42, k=4,
+                 distribution="easy"):
         from procgen import ProcgenGym3Env
         self.env = ProcgenGym3Env(num=num_envs, env_name=game,
                                   num_levels=num_levels,
-                                  distribution_mode="easy", rand_seed=seed)
+                                  distribution_mode=distribution,
+                                  rand_seed=seed)
         self.n, self.k = num_envs, k
         _, d, _ = self.env.observe()
         o = d["rgb"] if isinstance(d, dict) else d
