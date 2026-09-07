@@ -7,6 +7,7 @@ Sem GPU (matplotlib CPU). Saida: jax_port/figures/*.png
   04_hrl.png            4 bracos x jumper/plunder
   05_algo.png           policy vs value por jogo
   06_top10.png          cluster top-5 com n=10
+  07_temporal_bakeoff.png  memória: 100k-easy vs 500k-hard
 Uso: python -m jax_port.make_figures  (raiz do repo, qualquer python+mpl)
 """
 
@@ -156,6 +157,58 @@ def fig_top10():
     plt.close(fig)
 
 
+def fig_temporal():
+    """Bake-off de memoria: 100k-easy vs 500k-hard por arquitetura."""
+    import numpy as np
+    order = ["mlp", "cnn1d", "tcn", "lstm", "gru", "transformer",
+             "transformer_xl", "mamba", "s4", "s5"]
+    games = [g for g in ("heist", "maze", "jumper") if g in A.get("temporal", {})]
+    hg = [g for g in ("heist", "bossfight") if g in A.get("temporal_hard", {})]
+    ncols = len(games) + len(hg)
+    fig, axes = plt.subplots(1, ncols, figsize=(4.2 * ncols, 5), sharey=False)
+    if ncols == 1:
+        axes = [axes]
+    col = 0
+    for game in games:
+        ax = axes[col]
+        r = A["temporal"][game]["ranking"]
+        d = {x["cell"]: x for x in r}
+        means = [d[c]["mean"] if c in d else np.nan for c in order]
+        los = [d[c]["ci95"][0] if c in d else np.nan for c in order]
+        his = [d[c]["ci95"][1] if c in d else np.nan for c in order]
+        y = np.arange(len(order))
+        ax.errorbar(means, y, xerr=[np.array(means) - np.array(los),
+                                    np.array(his) - np.array(means)],
+                    fmt="o", capsize=3)
+        ax.set_yticks(y)
+        ax.set_yticklabels(order)
+        ax.set_title(f"{game} 100k (easy)")
+        ax.grid(axis="x", alpha=0.3)
+        col += 1
+    for game in hg:
+        ax = axes[col]
+        r = A["temporal_hard"][game]["ranking"]
+        d = {x["cell"]: x for x in r}
+        means = [d[c]["mean"] if c in d else np.nan for c in order]
+        los = [d[c]["ci95"][0] if c in d else np.nan for c in order]
+        his = [d[c]["ci95"][1] if c in d else np.nan for c in order]
+        y = np.arange(len(order))
+        ax.errorbar(means, y, xerr=[np.array(means) - np.array(los),
+                                    np.array(his) - np.array(means)],
+                    fmt="s", capsize=3, color="tab:orange")
+        ax.set_yticks(y)
+        ax.set_yticklabels(order)
+        ax.set_title(f"{game} 500k (hard)")
+        ax.grid(axis="x", alpha=0.3)
+        col += 1
+    axes[0].set_xlabel("eval unseen ± IC95")
+    fig.suptitle("Temporal bake-off: memória não separa, transformer não sobe",
+                 fontsize=11)
+    fig.tight_layout()
+    fig.savefig(f"{FIG}/07_temporal_bakeoff.png", dpi=120)
+    plt.close(fig)
+
+
 def main():
     os.makedirs(FIG, exist_ok=True)
     fig_global()
@@ -164,7 +217,8 @@ def main():
     fig_hrl()
     fig_algo()
     fig_top10()
-    print("figs 01-06 OK ->", FIG)
+    fig_temporal()
+    print("figs 01-07 OK ->", FIG)
 
 
 if __name__ == "__main__":

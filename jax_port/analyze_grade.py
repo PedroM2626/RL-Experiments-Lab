@@ -71,12 +71,23 @@ def main():
         for cfg in cfgs if all(s in gs.get((cfg, gm), {}) for gm in games
                                for s in seeds)})
     for suite in ("exploration", "algo", "hrl", "hard", "pilot", "spr",
-                  "gnn", "aux", "temporal"):
+                  "gnn", "aux", "temporal", "temporal_hard"):
         gg = group(load_cells(suite))
         games = sorted(set(game for _, game in gg))
         rep[suite] = {game: rank_cells(
             {cfg: vals for (cfg, gm), vals in gg.items() if gm == game})
             for game in games}
+    # temporal_hard: 100k-easy vs 500k-hard por (cfg, jogo) — delta p/ ver
+    # se o transformer sai do fundo com mais budget/dificuldade.
+    t_easy = group(load_cells("temporal"))
+    t_hard = group(load_cells("temporal_hard"))
+    rep["temporal_delta"] = {}
+    for (cfg, game) in sorted(set(t_easy) | set(t_hard)):
+        e = t_easy.get((cfg, game))
+        h = t_hard.get((cfg, game))
+        rep["temporal_delta"][f"{cfg}__{game}"] = {
+            "easy_100k": sorted(e) if e else None,
+            "hard_500k": sorted(h) if h else None}
     # budget: curvas por (cfg, jogo)
     curves = {}
     for d in load_cells("budget"):
@@ -106,7 +117,7 @@ def main():
     # AUC por celula com curva
     n_auc = 0
     for suite in ("main", "exploration", "algo", "hrl", "budget", "hard",
-                  "pilot", "spr", "gnn", "aux", "temporal"):
+                  "pilot", "spr", "gnn", "aux", "temporal", "temporal_hard"):
         for pat in (os.path.join(GRADE, suite, "*.json"),
                     os.path.join("jax_port", GRADE, suite, "*.json")):
             for f in glob.glob(pat):
@@ -132,6 +143,11 @@ def main():
     if "temporal" in rep:
         print("== temporal ==")
         for game, r in rep["temporal"].items():
+            top = [(x["cell"], round(x["mean"], 2)) for x in r["ranking"][:5]]
+            print(f"  {game}: {top}")
+    if "temporal_hard" in rep:
+        print("== temporal_hard ==")
+        for game, r in rep["temporal_hard"].items():
             top = [(x["cell"], round(x["mean"], 2)) for x in r["ranking"][:5]]
             print(f"  {game}: {top}")
     print("wrote", OUT)
