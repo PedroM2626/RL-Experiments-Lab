@@ -2842,6 +2842,16 @@
    "n_seeds": 3,
    "solved": false
   },
+  "qmix-recurrent__2s3z__10M": {
+   "winrate_mean": 0.0,
+   "winrate_by_seed": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "n_seeds": 3,
+   "solved": false
+  },
   "qmix-recurrent__3m__10M": {
    "winrate_mean": 0.0,
    "winrate_by_seed": [
