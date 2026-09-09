@@ -114,6 +114,39 @@ def main():
             "winrate_mean": round(sum(vals) / len(vals), 3),
             "winrate_by_seed": vals, "n_seeds": len(vals),
             "solved": round(sum(vals) / len(vals), 3) >= 0.5}
+    from jax_port.stats import mean_ci
+    # gen_gap: quem generaliza (menor gap = melhor). rank_cells ordena
+    # decrescente, entao entramos com -gap para o menor gap liderar.
+    gg = {}
+    for d in load_cells("main"):
+        if d.get("gen_gap") is None:
+            continue
+        gg.setdefault((d["_cfg"], d["game"]), []).append(d["gen_gap"])
+    rep["gen_gap"] = {game: rank_cells(
+        {cfg: [-v for v in vals] for (cfg, gm), vals in gg.items()
+         if gm == game})
+        for game in sorted(set(gm for _, gm in gg))}
+    # inverte o sinal de volta p/ presentaao nos rankings (mean = gap real)
+    for game in rep["gen_gap"]:
+        for row in rep["gen_gap"][game]["ranking"]:
+            row["mean"] = -row["mean"]
+            row["ci95"] = [-row["ci95"][1], -row["ci95"][0]]
+    ggs = {}
+    for d in load_cells("main"):
+        if d.get("gen_gap") is None:
+            continue
+        ggs.setdefault((d["_cfg"], d["game"]), {})[d["seed"]] = d["gen_gap"]
+    games_g = sorted(set(gm for _, gm in ggs))
+    seeds_g = sorted(set(v_ for v in ggs.values() for v_ in v))
+    rep["gen_gap"]["global"] = rank_cells({
+        cfg: [-sum(ggs[(cfg, gm)][s] for gm in games_g) / len(games_g)
+              for s in seeds_g]
+        for cfg in sorted(set(c for c, _ in ggs))
+        if all(s in ggs.get((cfg, gm), {}) for gm in games_g
+               for s in seeds_g)})
+    for row in rep["gen_gap"]["global"]["ranking"]:
+        row["mean"] = -row["mean"]
+        row["ci95"] = [-row["ci95"][1], -row["ci95"][0]]
     # AUC por celula com curva
     n_auc = 0
     for suite in ("main", "exploration", "algo", "hrl", "budget", "hard",
@@ -140,6 +173,15 @@ def main():
     print("== marl ==")
     for k, v in rep["marl"].items():
         print(f"  {k}: winrate={v['winrate_mean']} n={v['n_seeds']} solved={v['solved']}")
+    if "gen_gap" in rep:
+        print("== gen_gap (menor = generaliza melhor) ==")
+        for game, r in rep["gen_gap"].items():
+            if game == "global":
+                continue
+            top = [(x["cell"], round(x["mean"], 2)) for x in r["ranking"][:4]]
+            print(f"  {game}: {top}")
+        print("  GLOBAL:", [(x["cell"], round(x["mean"], 2))
+                           for x in rep["gen_gap"]["global"]["ranking"][:6]])
     if "temporal" in rep:
         print("== temporal ==")
         for game, r in rep["temporal"].items():
