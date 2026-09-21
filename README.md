@@ -785,6 +785,46 @@ Leituras:
 
 **Resposta à pergunta do estudo:** "memória ajuda em ProcGen?" — **não em 100k, não em 500k, com estas 10 arquiteturas e estes 4 jogos**. O que aparece não é uma vantagem de memória, é que arquiteturas *mais pobres* (stateless MLP/CNN) batem de frente ou vencem as *mais ricas*. Se a intuição diz "deve importar", ela precisa de uma tarefa que a exija — ProcGen padrão (4 jogos testados) não é essa tarefa.
 
+#### 15.4.7. E sem frame stack (`stack=1`)? Auditoria e benchmark pareado de memória recorrente real (20/09/2026, `starpilot`, 100k, seed 42)
+
+Uma crítica metodológica crucial aos bake-offs anteriores (§15.4.5 e §15.4.6) é que ambos rodaram inteiramente com `stack=4` (4 frames empilhados). Em aprendizado por reforço visual, $k=4$ fornece aproximação markoviana de primeira ordem (velocidade/aceleração instantânea via diferenças finitas), potencialmente mascarando a utilidade de uma memória recorrente explícita.
+
+**Auditoria prévia da infraestrutura existente:**
+Ao auditar `temporal.py` e `train.py`, descobriu-se que os modelos do zoo temporal anterior (`LSTMStack`, `S5Stack`, etc.) operavam sua recorrência **estritamente dentro da pilha de 4 frames** e eram *stateless* entre passos de transição do ambiente ($t \to t+1$, com o carry celular reinicializado a zero a cada observação). Rodar o código anterior com `stack=1` resultaria em uma sequência de comprimento 1 sem memória inter-passos (essencialmente camadas lineares feedforward).
+
+Para testar cientificamente a hipótese de memória em regime de POMDP estrito sem frame stack, foi implementada recorrência inter-passos real (`jax_port/recurrent_step.py`: `RecurrentLSTMBackbone` e `RecurrentS5Backbone`), com carry latente mantido continuamente ao longo de todo o rollout e resetado em `done`, compatível com `make_mem_fns` e executado via script pareado dedicado `jax_port/bench_temporal_stack1.py`. Avaliado no jogo cinemático `starpilot` (projéteis rápidos e nave balística onde $k=1$ remove vetores de velocidade diretos):
+
+| Modelo | Arquitetura | SPS | Wall (s) | Treino (últimos 20 eps) | Eval Unseen (20 eps) | IC 95% | Fonte |
+|---|---|---:|---:|---:|---:|---|---|
+| **`classic`** | NatureCNN feedforward (*stateless*, $k=1$) | **7.566** | **14,1 s** | 2,65 | **3,10** | [1,73, 4,47] | `results_stack1_bench_100k.json` |
+| **`recurrent_s5`** | ClassicCNN + S5 SSM step-carry ($k=1$) | 5.088 | 20,9 s | 2,25 | **2,20** | [1,29, 3,11] | `results_stack1_bench_100k.json` |
+| **`recurrent_lstm`** | ClassicCNN + LSTM cell step-carry ($k=1$) | 4.982 | 21,4 s | **3,20** | **1,45** | [0,64, 2,26] | `results_stack1_bench_100k.json` |
+
+**Achados científicos:**
+1. **A política reativa feedforward simples (`classic`) venceu em generalização:** Mesmo sob observabilidade parcial forçada ($k=1$), a NatureCNN feedforward obteve o maior retorno em fases *unseen* (3,10), superando os dois modelos recorrentes.
+2. **Overfitting de estado latente na LSTM:** A `recurrent_lstm` teve o maior retorno nos níveis de treino (3,20), mas desabou para 1,45 em níveis não vistos (gap de generalização de $-1,75$). Em budgets curtos (100k), a capacidade extra do estado oculto da LSTM serviu primariamente para memorizar trajetórias específicas dos 200 níveis de treino.
+3. **Estabilidade e regularização do SSM (S5):** O modelo de espaço de estados `recurrent_s5` exibiu estabilidade notável e gap de generalização quase nulo (2,25 no treino $\to$ 2,20 no eval unseen), mas sem conseguir superar o baseline feedforward.
+4. **Throughput:** A manutenção do estado recorrente e da memória persistente impôs uma sobrecarga de ~33–34% no SPS (~7,5k $\to$ ~5,0k SPS).
+5. **Veredito final:** Mesmo sem frame stacking, a memória sequencial explícita em ProcGen não compensa a complexidade de otimização no regime de 100k passos; políticas feedforward continuam superiores em robustez amostral.
+
+**Taxonomia e Viabilidade Arquitetural dos 10 Modelos em `stack=1`:**
+Por que não rodamos todos os 10 modelos do bake-off de `stack=4` em `stack=1`? Porque em $k=1$, a natureza matemática das arquiteturas divide o zoo em classes estruturalmente distintas:
+
+| Categoria | Modelo no `stack=4` | Mecanismo em $k=4$ | Degeneração / Viabilidade em $k=1$ | Status em `stack=1` |
+|---|---|---|---|---|
+| **Convolucionais e Stateless** | `mlp` (`MlpStack`) | MLP sobre frames concatenados | Vira MLP padrão sobre 1 frame. Sem memória. | Redundante com `classic`. |
+| | `cnn1d` | Conv1D temporal sobre os 4 frames | Em $T=1$, Conv1D colapsa matematicamente em camada linear (`Dense`). Sem memória. | Impossível sem buffer FIFO de frames. |
+| | `tcn` | Conv causal dilatada sobre os 4 frames | Convolução causal em $T=1$ degenera em projeção linear. Sem memória. | Impossível sem buffer FIFO de frames. |
+| **Atenção Pura** | `transformer` | Auto-atenção nos 4 frames | Auto-atenção de 1 token consigo mesmo é trivial/identidade ($QK^T = 1$). Vira feedforward. | Inaplicável sem sequência. |
+| | `transformer_xl` | Auto-atenção nos frames + cache de segmento | Pode manter cache FIFO de latentes passados, mas em $k=1$ o encoder precisaria ser reformatado para 1 frame. | Adaptável (requer cache step-by-step). |
+| **Recorrentes e SSMs** *(Estado Oculto $h_t = f(h_{t-1}, x_t)$)* | `lstm` | LSTMCell nos 4 frames | Requer carry $(c_t, h_t)$ através das transições do ambiente e reset no `done`. | **Implementado** (`recurrent_lstm`). |
+| | `s5` | Associative scan nos 4 frames | Scan vira passo recursivo linear $h_t = \bar{A}h_{t-1} + Bu_t$. | **Implementado** (`recurrent_s5`). |
+| | `gru` | GRUCell nos 4 frames | Requer carry $h_t$ através das transições do ambiente e reset no `done`. | Viável (extensão direta da LSTM). |
+| | `s4` | Convolução FFT nos 4 frames | FFT requer dimensão de tempo; passo a passo opera como SSM discreto. | Viável (extensão do S5). |
+| | `mamba` | Selective scan nos 4 frames | Scan vira passo recursivo com portas dependentes de entrada. | Viável (SSM não-estacionário). |
+
+> **Conclusão de Engenharia:** Convoluções temporais (`cnn1d`, `tcn`) não possuem estado interno latente e exigem um buffer explícito de frames passados (o que seria apenas recriar o frame stack artificialmente). Apenas modelos com equações de transição de estado latente ($h_t = f(h_{t-1}, x_t)$) são conceitualmente válidos para memória estrita em $k=1$. Dos modelos viáveis, `recurrent_lstm` (rede com portas) e `recurrent_s5` (modelo de espaço de estados MIMO) representam as duas principais famílias de memória latente da literatura.
+
 
 ### 15.3. Benchmark pareado justo — mesma máquina, mesmo dia (05/09/2026, `coinrun`, 100k, seed 42)
 

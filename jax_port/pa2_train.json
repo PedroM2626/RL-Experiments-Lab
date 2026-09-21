@@ -1,0 +1,51 @@
+{
+  "game": "starpilot",
+  "seed": 42,
+  "algo": "ppo",
+  "extractor": "classic",
+  "stack": 1,
+  "obs_mode": "pixels",
+  "augment": "none",
+  "explore": "none",
+  "aux": "none",
+  "timesteps": 106496,
+  "wall_s": 11.1,
+  "sps": 9593.7,
+  "train_episodes": 1205,
+  "train_ret_mean20": 1.95,
+  "curve": [
+    {
+      "steps": 40960,
+      "ret20": 2.2
+    },
+    {
+      "steps": 81920,
+      "ret20": 2.2
+    },
+    {
+      "steps": 106496,
+      "ret20": 1.95
+    }
+  ],
+  "aux_loss_mean": null,
+  "hparams": {
+    "algo": "ppo",
+    "lr": 0.0003,
+    "gamma": 0.99,
+    "lambda": 0.95,
+    "clip": 0.2,
+    "epochs": 3,
+    "num_envs": 64,
+    "rollout": 128,
+    "minibatch": 1024
+  },
+  "phase_s": {
+    "rollout": 6.35,
+    "gae": 0.5,
+    "update": 4.25
+  },
+  "eval_unseen": {
+    "mean": 2.1,
+    "eps": 10
+  }
+}
