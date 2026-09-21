@@ -1,8 +1,8 @@
-"""Paridade de env: gym3 batch vs gym unitario, mesma seed/acoes (200 steps).
+"""Environment parity: gym3 batch vs unitary gym, same seed/actions (200 steps).
 
-Se o C++ e o mesmo e os niveis os mesmos, gym3 N=1 deve devolver as
-mesmas obs/recompensas que o gym. Requer: gym+procgen (venv do estudo
-ou do porte). Uso: python -m jax_port.tests.test_parity
+Since the C++ core and levels are identical, gym3 N=1 must return the
+same obs/rewards as gym. Requires: gym+procgen (study or port venv).
+Usage: python -m jax_port.tests.test_parity
 """
 
 import numpy as np

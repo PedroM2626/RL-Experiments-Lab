@@ -1,17 +1,17 @@
-"""Exploracao intrinseca fiel a ``compare_maze_heist.py:16`` (ICM/RND/NGU).
+"""Intrinsic exploration faithful to ``compare_maze_heist.py:16`` (ICM/RND/NGU).
 
-Semantica replicada (beta=0.01 nos tres; treino online a cada step):
-  ICM: phi = CNN Classic sem FC (1024D); forward (1024+15)->512->1024;
-       bonus = MSE(fwd(phi_t,a), phi_t+1); otimizados phi+fwd, Adam 1e-4.
-       QUIRK FIEL: o inverse (2048->512->15) e definido mas NUNCA entra
-       no loss no estudo — aqui tambem nao (documentado, nao removido).
-  RND: target congelada + predictor CNN->512; bonus = MSE; Adam 1e-4.
-  NGU: RND + memoria episodica por env (deque 1000): episodic = media
-       das 5 menores distancias aos ultimos 100 (1.0 se <10);
+Replicated semantics (beta=0.01 across all three; online training at every step):
+  ICM: phi = Classic CNN without FC (1024D); forward (1024+15)->512->1024;
+       bonus = MSE(fwd(phi_t, a), phi_t+1); phi+fwd optimized, Adam 1e-4.
+       FAITHFUL QUIRK: inverse model (2048->512->15) is defined but NEVER enters
+       the loss in the study — not here either (documented, preserved).
+  RND: frozen target + predictor CNN->512; bonus = MSE; Adam 1e-4.
+  NGU: RND + episodic memory per env (deque 1000): episodic = mean
+       of 5 smallest distances to the last 100 entries (1.0 if <10);
        bonus = beta * rnd * episodic.
-Ajuste de batching (documentado): o estudo treina 1 obs/step (n_envs=1);
-aqui o batch e N envs com o mesmo lr — mesmo objetivo, SGD em lote.
-Sem normalizacao de bonus (o estudo nao normaliza) e sem clip.
+Batching adjustment (documented): the study trains 1 obs/step (n_envs=1);
+here the batch has N envs with identical learning rate — same objective, batched SGD.
+No bonus normalization (the study does not normalize) and no clipping.
 """
 
 import collections
@@ -40,7 +40,7 @@ class ICMForward(nn.Module):
 
 
 class ICMInverse(nn.Module):
-    """Definido por fidelidade; o estudo nunca o otimiza (ver loss abaixo)."""
+    """Defined for fidelity; the study never optimizes it (see loss below)."""
 
     @nn.compact
     def __call__(self, phi_pair):
@@ -67,7 +67,7 @@ class Exploration:
             key, k1, k2, k3 = jax.random.split(key, 4)
             self.phi = ICMPhi()
             self.fwd = ICMForward()
-            self.inv = ICMInverse()  # parametros existem; sem otimizador
+            self.inv = ICMInverse()  # parameters exist; no optimizer
             self.p_phi = self.phi.init(k1, dummy)
             self.p_fwd = self.fwd.init(k2, jnp.zeros((1, 1039)))
             self._ = self.inv.init(k3, jnp.zeros((1, 2048)))
@@ -127,7 +127,7 @@ class Exploration:
                 m.clear()
 
     def step(self, obs_t_u8, act, rew, obs_tp1_u8, done):
-        """Bonus + treino online; devolve recompensas aumentadas (numpy)."""
+        """Bonus + online training; returns augmented rewards (numpy)."""
         xt = obs_t_u8.astype(jnp.float32) / 255.0
         xtp1 = obs_tp1_u8.astype(jnp.float32) / 255.0
         if self.kind == "icm":

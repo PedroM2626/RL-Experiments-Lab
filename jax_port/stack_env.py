@@ -1,9 +1,9 @@
-"""Stack de frames sobre ProcgenGym3Env (fiel ao frame_stack do estudo).
+"""Frame stacking over ProcgenGym3Env (faithful to study's frame_stack).
 
-StackVec: guarda os ultimos K frames por env (anel numpy), reset limpa.
-API compativel com o loop de treino (act/observe estilo gym3):
-  reset() -> stacked; act(a) guarda; observe() -> (rew, {"rgb_stacked"},
-  first). K=1 equivale a sem stack (estudo).
+StackVec: stores the last K frames per env (numpy ring buffer), reset clears.
+API compatible with training loop (act/observe gym3-style):
+  reset() -> stacked; act(a) buffers; observe() -> (rew, {"rgb_stacked"},
+  first). K=1 equals no stack (study baseline).
 """
 
 import numpy as np

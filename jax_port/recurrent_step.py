@@ -1,9 +1,9 @@
-"""Modelos recorrentes passo-a-passo com carry entre transições do ambiente (stack=1).
+"""Step-by-step recurrent models with carry across environment transitions (stack=1).
 
-Diferente do temporal.py (que fazia recorrencia interna apenas dentro dos 4 frames da pilha),
-estes modelos recebem um unico frame (B, 64, 64, 3) e um estado de memoria (B, L, D),
-atualizando o estado a cada passo do ambiente (t -> t+1) com carry persistente no rollout
-e reset no done.
+Unlike temporal.py (which applied recurrence only inside the 4 frames of the stack),
+these models receive a single frame (B, 64, 64, 3) and a memory state (B, L, D),
+updating the state at each environment step (t -> t+1) with persistent carry across the rollout
+and reset upon done.
 """
 
 import flax.linen as nn
@@ -36,7 +36,7 @@ class RecurrentLSTMBackbone(nn.Module):
 
     @nn.compact
     def __call__(self, x, mem):
-        # x: (B, 64, 64, 3), mem: (B, 2, hidden) onde [:, 0] e' c e [:, 1] e' h
+        # x: (B, 64, 64, 3), mem: (B, 2, hidden) where [:, 0] is c and [:, 1] is h
         enc = ClassicCNN()
         f = nn.relu(nn.Dense(self.hidden)(enc(x)))  # (B, hidden)
         c_prev = mem[:, 0]
@@ -53,7 +53,7 @@ class RecurrentS5Backbone(nn.Module):
 
     @nn.compact
     def __call__(self, x, mem):
-        # x: (B, 64, 64, 3), mem: (B, 2, state) para 2 camadas de S5
+        # x: (B, 64, 64, 3), mem: (B, 2, state) for 2 layers of S5
         enc = ClassicCNN()
         f = nn.relu(nn.Dense(self.dim)(enc(x)))  # (B, dim)
         h0_prev = mem[:, 0]

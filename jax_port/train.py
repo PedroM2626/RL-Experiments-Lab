@@ -1,20 +1,20 @@
-"""Treino PPO em JAX sobre ProcGen real (velocidade do porte, PA2).
+"""PPO training in JAX on real Procgen (port speed, PA2).
 
-Protocolo fiel ao estudo onde importa, ajustado onde o throughput manda:
-  fiel: jogo/niveis/sementes (treino 200 easy seed S; eval 0 unseen seed
+Protocol faithful to study where it matters, tuned where throughput demands:
+  faithful: game/levels/seeds (train 200 easy seed S; eval 0 unseen seed
     S+1000), frame 64x64x3, PPO lr 3e-4 / gamma 0.99 / lambda 0.95 /
     clip 0.2 / epochs 3 / vf 0.5 / ent 0.01 / grad-clip 0.5 / adv-norm.
-  ajustado: N envs paralelos (C++ gym3, 1 no estudo) e minibatch >= 1024
-    (64 no estudo) — mesmo objetivo PPO, batching GPU-eficiente.
-    Micro-ajustes so de batching: vantagem normalizada 1x por epoca em
-    numpy (8192 amostras) em vez de 1x por minibatch (64); layout NHWC
-    (convencao Flax) em vez de CHW (convencao torch) — rede identica.
-    Extratores: ``--extractor`` do zoo ``backbones.py`` (classic/cbam/
-    spatial/impala/impoola/resnet18/vit/mlp); ``mlp`` usa obs vetor 256D
-    (grayscale 16x16, ``ProcgenVectorWrapper`` do estudo, sem cv2:
-    luminancia + mean-pool 4x = INTER_AREA exato).
+  tuned: N parallel envs (C++ gym3, 1 in original study) and minibatch >= 1024
+    (64 in study) — same PPO objective, GPU-efficient batching.
+    Batching-only micro-adjustments: advantage normalized 1x per epoch in
+    numpy (8192 samples) instead of 1x per minibatch (64); NHWC layout
+    (Flax convention) instead of CHW (torch convention) — identical network.
+    Extractors: ``--extractor`` from ``backbones.py`` zoo (classic/cbam/
+    spatial/impala/impoola/resnet18/vit/mlp); ``mlp`` uses 256D vector obs
+    (grayscale 16x16, study's ``ProcgenVectorWrapper``, without cv2:
+    luminance + 4x mean-pool = exact INTER_AREA).
 
-Uso (venv /root/procgen-jax, via WSL):
+Usage (venv /root/procgen-jax, via WSL):
     wsl -e env PYTHONPATH=/mnt/c/Users/Acer/Downloads/MLE \
       /root/procgen-jax/bin/python \
       /mnt/c/Users/Acer/Downloads/MLE/jax_port/train.py \
@@ -53,10 +53,10 @@ def with_backbone(params, bb):
 
 
 def to_vector(rgb):
-    """(N,64,64,3) uint8 -> (N,256) uint8: luminancia + mean-pool 4x.
+    """(N,64,64,3) uint8 -> (N,256) uint8: luminance + 4x mean-pool.
 
-    Equivale a ``ProcgenVectorWrapper._to_vector`` (cv2 INTER_AREA com
-    fator inteiro exato = media dos blocos 4x4).
+    Equivalent to ``ProcgenVectorWrapper._to_vector`` (cv2 INTER_AREA with
+    exact integer factor = mean of 4x4 blocks).
     """
     gray = (rgb.astype(np.float32) * np.array([0.2989, 0.5870, 0.1140],
                                               np.float32)).sum(-1)
@@ -79,17 +79,17 @@ def train(args):
     key = jax.random.PRNGKey(args.seed)
     device = jax.devices()[0]
     temporal = args.extractor in TEMPORAL
-    # "mlp" temporal (MlpStack) le frames empilhados, nao o modo vector
-    # do extractor mlp do estudo: pixels como os demais temporais.
+    # Temporal "mlp" (MlpStack) reads stacked frames, not the vector mode
+    # of the study's mlp extractor: pixels like the other temporal models.
     mode = args.obs or ("vector" if args.extractor == "mlp" and not temporal
                         else "pixels")
     assert (args.extractor == "mlp") == (mode == "vector") or temporal, \
-        "mlp<->vector, demais<->pixels (temporal: mlp tambem usa pixels)"
+        "mlp<->vector, others<->pixels (temporal: mlp also uses pixels)"
     if temporal and args.stack == 1:
         args.stack = 4
-        print("stack=4 automatico p/ backbone temporal", flush=True)
+        print("Automatic stack=4 for temporal backbone", flush=True)
     assert args.stack == 1 or (temporal and args.stack == 4), \
-        "stack>1 so com backbone temporal (estudo: frame_stack=1)"
+        "stack>1 only with temporal backbone (study: frame_stack=1)"
     oshape = (256,) if mode == "vector" else (64, 64, 3 * args.stack)
     print(f"jax={jax.__version__} device={device} game={args.game} "
           f"extractor={args.extractor} obs={mode} stack={args.stack}")
@@ -106,12 +106,12 @@ def train(args):
     stoch = args.extractor == "vae"
     a2c = args.algo == "a2c"
     epochs = 1 if a2c else 3
-    lam = 1.0 if a2c else 0.95  # defaults SB3: A2C 1.0, PPO 0.95 (estudo)
+    lam = 1.0 if a2c else 0.95  # SB3 defaults: A2C 1.0, PPO 0.95 (study)
     mem_mode = temporal and args.extractor == "transformer_xl"
     if temporal:
-        assert not stoch and not a2c, "temporal: PPO deterministico por ora"
+        assert not stoch and not a2c, "temporal: deterministic PPO for now"
         assert args.augment == "none" and args.explore == "none" \
-            and args.aux == "none", "temporal: sem augment/explore/aux (fase 1)"
+            and args.aux == "none", "temporal: no augment/explore/aux (phase 1)"
         if mem_mode:
             model = ActorCriticXL(backbone=TEMPORAL[args.extractor](),
                                   n_actions=n_actions)
@@ -142,7 +142,7 @@ def train(args):
     stacked = args.stack > 1
     mem0 = jnp.zeros((N, MEM_LEN, MEM_DIM), jnp.float32)
 
-    # warmup do JIT fora da medida (update uint8 + rollout uint8)
+    # JIT warmup outside timing (uint8 update + uint8 rollout)
     key, kw, ku = jax.random.split(key, 3)
     if mem_mode:
         (state, _) = update_fn(
@@ -169,19 +169,19 @@ def train(args):
         obs = env.reset()
     else:
         _, obs_d, _ = env.observe()
-        obs = get_obs(obs_d, mode)  # uint8: (N,64,64,C) NHWC ou (N,256)
+        obs = get_obs(obs_d, mode)  # uint8: (N,64,64,C) NHWC or (N,256)
     aug = make_augment(args.augment)
     if args.augment != "none" or args.explore != "none":
-        assert mode == "pixels", "augment/exploracao sao so-pixels (estudo)"
+        assert mode == "pixels", "augment/exploration are pixels-only (study)"
     spr = None
     if args.aux == "spr":
         assert mode == "pixels" and args.extractor not in ("mlp", "vae"), \
-            "SPR: backbone CNN pixels (extensao)"
+            "SPR: CNN pixels backbone (extension)"
         from jax_port.spr import make_spr
         spr = make_spr(BACKBONES[args.extractor])
     elif args.aux in ("curl", "cpc", "acl"):
         assert mode == "pixels" and args.extractor not in ("mlp", "vae"), \
-            "contrast: backbone CNN pixels (extensao)"
+            "contrast: CNN pixels backbone (extension)"
         from jax_port.contrast import make_contrast
         spr = make_contrast(BACKBONES[args.extractor], args.aux)
     if spr is not None:
@@ -232,7 +232,7 @@ def train(args):
                 act_d, logp_d, val_d, mem_d, key = rollout_fn(
                     state[0], pin, jnp.asarray(mems, device=device), key)
                 jax.block_until_ready((act_d, logp_d, val_d, mem_d))
-                mems = np.array(mem_d)  # copy: fallback JAX pode vir read-only
+                mems = np.array(mem_d)  # copy: JAX fallback can be read-only
                 b_mem[t] = mems
             else:
                 act_d, logp_d, val_d, key = rollout_fn(state[0], pin, key)
@@ -274,8 +274,8 @@ def train(args):
         F = (flat(b_obs), flat(b_act).astype(np.int32), flat(b_logp),
              flat(adv), flat(ret).astype(np.float32))
         idx = rng.permutation(T * N)
-        # Slicing NO HOST + H2D contiguo por minibatch: gather com indice
-        # no device media 457ms/call (medido) vs 12ms/call contiguo (~40x).
+        # Slicing ON HOST + contiguous H2D per minibatch: gather with index
+        # on device averaged 457ms/call (measured) vs 12ms/call contiguous (~40x).
         adv_n = F[3]  # (8192,) float32 numpy
         adv_n = (adv_n - adv_n.mean()) / (adv_n.std() + 1e-8)
         for _ep in range(epochs):
@@ -305,7 +305,7 @@ def train(args):
         ph["update"] += time.perf_counter() - t_upd0
         spr_loss = None
         if spr is not None:
-            # Fase aux: pares (o_t, a_t, o_{t+1}) em chunks de 2048.
+            # Aux phase: pairs (o_t, a_t, o_{t+1}) in chunks of 2048.
             P1 = flat(b_obs).reshape(T * N, *oshape)
             P2 = flat(b_obs2).reshape(T * N, *oshape)
             A1 = flat(b_act).astype(np.int32)
@@ -365,7 +365,7 @@ def train(args):
                                      200, args.seed, False, args.eval_train_eps)
     if "eval_train" in out and "eval_unseen" in out:
         out["gen_gap"] = round(out["eval_train"]["mean"]
-                               - out["eval_unseen"]["mean"], 3)
+                                - out["eval_unseen"]["mean"], 3)
     with open(args.out, "w") as fh:
         json.dump(out, fh, indent=2)
     print(json.dumps(out, indent=2))
@@ -374,9 +374,9 @@ def train(args):
 
 def evaluate(state, forward_fn, args, device, mode, num_levels, seed,
              deterministic, n_eps):
-    """Eval generico: unseen (0, seed+1000) ou train (200, seed);
-    deterministic=argmax, senao categorical (extrator VAE segue amostrado,
-    como no estudo). Stack>1 usa StackVec; XL carrega mems proprias."""
+    """Generic eval: unseen (0, seed+1000) or train (200, seed);
+    deterministic=argmax, otherwise categorical (VAE extractor remains sampled,
+    as in study). Stack>1 uses StackVec; XL carries its own memory."""
     from jax_port.temporal import MEM_DIM, MEM_LEN
     xl = args.extractor == "transformer_xl"
     if args.stack > 1:
@@ -386,8 +386,8 @@ def evaluate(state, forward_fn, args, device, mode, num_levels, seed,
         obs = ev.reset()
     else:
         ev = ProcgenGym3Env(num=args.eval_envs, env_name=args.game,
-                            num_levels=num_levels,
-                            distribution_mode=args.distribution, rand_seed=seed)
+                             num_levels=num_levels,
+                             distribution_mode=args.distribution, rand_seed=seed)
         _, obs_d, _ = ev.observe()
         obs = get_obs(obs_d, mode)
     key = jax.random.PRNGKey(seed)
@@ -402,7 +402,7 @@ def evaluate(state, forward_fn, args, device, mode, num_levels, seed,
             (logits, _), mems = _eval_xl_step(
                 forward_fn, state[0], ob,
                 jnp.asarray(mems, device=device), kf)
-            mems = np.array(mems)  # copy: fallback JAX pode vir read-only
+            mems = np.array(mems)  # copy: JAX fallback can be read-only
         else:
             logits, _ = forward_fn(state[0], ob, kf)
         jax.block_until_ready(logits)
@@ -438,18 +438,18 @@ def main():
     ap.add_argument("--extractor", default="classic",
                     choices=sorted(set(BACKBONES) | set(TEMPORAL)))
     ap.add_argument("--stack", type=int, default=1,
-                    help="frames empilhados (1=estudo; temporal usa 4)")
+                    help="Stacked frames (1=study; temporal uses 4)")
     ap.add_argument("--obs", default=None, choices=[None, "pixels", "vector"])
     ap.add_argument("--distribution", default="easy",
                     choices=["easy", "hard", "extreme"],
-                    help="distribution_mode do Procgen (easy=estudo)")
+                    help="Procgen distribution_mode (easy=study)")
     ap.add_argument("--augment", default="none",
                     choices=["none", "crop", "color", "noise"])
     ap.add_argument("--explore", default="none",
                     choices=["none", "icm", "rnd", "ngu"])
     ap.add_argument("--aux", default="none",
                     choices=["none", "spr", "curl", "cpc", "acl"],
-                    help="spr/curl/cpc/acl = extensao alem do estudo")
+                    help="spr/curl/cpc/acl = extension beyond study")
     ap.add_argument("--timesteps", type=int, default=100000)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--num-envs", type=int, default=64)

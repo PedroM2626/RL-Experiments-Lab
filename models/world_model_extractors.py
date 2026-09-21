@@ -5,7 +5,7 @@ import gymnasium as gym
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
 class VAEExtractor(BaseFeaturesExtractor):
-    """Variational Inference: z ~ q(z|o), KL regulariza, sample estocástico + dream decoder"""
+    """Variational Inference: z ~ q(z|o), KL regularization, stochastic sampling + dream decoder"""
     def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 512, latent_dim: int = 128):
         super().__init__(observation_space, features_dim)
         if len(observation_space.shape) == 3 and observation_space.shape[2] in [1,3,4]:
@@ -31,7 +31,7 @@ class VAEExtractor(BaseFeaturesExtractor):
         self.deconv3 = nn.ConvTranspose2d(32, n_input, 8, stride=4)
 
     def dream(self, observations: torch.Tensor) -> torch.Tensor:
-        """Reconstrói obs: enc->sample->dec para visualizar sonho"""
+        """Reconstructs obs: enc -> sample -> dec to visualize reconstructed dreams"""
         if observations.dtype == torch.uint8: observations = observations.float()/255.0
         elif observations.max() > 1.5: observations = observations/255.0
         if self.is_hwc and observations.dim()==4 and observations.shape[-1] in [1,3,4]:
@@ -52,11 +52,11 @@ class VAEExtractor(BaseFeaturesExtractor):
         x = x.view(x.size(0), -1)
         mu = self.fc_mu(x); logvar = self.fc_logvar(x)
         std = torch.exp(0.5*logvar); eps = torch.randn_like(std)
-        z = mu + eps*std  # reparametrization
+        z = mu + eps*std  # reparameterization trick
         return self.fc_out(z)
 
 class AEExtractor(BaseFeaturesExtractor):
-    """Autoencoder não-variacional determinístico: z = enc(o) + dream decoder"""
+    """Deterministic non-variational autoencoder: z = enc(o) + dream decoder"""
     def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 512):
         super().__init__(observation_space, features_dim)
         if len(observation_space.shape) == 3 and observation_space.shape[2] in [1,3,4]:
@@ -76,7 +76,7 @@ class AEExtractor(BaseFeaturesExtractor):
             nn.Conv2d(32, 64, 4, stride=2), nn.ReLU(),
             nn.Conv2d(64, 64, 3, stride=1), nn.ReLU(), nn.Flatten()
         )
-        # redefinir para usar conv separados para dream
+        # Separate conv layers for dream decoding
         self.fc = nn.Sequential(nn.Linear(n_flat, features_dim), nn.ReLU())
         self.fc_dec = nn.Linear(features_dim, int(torch.prod(torch.tensor(self._shape))))
         self.deconv1 = nn.ConvTranspose2d(64, 64, 3, stride=1)
@@ -102,7 +102,7 @@ class AEExtractor(BaseFeaturesExtractor):
         return self.fc(self.cnn(observations))
 
 class ReconExtractor(BaseFeaturesExtractor):
-    """Latent via reconstrução: enc(o)->z->dec(o|z) L2, z usado p/ RL + dream"""
+    """Latent via reconstruction: enc(o) -> z -> dec(o|z) L2, z used for RL + dream"""
     def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 512):
         super().__init__(observation_space, features_dim)
         if len(observation_space.shape) == 3 and observation_space.shape[2] in [1,3,4]:
@@ -144,7 +144,7 @@ class ReconExtractor(BaseFeaturesExtractor):
         return self.fc_enc(x)
 
 class ContrastiveExtractor(BaseFeaturesExtractor):
-    """Contrastive: sim(z,z+)/tau, sem decoder, invariante a fundo"""
+    """Contrastive representation: sim(z, z+)/tau, decoder-free, background-invariant"""
     def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 512):
         super().__init__(observation_space, features_dim)
         if len(observation_space.shape) == 3 and observation_space.shape[2] in [1,3,4]:
@@ -167,7 +167,7 @@ class ContrastiveExtractor(BaseFeaturesExtractor):
         elif observations.max() > 1.5: observations = observations/255.0
         if self.is_hwc and observations.dim()==4 and observations.shape[-1] in [1,3,4]:
             observations = observations.permute(0,3,1,2)
-        # augment leve p/ robustez (noise) - mantém invariância
+        # Light augmentation for noise robustness - preserves invariance
         if self.training and torch.rand(1).item() < 0.5:
             observations = observations + torch.randn_like(observations)*0.01
             observations = torch.clamp(observations, 0, 1)

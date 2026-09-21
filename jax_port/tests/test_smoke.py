@@ -1,7 +1,7 @@
-"""Smoke de treino ponta-a-ponta (MLP+coinrun, ~1k steps, rapido, sem conv).
+"""End-to-end training smoke test (MLP+coinrun, ~1k steps, fast, non-conv).
 
-Exercita o caminho da grade (train.train em processo). Requer venv do
-porte + GPU. Uso: python -m jax_port.tests.test_smoke
+Exercises the grid runner pipeline (train.train in process). Requires port
+venv + GPU. Usage: python -m jax_port.tests.test_smoke
 """
 
 import math
@@ -20,7 +20,7 @@ def test_smoke_train():
         eval_det_eps=0, eval_train_eps=0, eval_envs=2, out=out)
     r = T.train(args)
     assert r["timesteps"] >= 1024 and r["sps"] > 100, r
-    assert r["curve"], "curva AUC ausente"
+    assert r["curve"], "AUC curve missing"
     assert math.isfinite(r["train_ret_mean20"])
     assert r["eval_unseen"]["eps"] == 2
     return {"sps": r["sps"], "ret": r["train_ret_mean20"]}

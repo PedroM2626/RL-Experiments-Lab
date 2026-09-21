@@ -5,21 +5,21 @@ import cv2
 
 class ProcgenGymWrapper(gymn.Env):
     """
-    Wrapper para Procgen que converte old gym API (obs, done) para gymnasium (obs, info, terminated, truncated)
-    e mantém imagem 64x64x3
+    Wrapper for Procgen that converts old gym API (obs, done) to gymnasium (obs, info, terminated, truncated)
+    and maintains 64x64x3 observations.
     """
     def __init__(self, env, frame_stack=1):
         super().__init__()
         self.env = env
         self.frame_stack = frame_stack
-        # Procgen 64x64x3 HWC -> convertemos para CHW para CNN
+        # Procgen 64x64x3 HWC -> converted to CHW for CNN
         if frame_stack > 1:
             from collections import deque
             self.frames = deque(maxlen=frame_stack)
             self.observation_space = gymn.spaces.Box(low=0, high=255, shape=(3*frame_stack, 64, 64), dtype=np.uint8)
         else:
             self.observation_space = gymn.spaces.Box(low=0, high=255, shape=(3, 64, 64), dtype=np.uint8)
-        # Converter Discrete old gym para gymnasium Discrete
+        # Convert Discrete old gym to gymnasium Discrete
         self.action_space = gymn.spaces.Discrete(env.action_space.n)
 
     def reset(self, **kwargs):
@@ -48,15 +48,15 @@ class ProcgenGymWrapper(gymn.Env):
 
 class ProcgenVectorWrapper(gymn.Env):
     """
-    Variação SEM CV do mesmo Procgen: retorna vetor flatten downsampled
-    Mesmo jogo coinrun, mas obs é vetor 512D (downsample 16x16 grayscale flatten)
-    Permite comparar CNN vs MLP no mesmo ambiente
+    Non-vision variation of the same Procgen task: returns a flattened downsampled vector.
+    Same game environment, but observation is a 256D vector (downsampled 16x16 grayscale flatten).
+    Enables direct comparison between CNN and MLP in the identical environment.
     """
     def __init__(self, env, downsample=16):
         super().__init__()
         self.env = env
         self.downsample = downsample
-        # vetor = downsample*downsample
+        # vector = downsample * downsample
         self.observation_space = gymn.spaces.Box(low=0, high=255, shape=(downsample*downsample,), dtype=np.uint8)
         self.action_space = gymn.spaces.Discrete(env.action_space.n)
 
@@ -84,9 +84,9 @@ class ProcgenVectorWrapper(gymn.Env):
 
 def make_procgen_env(game='coinrun', num_levels=200, distribution_mode='easy', seed=0, frame_stack=1, vector=False):
     """
-    Factory Procgen
+    Procgen Environment Factory
     game: coinrun, starpilot, bossfight, dodgeball, etc.
-    vector=False -> imagem 64x64x3 (CV), True -> vetor 256D (sem CV)
+    vector=False -> 64x64x3 image (Vision), True -> 256D vector (Non-vision)
     """
     env = gym.make(f'procgen:procgen-{game}-v0', num_levels=num_levels, start_level=0, distribution_mode=distribution_mode, rand_seed=seed)
     if vector:

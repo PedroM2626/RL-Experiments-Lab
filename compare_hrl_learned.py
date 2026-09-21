@@ -1,16 +1,16 @@
 """
-Braço 'hrl_learned' do benchmark HRL (seção 11): skills APRENDIDAS, sem macros hand-designed.
+'hrl_learned' branch of the HRL benchmark (Section 11): LEARNED skills, without hand-designed macros.
 
-Hierarquia 2 níveis treinada em conjunto (PPO-lite custom, mesmo budget de 100k frames):
-- Meta-controlador: NatureCNN(obs) -> MLP -> K skills latentes; decide a cada DUR=4 frames
-- Low-level: NatureCNN(obs) + one-hot(z) -> MLP -> 15 ações primitivas; age por frame
-- Ambos atualizam com PPO clip; especialização das skills é emergente (não há incentivo explícito de diversidade)
-- gamma do meta = 0.99**DUR (consistente com o desconto por frame do low-level)
+2-level hierarchy trained jointly (custom PPO-lite, same budget of 100k frames):
+- Meta-controller: NatureCNN(obs) -> MLP -> K latent skills; decides every DUR=4 frames
+- Low-level: NatureCNN(obs) + one-hot(z) -> MLP -> 15 primitive actions; acts per frame
+- Both updated with PPO clip; skill specialization is emergent (no explicit diversity bonus)
+- Meta gamma = 0.99**DUR (consistent with the per-frame discount of low-level)
 
-Mesmo protocolo de eval dos outros braços: 100 eps unseen stoch (meta amostra) + 100 det
-(meta/low argmax) + 15 eps train. Escreve no MESMO results/hrl_results.json
-(chaves {game}_hrl_learned_seed{s}) -> RODAR SEQUENCIALMENTE após compare_hrl.py
-(ele carrega o JSON no início e sobrescreve a cada job).
+Same evaluation protocol as other branches: 100 unseen stochastic episodes (meta samples) + 100 deterministic
+(meta/low argmax) + 15 training episodes. Writes to the SAME results/hrl_results.json
+(keys {game}_hrl_learned_seed{s}) -> RUN SEQUENTIALLY after compare_hrl.py
+(it loads the JSON at startup and overwrites on each job).
 """
 import os, json, argparse
 import numpy as np, torch, torch.nn as nn
@@ -29,7 +29,7 @@ EPOCHS = 3
 BATCH = 64
 LR = 3e-4
 ENT_COEF = 0.01
-HORIZON = 256           # teto de frames por episódio (jumper tem episódios de 500+; truncamento com bootstrap, como SB3 TimeLimit)
+HORIZON = 256           # frame cap per episode (jumper has 500+ episodes; bootstrap truncation, like SB3 TimeLimit)
 
 class MetaNet(nn.Module):
     def __init__(self, obs_space, k):
@@ -58,8 +58,8 @@ def obs_batch(arr, device):
     return torch.from_numpy(np.stack(arr)).float().to(device)
 
 def collect(env, meta, low, device, n_frames):
-    """Coleta ~n_frames primitivos; buffers meta (por macro) e low (por frame).
-    Episódios são truncados em HORIZON frames com bootstrap de valor (padrão SB3)."""
+    """Collects ~n_frames primitive transitions; meta (per macro) and low (per frame) buffers.
+    Episodes are truncated at HORIZON frames with value bootstrap (SB3 standard)."""
     meta_b = {'obs': [], 'z': [], 'logp': [], 'val': [], 'R': [], 'done': [], 'next_val': []}
     low_b = {'obs': [], 'z': [], 'a': [], 'logp': [], 'val': [], 'r': [], 'done': [], 'next_val': []}
     frames = 0
@@ -83,10 +83,10 @@ def collect(env, meta, low, device, n_frames):
             o2, r, term, trunc, _ = env.step(a)
             frames += 1; ep_len += 1; R += r
             hit_horizon = ep_len >= HORIZON
-            if term:                    # episódio terminou de verdade
+            if term:                    # episode truly terminated
                 next_val_l = 0.0; done_flag = True
                 o2, _ = env.reset(); ep_len = 0
-            elif hit_horizon:           # truncamento: bootstrap no estado pré-reset
+            elif hit_horizon:           # truncation: bootstrap on pre-reset state
                 with torch.no_grad():
                     _, nv = low(to_t(o2, device), zo)
                 next_val_l = nv.item(); done_flag = True
@@ -231,7 +231,7 @@ def main():
             try:
                 torch.save({'meta': meta.state_dict(), 'low': low.state_dict()},
                            os.path.join(zip_dir, f"{name}.pt"))
-            except Exception as e: print(f"  save falhou: {e}")
+            except Exception as e: print(f"  save failed: {e}")
             results[name] = {'stoch_unseen': round(m_st, 3), 'det_unseen': round(m_dt, 3),
                              'stoch_train': round(m_tr, 3), 'gen_gap': round(m_tr - m_st, 3),
                              'n_unseen': 100, 'n_train': 15, 'frames': FRAMES}
@@ -240,7 +240,7 @@ def main():
             import traceback; traceback.print_exc()
             results[name] = {'error': str(e)}
         with open(out_path, 'w') as f: json.dump(results, f, indent=2)
-    print(f"Concluído: {out_path}")
+    print(f"Completed: {out_path}")
 
 if __name__ == '__main__':
     main()

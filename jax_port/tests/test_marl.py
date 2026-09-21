@@ -1,8 +1,8 @@
-"""Testes MARL (SMAX): paridade zero-GPU quando JAX_PLATFORMS=cpu.
+"""MARL tests (SMAX): zero-GPU parity when JAX_PLATFORMS=cpu.
 
-Cobre: battle_won, adapter (shapes/autoreset), forwards + losses
-finitas de ippo/mappo/vdn/qmix/mapoca/tarmac/cte.
-Uso: python -m jax_port.tests.test_marl
+Covers: battle_won, adapter (shapes/autoreset), forwards + finite losses
+of ippo/mappo/vdn/qmix/mapoca/tarmac/cte.
+Usage: python -m jax_port.tests.test_marl
 """
 
 import jax

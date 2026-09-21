@@ -1,4 +1,4 @@
-"""Análise final do benchmark HRL (seção 11): 4 braços × 2 jogos × 5 seeds."""
+"""Final analysis of HRL benchmark (Section 11): 4 branches × 2 games × 5 seeds."""
 import json
 import numpy as np
 
@@ -23,8 +23,8 @@ for k in sorted(rows):
           f"{np.mean(dt):5.2f}+/-{np.std(dt):4.2f} "
           f"{np.mean(tr):5.2f}+/-{np.std(tr):4.2f} {np.mean(gp):+7.2f}")
 
-# deltas por jogo: hrl_learned vs os demais
-print('\nDeltas (stoch, média 5 seeds):')
+# deltas per game: hrl_learned vs other branches
+print('\nDeltas (stoch, 5 seeds mean):')
 for game in ['jumper', 'plunder']:
     get = lambda arm: summary[f'{game}_{arm}']['stoch']
     f, s4, h, hl = get('flat'), get('skip4'), get('hrl'), get('hrl_learned')
@@ -32,4 +32,4 @@ for game in ['jumper', 'plunder']:
           f"| learned-skip4={hl-s4:+.2f} learned-flat={hl-f:+.2f}")
 
 json.dump(summary, open('results/hrl_analysis.json', 'w'), indent=2)
-print('\nSalvo: results/hrl_analysis.json')
+print('\nSaved: results/hrl_analysis.json')

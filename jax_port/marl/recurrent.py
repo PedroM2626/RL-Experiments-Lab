@@ -1,9 +1,9 @@
-"""Politicas recorrentes MARL (padrao JaxMARL: GRU-128).
+"""Recurrent MARL policies (JaxMARL default: GRU-128).
 
-RecurrentAC: obs -> Dense128 -> GRU128 -> heads policy/value.
-Forward em sequencia via loop Python desenrolado (L estatico) — mesmo
-padrao do Dreamer (sem lax.scan sobre metodos de submodulo).
-h0 por (env,agente); reset do carry onde done (mascara passada).
+RecurrentAC: obs -> Dense128 -> GRU128 -> policy/value heads.
+Sequence forward via unrolled Python loop (static L) — same
+pattern as Dreamer (no lax.scan over submodule methods).
+h0 per (env, agent); carry reset where done (passed mask).
 """
 
 import flax.linen as nn
@@ -89,12 +89,12 @@ class RecurrentQ(nn.Module):
 
 def make_ppo_seq_update(model, optimizer, clip_range=0.2, vf_coef=0.5,
                         ent_coef=0.0):
-    """PPO sobre minibatches de SEQUENCIAS. Entrada time-major (T,S,...);
-    BPTT full na janela T."""
+    """PPO over minibatches of SEQUENCES. Time-major input (T,S,...);
+    full BPTT in window T."""
 
     @jax.jit
     def update(state, obs, act, old_logp, adv, ret, h0, dones):
-        # entrada time-major (T,S,...) — igual aos buffers do loop.
+        # Time-major input (T,S,...) — matches loop buffers.
         params, opt_state = state
         ot, at, lt, adt, rt, dt = obs, act, old_logp, adv, ret, dones
 
@@ -121,8 +121,8 @@ def make_ppo_seq_update(model, optimizer, clip_range=0.2, vf_coef=0.5,
 
 
 def make_ql_seq_update(qnet, mixer, optimizer, gamma=0.99, kind="vdn"):
-    """VDN/QMIX recorrente: Q por sequencia (h0=zero, aproximacao
-    documentada), mixer feedforward por step, TD com target net."""
+    """Recurrent VDN/QMIX: Q per sequence (h0=zero, documented
+    approximation), feedforward mixer per step, TD with target net."""
 
     @jax.jit
     def update(params, opt_state, tgt_params, obs, act, rew, obs2, state,
@@ -133,7 +133,7 @@ def make_ql_seq_update(qnet, mixer, optimizer, gamma=0.99, kind="vdn"):
         dn = jnp.broadcast_to(done[:, :, None], (S, L, A))
 
         def agent_q(qp, o):
-            # (S,L,A,O) -> time-major (L,S*A,O) p/ o modulo.
+            # (S,L,A,O) -> time-major (L,S*A,O) for the module.
             ot = o.transpose(1, 0, 2, 3).reshape(L, S * A, -1)
             dnt = dn.transpose(1, 0, 2).reshape(L, S * A)
             q, _ = qnet.apply(qp, ot, h0, dnt)
@@ -150,7 +150,7 @@ def make_ql_seq_update(qnet, mixer, optimizer, gamma=0.99, kind="vdn"):
                     p["mix"], qa.reshape(S * L, A),
                     state.reshape(S * L, -1)).reshape(S, L)
             tq = agent_q(tgt_params["q"], obs2)
-            ta_max = tq.max(-1)  # (S,L,A) max por agente
+            ta_max = tq.max(-1)  # (S,L,A) max per agent
             t = rew + gamma * (1.0 - done) * jax.lax.stop_gradient(
                 ta_max.sum(-1))
             if kind == "vdn":

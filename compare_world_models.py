@@ -1,5 +1,5 @@
 """
-Comparação World Models em Procgen bossfight: VAE vs AE vs Recon vs Contrastivo
+World Models comparison on Procgen bossfight: VAE vs AE vs Recon vs Contrastive
 - Python 3.10 + procgen 0.10.7 + SB3 PPO, 100k steps ~60 min
 """
 import os, json, argparse
@@ -77,11 +77,11 @@ def main():
             plt.tight_layout()
             for bar,m,s in zip(bars,means,stds): plt.text(bar.get_x()+bar.get_width()/2, bar.get_height(), f'{m:.1f}±{s:.1f}', ha='center', va='bottom', fontsize=9)
             plt.savefig(os.path.join(comp_dir,'comparison_plot.png'), dpi=150, bbox_inches='tight')
-            print(f"Plot salvo em {comp_dir}")
-    except Exception as e: print(f"Plot erro: {e}")
+            print(f"Plot saved in {comp_dir}")
+    except Exception as e: print(f"Plot error: {e}")
     with open(os.path.join(comp_dir,'comparison_report.txt'),'w') as f:
         f.write(f"World Models bossfight - {args.timesteps} steps\n"+"="*60+"\n")
-        for k,s in stats.items(): f.write(f"{k}: mean {s['mean']:.2f} std {s['std']:.2f} n {s['n']}\n" if s else f"{k}: sem dados\n")
-    print(f"\nResultados em {comp_dir}\n"+json.dumps(stats,indent=2))
+        for k,s in stats.items(): f.write(f"{k}: mean {s['mean']:.2f} std {s['std']:.2f} n {s['n']}\n" if s else f"{k}: no data\n")
+    print(f"\nResults in {comp_dir}\n"+json.dumps(stats,indent=2))
 
 if __name__=='__main__': main()

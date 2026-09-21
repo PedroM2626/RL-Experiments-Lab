@@ -1,9 +1,9 @@
-"""Loop treino VDN/QR... (VDN/QMIX) sobre SMAX.
+"""VDN/QMIX training loop on SMAX.
 
-Buffer em anel (obs, acts, rew-time, obs2, states, states2, done);
-eps-greedy por agente (1.0->0.05 nos primeiros 25%); target hard-copy
-a cada 500 grad-steps; lr 1e-4; batch 64; gamma .99.
-Eval: greedy win-rate + retorno. Uso:
+Ring buffer (obs, acts, rew-time, obs2, states, states2, done);
+eps-greedy per agent (1.0->0.05 in first 25%); target hard-copy
+every 500 grad-steps; lr 1e-4; batch 64; gamma .99.
+Eval: greedy win-rate + return. Usage:
   train_ql.py --algo qmix --map 3m --timesteps 1000000 --seed 42
 """
 
@@ -54,8 +54,8 @@ class MARLBuffer:
                 self.obs2[idx], self.st[idx], self.st2[idx], self.done[idx])
 
     def sample_seq(self, rng, batch, L):
-        # blocos consecutivos (wrap modulo = aproximacao documentada).
-        # obs/st com L+1 (o_t..o_{t+L}); act/rew/done com L.
+        # Consecutive blocks (wrap modulo = documented approximation).
+        # obs/st with L+1 (o_t..o_{t+L}); act/rew/done with L.
         lim = max(L + 2, len(self))
         s0 = rng.integers(0, lim - L - 1, size=batch)
         ii = (s0[:, None] + np.arange(L + 1)[None, :]) % self.cap
@@ -64,8 +64,8 @@ class MARLBuffer:
 
 
 def train_recurrent_ql(args):
-    """VDN/QMIX recorrente (GRU-128): rollout com carry, updates em
-    sequencias L=32 (h0=zero, aproximacao documentada), resto identico."""
+    """Recurrent VDN/QMIX (GRU-128): rollout with carry, updates in
+    sequences L=32 (h0=zero, documented approximation), remainder identical."""
     from flax.serialization import from_bytes, to_bytes
     from jax_port.marl.recurrent import REC_H, RecurrentQ, make_ql_seq_update
     jax.config.update("jax_compilation_cache_dir",
@@ -191,7 +191,7 @@ def train_recurrent_ql(args):
 
 
 def _save_ckpt(path, params, tgt, opt_state, buf, steps, grads):
-    """Checkpoint atomico (tmp+rename): params/tgt/opt em bytes + buffer."""
+    """Atomic checkpoint (tmp+rename): params/tgt/opt in bytes + buffer."""
     from flax.serialization import to_bytes
     n_b = len(buf)
     tmp = path + ".tmp.npz"
@@ -212,7 +212,7 @@ def _save_ckpt(path, params, tgt, opt_state, buf, steps, grads):
 
 
 def evaluate_recurrent_ql(params, qnet, args):
-    """Eval greedy com carry (win-rate padrao SMAC)."""
+    """Greedy eval with carry (standard SMAC win-rate)."""
     from jax_port.marl.recurrent import REC_H
     from jax_port.marl.smax_vec import SmaxVec
     ev = SmaxVec(args.map, num_envs=args.eval_envs, seed=args.seed + 1000)
@@ -225,7 +225,7 @@ def evaluate_recurrent_ql(params, qnet, args):
     def esteps(p, ob, carry_):
         q, new_carry = qnet.apply(p["q"], ob[None], carry_,
                                   jnp.zeros((1, E * A), bool))
-        # carry sem dim de tempo: retorna (E*A,H) inteiro.
+        # carry without time dimension: returns whole (E*A,H).
         return q[0].argmax(-1), new_carry
 
     while len(wins) < args.eval_eps:
@@ -254,15 +254,15 @@ def main():
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--lr", type=float, default=1e-4)
     ap.add_argument("--recurrent", action="store_true",
-                    help="GRU-128 (padrao JaxMARL p/ SMAX)")
+                    help="GRU-128 (JaxMARL default for SMAX)")
     ap.add_argument("--num-envs", type=int, default=32)
     ap.add_argument("--eval-eps", type=int, default=32)
     ap.add_argument("--eval-envs", type=int, default=8)
     ap.add_argument("--out", default="jax_port/marl_ql.json")
     ap.add_argument("--ckpt", default=None,
-                    help="path p/ checkpoint periodico (params+opt+buffer)")
+                    help="path for periodic checkpoint (params+opt+buffer)")
     ap.add_argument("--resume", default=None,
-                    help="retoma de checkpoint salvo")
+                    help="resume from saved checkpoint")
     train(ap.parse_args())
 
 

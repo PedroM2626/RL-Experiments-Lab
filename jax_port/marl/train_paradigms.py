@@ -1,12 +1,12 @@
-"""Treino MA-POCA / CTE / TarMAC sobre SMAX.
+"""Training MA-POCA / CTE / TarMAC on SMAX.
 
-mapoca : rollout com o actor + alvos TD p/ o critico + update
-         contrafactual (paradigms.make_mapoca_update).
-cte    : wrapper espaco-produto (8^A acoes; assert <= 4096, i.e. 3m)
-         + PPO joint via make_update_float (reuso total).
-tarmac : actor com comunicacao (TarMACActor) + critico centralizado,
-         loop estilo MAPPO com batches (E,A) preservados p/ a atencao.
-Eval: win-rate greedy + retorno (padrao SMAC). Uso:
+mapoca : rollout with actor + TD targets for critic + counterfactual
+         update (paradigms.make_mapoca_update).
+cte    : product-space wrapper (8^A actions; assert <= 4096, i.e. 3m)
+         + joint PPO via make_update_float (complete reuse).
+tarmac : communication actor (TarMACActor) + centralized critic,
+         MAPPO-style loop with (E,A) batches preserved for attention.
+Eval: greedy win-rate + return (SMAC standard). Usage:
   train_paradigms.py --algo mapoca --map 3m --timesteps 1000000
 """
 
@@ -46,7 +46,7 @@ def train(args):
 
     if args.algo == "cte":
         nj = NA ** A
-        assert nj <= 4096, f"espaco-produto {nj} grande demais (use 3m)"
+        assert nj <= 4096, f"product space {nj} too large (use 3m)"
         journal = {"n_joint": nj}
 
         model = ActorCritic(backbone=JointBackbone(), n_actions=nj)
@@ -60,7 +60,7 @@ def train(args):
             return np.stack(
                 [(a // (NA ** k)) % NA for k in range(A)], -1).astype(np.int32)
 
-        # rollout joint inline (obs concatenada + decode p/ o env)
+        # Inline joint rollout (concatenated obs + decode for env)
         rng = np.random.default_rng(args.seed)
         key2 = jax.random.PRNGKey(args.seed + 999)
         T, MB = args.rollout, args.minibatch
@@ -139,8 +139,8 @@ def train(args):
                      "n_joint": journal["n_joint"]}
     elif args.algo == "tarmac":
         model = ActorCritic(backbone=MlpBackbone(), n_actions=NA)
-        # TarMAC: backbone substituido pelo actor comunicante no rollout;
-        # treino segue MAPPO (critico central) com minibatches (E,A).
+        # TarMAC: backbone replaced by communicating actor in rollout;
+        # training follows MAPPO (central critic) with (E,A) minibatches.
         comm = TarMACActor(n_actions=NA)
         critic = CentralCritic()
         key, k0, k1, k2 = jax.random.split(key, 4)
@@ -227,7 +227,7 @@ def train(args):
                 gae = delta + 0.99 * 0.95 * nt * gae
                 adv[t] = gae
             ret = (adv + Bv).astype(np.float32)
-            # retornos do critico central (por env), p/ a loss de valor
+            # Central critic returns (per env), for value loss
             adv_c = np.empty((T, N), np.float32)
             last_vc = Bc[-1] * (1 - Bd[-1, :, 0].astype(np.float32))
             gae_c = np.zeros(N, np.float32)
@@ -246,7 +246,7 @@ def train(args):
             for _ep in range(3):
                 for s in range(0, Tn, MB):
                     mb = eidx[s:s + MB]
-                    # fatia por ENV (preserva dim agente p/ atencao)
+                    # Slice per ENV (preserves agent dim for attention)
                     astate, cstate, _ = comm_update(
                         astate, cstate, jnp.asarray(Bo.reshape(Tn, A, -1)[mb]),
                         jnp.asarray(Ba.reshape(Tn, A)[mb]),
@@ -273,10 +273,10 @@ def train(args):
     else:  # mapoca
         encoder, critic = AgentEncoder(), AttnCritic(n_actions=NA)
         actor = PolicyHead(n_actions=NA)
-        # NOTA: rollout inline abaixo (versao unificada).
+        # NOTE: inline rollout below (unified version).
         key, k0, k1, k2 = jax.random.split(key, 4)
         p_enc = AgentEncoder().init(k0, jnp.zeros((1, venv.obs_dim)))
-        # policy consome embeddings 64D (nao obs!): init com a forma certa.
+        # Policy consumes 64D embeddings (not obs!): init with proper shape.
         p_pol = PolicyHead(n_actions=NA).init(
             k1, jnp.zeros((1, 64)))
         p_cri = critic.init(k2, jnp.zeros((1, A, 64)),
@@ -324,15 +324,15 @@ def train(args):
                     cur[i] = 0.0
             done_steps += T * N
             Tn = T * N * A
-            # Retornos Monte-Carlo por env (critico Q sem bootstrap:
-            # sem target net por construcao).
+            # Monte Carlo returns per env (Q critic without bootstrap:
+            # no target net by construction).
             G = np.empty((T, N), np.float32)
             g = np.zeros(N, np.float32)
             dn = Bd[:, :, 0]
             for t in reversed(range(T)):
                 g = Brt[t] + 0.99 * (1 - dn[t].astype(np.float32)) * g
                 G[t] = g
-            Gret = G  # (T,N) retornos MC por env (critico Q global)
+            Gret = G  # (T,N) MC returns per env (global Q critic)
             Srep = Bs.reshape(T * N, -1)
             Gret_f = Gret.reshape(T * N)
             idx = rng.permutation(T * N)

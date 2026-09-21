@@ -1,7 +1,7 @@
-"""Runner da suite (sem pytest): python -m jax_port.tests.run_tests.
+"""Test suite runner (without pytest): python -m jax_port.tests.run_tests.
 
-test_stats sempre; test_parity/test_zoo/test_smoke pulam (SKIP) se o
-venv nao tiver as deps — nunca falham por falta de ambiente.
+test_stats always runs; test_parity/test_zoo/test_smoke skip (SKIP) if
+venv lacks dependencies — never fail due to environment absence.
 """
 
 import traceback

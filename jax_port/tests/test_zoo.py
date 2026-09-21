@@ -1,6 +1,6 @@
-"""Shapes/params do zoo + forward JIT (GPU se houver, CPU se nao).
+"""Zoo shapes/params + JIT forward (GPU if available, else CPU).
 
-Uso: python -m jax_port.tests.test_zoo
+Usage: python -m jax_port.tests.test_zoo
 """
 
 import jax
@@ -27,7 +27,7 @@ def test_zoo():
         assert tuple(logits.shape) == (2, 15), name
         assert tuple(value.shape) == (2,), name
         got[name] = n
-    # Fidelidade arquitetural: classic ~600k (VALID); gemeos identicos.
+    # Architectural fidelity: classic ~600k (VALID); identical twins.
     assert 550_000 < got["classic"] < 650_000, got["classic"]
     assert got["ae"] == got["classic"] and got["recon"] == got["classic"]
     return got

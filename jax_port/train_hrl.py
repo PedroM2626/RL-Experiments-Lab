@@ -1,16 +1,16 @@
-"""HRL em JAX — paridade com ``compare_hrl.py`` + ``compare_hrl_learned.py`` (§11).
+"""HRL in JAX — parity with ``compare_hrl.py`` + ``compare_hrl_learned.py`` (§11).
 
-Quatro bracos, mesmo budget em FRAMES primitivos (100k), PPO identico:
-  flat        : PPO sobre 15 acoes primitivas (DUR=1)
-  skip4       : action-repeat 4 sobre 15 acoes (controle, sem hierarquia)
-  hrl         : meta PPO sobre 6 skills FIXAS x 4 frames (SKILLS por jogo)
-  hrl_learned : meta PPO (6 skills LATENTES) + low pi(a|obs,z) co-treinada
-Skills fixas (``compare_hrl.py:30`` + mapeamento oficial procgen/env.py):
+Four arms, same budget in primitive FRAMES (100k), identical PPO:
+  flat        : PPO on 15 primitive actions (DUR=1)
+  skip4       : action-repeat 4 on 15 actions (control, without hierarchy)
+  hrl         : meta PPO on 6 FIXED skills x 4 frames (SKILLS per game)
+  hrl_learned : meta PPO (6 LATENT skills) + low pi(a|obs,z) co-trained
+Fixed skills (``compare_hrl.py:30`` + official procgen/env.py mapping):
   jumper : [4,1,7,5,2,8]  (wait/left/right/jump/jump_left/jump_right)
   plunder: [4,1,7,9,0,6]  (wait/left/right/shoot/shoot_left/shoot_right)
-Macro termina na borda do episodio (estudo ``MacroEnv.step``); autoreset
-do gym3 devolve obs ja resetada — irrelevante p/ GAE (done mascara).
-Eval definitivo: 100 stoch + 100 det unseen + 15 train (estudo).
+Macro terminates on episode boundary (study ``MacroEnv.step``); autoreset
+in gym3 returns already-reset obs — irrelevant for GAE (masked by done).
+Definitive eval: 100 stoch + 100 det unseen + 15 train (study).
 """
 
 import argparse
@@ -37,7 +37,7 @@ SKILLS = {
 
 
 class MacroGym3:
-    """N envs gym3 com macro-steps de ate DUR frames (mapa escolha->prim)."""
+    """N gym3 envs with macro-steps up to DUR frames (choice->prim map)."""
 
     def __init__(self, game, num_envs, num_levels, seed):
         self.env = ProcgenGym3Env(num=num_envs, env_name=game,
@@ -48,9 +48,9 @@ class MacroGym3:
         self.obs = d["rgb"] if isinstance(d, dict) else d
 
     def step_macro(self, prims):
-        """prims: (N,) acoes primitivas (ja mapeadas). Retorna
-        (obs, rew_sum, done_any, frames_consumidos). Macro quebra por env
-        na borda do episodio (estudo); frames contam todo step executado.
+        """prims: (N,) primitive actions (already mapped). Returns
+        (obs, rew_sum, done_any, frames_consumed). Macro terminates per env
+        on episode boundary (study); frames count every executed step.
         """
         N = self.num_envs
         tot = np.zeros(N, np.float32)
@@ -126,7 +126,7 @@ def make_low_update(model, optimizer):
 def train(args):
     jax.config.update("jax_compilation_cache_dir",
                       os.environ.get("JAX_PORT_CACHE", "/tmp/jax_port_cache"))
-    assert args.game in SKILLS, "HRL do estudo: jumper/plunder"
+    assert args.game in SKILLS, "HRL in study: jumper/plunder"
     assert args.arm in ("flat", "skip4", "hrl", "hrl_learned")
     rng = np.random.default_rng(args.seed)
     key = jax.random.PRNGKey(args.seed)
@@ -246,7 +246,7 @@ def train(args):
                     jnp.asarray(adv_n[mb], device=device),
                     jnp.asarray(F[4][mb], device=device), kz)
         if learned and L:
-            # update low-level sobre transicoes primitivas (obs,z,a,r)
+            # Low-level update on primitive transitions (obs,z,a,r)
             prim = [(r_[0], r_[1], r_[2], r_[3], r_[4], r_[5])
                     for r_ in L if len(r_) == 6][-N * T * DUR:]
             if prim:
@@ -309,7 +309,7 @@ def train(args):
 
 def evaluate_hrl(mstate, mfwd, lstate, lfwd, args, device, num_levels,
                  seed, deterministic, n_eps):
-    """Eval macro: meta argmax/sample; learned usa low argmax/sample."""
+    """Macro eval: meta argmax/sample; learned uses low argmax/sample."""
     learned = lstate is not None
     table = np.asarray(SKILLS[args.game])
     menv = MacroGym3(args.game, args.eval_envs, num_levels, seed)

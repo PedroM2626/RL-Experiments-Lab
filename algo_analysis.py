@@ -1,4 +1,4 @@
-"""Análise do benchmark Value vs Policy-based (seção 12): por jogo × algoritmo + famílias."""
+"""Analysis of Value vs Policy-based benchmark (Section 12): by game × algorithm + families."""
 import json
 import numpy as np
 
@@ -13,7 +13,7 @@ games = ['starpilot', 'dodgeball', 'bossfight']
 algos = ['ppo', 'a2c', 'dqn', 'qrdqn']
 fam = {'ppo': 'policy', 'a2c': 'policy', 'dqn': 'value', 'qrdqn': 'value'}
 
-print(f"{'config':24s} {'stoch':>12s} {'det':>12s} {'train':>12s} {'gap':>7s}  família")
+print(f"{'config':24s} {'stoch':>12s} {'det':>12s} {'train':>12s} {'gap':>7s}  family")
 print('-' * 78)
 summary = {}
 for g in games:
@@ -29,7 +29,7 @@ for g in games:
               f"{tr:5.2f}±{np.std([v['stoch_train'] for v in vs]):4.2f} {gp:+7.2f}  {fam[a]}")
     print()
 
-print('FAMÍLIAS (média dos 3 jogos):')
+print('FAMILIES (average across 3 games):')
 for f in ['policy', 'value']:
     vals = [summary[f'{g}_{a}']['stoch'] for g in games for a in algos if fam[a] == f]
     print(f"  {f:8s} {np.mean(vals):.2f}")
@@ -38,4 +38,4 @@ for f in ['policy', 'value']:
         print(f"    {a:7s} (S/D/B): {per_game}")
 
 json.dump(summary, open('results/algo_families_analysis.json', 'w'), indent=2)
-print('\nSalvo: results/algo_families_analysis.json')
+print('\nSaved: results/algo_families_analysis.json')

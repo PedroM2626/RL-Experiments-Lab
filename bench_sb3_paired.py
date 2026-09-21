@@ -1,15 +1,15 @@
-"""Bench pareado SB3 — protocolo justo (04/09/2026).
+"""Paired SB3 Benchmark — fair protocol (2026-09-04).
 
-Config A (fiel ao estudo, ``compare_suite.py:19-26``): DummyVecEnv n=1 com
-Monitor, CnnPolicy default (NatureCNN), lr 3e-4, n_steps 256, batch 64,
-epochs 3, gamma 0.99, gae_lambda 0.95, clip 0.2, vf/ent/grad-clip defaults
-SB3 (0.5/0.01/0.5), seed fixo, device cuda, SEM tensorboard/eval callbacks.
-Config B (throughput): identica, exceto SubprocVecEnv n=64 + batch 1024
-(mesmo ajuste de batching do porte JAX; objetivo PPO inalterado).
+Config A (faithful to study, ``compare_suite.py:19-26``): DummyVecEnv n=1 with
+Monitor, default CnnPolicy (NatureCNN), lr 3e-4, n_steps 256, batch 64,
+epochs 3, gamma 0.99, gae_lambda 0.95, clip 0.2, SB3 default vf/ent/grad-clip
+(0.5/0.01/0.5), fixed seed, cuda device, WITHOUT tensorboard/eval callbacks.
+Config B (throughput): identical, except SubprocVecEnv n=64 + batch 1024
+(same batching adjustment as JAX port; PPO objective unchanged).
 
-Medida: wall de ``model.learn()`` APENAS (construcao de envs/modelo, eval
-e salvamento ficam de fora). SPS = model.num_timesteps / wall.
-Uso (venv do estudo, Windows):
+Measurement: wall clock of ``model.learn()`` ONLY (environment/model build,
+evaluation, and checkpointing excluded). SPS = model.num_timesteps / wall.
+Usage (study venv, Windows):
     & "C:/Users/Acer/AppData/Local/Programs/Python/Python310/python.exe" `
       bench_sb3_paired.py --vec dummy --n-envs 1 --batch-size 64 `
       --timesteps 100000 --seed 42 --game coinrun --out sb3_A.json
@@ -49,7 +49,7 @@ def main():
     from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
     print(f"torch={torch.__version__} cuda={torch.cuda.is_available()} "
           f"vec={args.vec} n={args.n_envs} batch={args.batch_size}", flush=True)
-    assert torch.cuda.is_available(), "bench justo exige torch CUDA (ver README)"
+    assert torch.cuda.is_available(), "Fair benchmark requires torch CUDA (see README)"
 
     if args.vec == "dummy":
         assert args.n_envs == 1

@@ -1,19 +1,19 @@
-"""SPR (Self-Predictive Representations) — EXTENSAO alem do estudo ProcGen.
+"""SPR (Self-Predictive Representations) — EXTENSION beyond the original ProcGen study.
 
-Rotulo honesto: o estudo `4f84ed3` NAO tem SPR (SPR/CURL/CPC/ACL eram da
-fase Craftax apagada). Aqui o SPR roda como suite extra `spr`, com o
-mesmo rigor, mas marcado como extensao — nunca misturado as conclusoes
-das seces 1-12 / paridade.
+Honest label: the study `4f84ed3` DOES NOT have SPR (SPR/CURL/CPC/ACL were from
+the removed Craftax phase). Here SPR runs as an extra `spr` suite, with the
+same rigor, but marked as an extension — never mixed into the core conclusions
+of Sections 1-12 / parity.
 
-Metodo (Schwarzer et al. 2021, adaptado ao loop PPO):
-  encoder ONLINE = backbone da policy (COMPARTILHADO: o gradiente aux
-    flui para o backbone) + target encoder = copia EMA (tau=0.99/iter);
-  modelo de transicao MLP (512+15)->512->512 prevê z_{t+1} de (z_t, a_t);
-  loss = MSE(pred, target) sobre latentes L2-normalizados, com views
-    aumentadas (crop proprio, p=1.0) de o_t e o_{t+1};
-  otimizador aux Adam 1e-4 (precedente ICM/RND do estudo), spr_coef=1.0
-  (somado ao loss PPO na fase SPR, em minibatches de pares).
-Requer backbone CNN pixels (nao mlp/vae).
+Method (Schwarzer et al. 2021, adapted to PPO loop):
+  ONLINE encoder = policy backbone (SHARED: auxiliary gradient
+    flows into the backbone) + target encoder = EMA copy (tau=0.99/iter);
+  MLP transition model (512+15)->512->512 predicts z_{t+1} from (z_t, a_t);
+  loss = MSE(pred, target) over L2-normalized latents, with augmented
+    views (own crop, p=1.0) of o_t and o_{t+1};
+  auxiliary Adam optimizer 1e-4 (precedent ICM/RND from study), spr_coef=1.0
+  (added to PPO loss in SPR phase, in pairs minibatches).
+Requires pixel CNN backbone (not mlp/vae).
 """
 
 import flax.linen as nn
@@ -38,13 +38,13 @@ class TransitionMLP(nn.Module):
 
 
 def _norm(x, eps=1e-6):
-    # sqrt(soma+eps): denominador nunca e zero exato (idem contrast.py).
+    # sqrt(sum+eps): denominator is never exactly zero (same as contrast.py).
     n = jnp.sqrt((x ** 2).sum(axis=-1, keepdims=True) + eps)
     return x / n
 
 
 def make_spr(backbone_cls, n_actions=15):
-    """Retorna dict com init/step/ema sobre o backbone compartilhado."""
+    """Returns dict with init/step/ema over the shared backbone."""
     backbone = backbone_cls()
     trans = TransitionMLP(n_actions=n_actions)
     aug = make_augment("crop", p=1.0)

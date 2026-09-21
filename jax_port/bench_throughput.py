@@ -1,13 +1,13 @@
-"""Bench PA1: throughput do pipeline ProcGen CPU -> JAX GPU.
+"""PA1 Benchmark: throughput of ProcGen CPU -> JAX GPU pipeline.
 
-Mede, por contagem de envs, (a) FPS so-env (acoes aleatorias, autoreset) e
-(b) FPS env+transferencia+preprocessamento JIT (uint8 CHW -> float32 /255
-no device cuda:0). Baseline legado do estudo SB3: ~300 FPS (secao 1.4).
+Measures, by env count, (a) env-only FPS (random actions, autoreset) and
+(b) env+transfer+JIT preprocessing FPS (uint8 CHW -> float32 /255
+on device cuda:0). Legacy baseline from SB3 study: ~300 FPS (Section 1.4).
 
-Uso (no venv /root/procgen-jax, via WSL):
+Usage (in /root/procgen-jax venv, via WSL):
     /root/procgen-jax/bin/python jax_port/bench_throughput.py \
         --game coinrun --num-envs 1 4 16 --steps 3000 --seed 42
-Saida: tabela stdout + JSON em jax_port/pa1_throughput.json.
+Output: stdout table + JSON in jax_port/pa1_throughput.json.
 """
 
 import argparse

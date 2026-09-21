@@ -1,14 +1,14 @@
-"""DQN / QR-DQN em JAX — paridade com ``compare_algo_families.py:32`` (§12).
+"""DQN / QR-DQN in JAX — parity with ``compare_algo_families.py:32`` (§12).
 
-Hparams do estudo (adaptacoes p/ budget pequeno): buffer 100k (imagens
-uint8 em anel), learning_starts 5000, exploration_fraction 0.25
+Study hyperparameters (adaptations for small budget): 100k buffer (uint8 ring
+buffer for images), learning_starts 5000, exploration_fraction 0.25
 (eps 1.0->0.05 linear), lr 1e-4, train_freq 4, gradient_steps 1,
-target_update 500, batch 64, gamma 0.99; QR: 200 quantis, Huber kappa 1.
-DQN padrao (sem double; SB3 nao usa double por default).
+target_update 500, batch 64, gamma 0.99; QR: 200 quantiles, Huber kappa 1.
+Standard DQN (no double; SB3 does not use double by default).
 
-Ajuste de batching (documentado): estudo n_envs=1; aqui N envs paralelos
-e atualizacoes por transicao mantidas em ~1/4 (N transicoes por iteracao
-de env -> N/4 grad-steps de batch 64 por iteracao).
+Batching adjustment (documented): study uses n_envs=1; here parallel N envs
+and updates per transition maintained at ~1/4 (N transitions per env
+iteration -> N/4 grad-steps of batch 64 per iteration).
 """
 
 import flax.linen as nn
@@ -23,7 +23,7 @@ from jax_port.backbones import BACKBONES
 class QNet(nn.Module):
     backbone: nn.Module
     n_actions: int = 15
-    quantiles: int = 0  # 0 = DQN escalar; >0 = QR-DQN com N quantis
+    quantiles: int = 0  # 0 = scalar DQN; >0 = QR-DQN with N quantiles
 
     @nn.compact
     def __call__(self, x):
@@ -45,7 +45,7 @@ def make_dqn_update(net, optimizer, gamma=0.99, quantiles=0, kappa=1.0):
                 quant = net.apply(p, o)  # (B,A,N)
                 qa = quant[jnp.arange(obs.shape[0]), act]  # (B,N)
                 tq = net.apply(target_params, o2)  # (B,A,N)
-                ta = tq.max(axis=1)  # SB3/sb3-contrib: max sobre acoes
+                ta = tq.max(axis=1)  # SB3/sb3-contrib: max over actions
                 t = rew[:, None] + gamma * (1.0 - done[:, None]) * ta
                 t = jax.lax.stop_gradient(t)
                 diff = t[:, None, :] - qa[:, :, None]

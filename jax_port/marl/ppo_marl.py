@@ -1,14 +1,14 @@
-"""IPPO + MAPPO sobre SMAX.
+"""IPPO + MAPPO on SMAX.
 
-IPPO: ActorCritic compartilhado (MLP sobre obs), PPO sobre o pool
-  (T,N,A) com team-reward + done broadcast; GAE por (env,agente).
-  Reusa update/rollout/forward de ppo.make_update_fn em batches flat.
-MAPPO: actor (obs) + critico centralizado (world_state); vantagens do
-  critico central, loss PPO no actor (custom, ~60 linhas).
-Hparams do projeto: lr 3e-4, gamma .99, lambda .95, clip .2, 3 epochs,
-  vf .5, ent .01, adv-norm por epoca.
-Metrica: win-rate greedy + retorno (padrao SMAC), multi-seed, JSON.
-Uso: train_marl.py --algo ippo --map 3m --timesteps 1000000
+IPPO: Shared ActorCritic (MLP over obs), PPO over pool
+  (T,N,A) with team-reward + broadcast done; GAE per (env, agent).
+  Reuses update/rollout/forward from ppo.make_update_fn on flat batches.
+MAPPO: actor (obs) + centralized critic (world_state); advantages from
+  central critic, PPO loss on actor (custom, ~60 lines).
+Project hparams: lr 3e-4, gamma .99, lambda .95, clip .2, 3 epochs,
+  vf .5, ent .01, adv-norm per epoch.
+Metric: greedy win-rate + return (SMAC standard), multi-seed, JSON.
+Usage: train_marl.py --algo ippo --map 3m --timesteps 1000000
 """
 
 import flax.linen as nn
@@ -30,7 +30,7 @@ from jax_port.ppo import compute_gae, make_optimizer
 
 def make_update_float(model, optimizer, clip_range=0.2, vf_coef=0.5,
                       ent_coef=0.01):
-    """Irmao float de ppo.make_update_fn (sem /255): obs vetoriais SMAX."""
+    """Float sibling of ppo.make_update_fn (without /255): SMAX vector obs."""
 
     def loss_fn(params, obs, act, old_logp, adv, ret):
         logits, value = model.apply(params, obs, None)
@@ -69,7 +69,7 @@ def make_update_float(model, optimizer, clip_range=0.2, vf_coef=0.5,
 
 
 class MlpBackboneMA(nn.Module):
-    """MLP agnostico a dimensao (obs 75D ou state 72D): 128/128 ReLU."""
+    """Dimension-agnostic MLP (obs 75D or state 72D): 128/128 ReLU."""
 
     @nn.compact
     def __call__(self, x):
@@ -92,7 +92,7 @@ class CentralCritic(nn.Module):
     @nn.compact
     def __call__(self, s):
         x = nn.relu(nn.Dense(128)(s))
-        x = nn.relu(nn.Dense(128)(x))
+        x = nn.relu(nn.Dense(128)(s))
         return nn.Dense(1)(x).squeeze(-1)
 
 
@@ -126,12 +126,12 @@ def make_mappo_update(actor, critic, optimizer, clip_range=0.2, vf_coef=0.5,
 
 
 def train_recurrent(args):
-    """IPPO recorrente (GRU-128, padrao JaxMARL p/ SMAX).
+    """Recurrent IPPO (GRU-128, JaxMARL default for SMAX).
 
-    Rollout com carry (N*A,H) e reset em done; minibatches sobre
-    SEQUENCIAS (S=N*A, mb=S//2, 2 epochs — paper); BPTT full em T=128;
-    lr/ent via flags (paper: 4e-3/0.0; sem annealing, documentado).
-    """
+    Rollout with carry (N*A,H) and reset on done; minibatches over
+    SEQUENCES (S=N*A, mb=S//2, 2 epochs — paper); full BPTT in T=128;
+    lr/ent via flags (paper: 4e-3/0.0; no annealing, documented).
+    """""
     import os
     from flax.serialization import msgpack_restore
     jax.config.update("jax_compilation_cache_dir",
@@ -153,9 +153,9 @@ def train_recurrent(args):
                         jnp.zeros((1, REC_H)), jnp.zeros((1, 1), bool))
     state = (params, opt.init(params))
     update = make_ppo_seq_update(model, opt, ent_coef=args.ent)
-    # ckpt/resume: salva (params, opt_state, done_steps) por iteracao;
-    # estado RNG nao e restaurado (aproximacao documentada: mesmo lr,
-    # nova amostragem; o treino e estocastico por design).
+    # ckpt/resume: saves (params, opt_state, done_steps) per iteration;
+    # RNG state is not restored (documented approximation: same lr,
+    # new sampling; training is stochastic by design).
     it0 = 0
     if getattr(args, "resume", None):
         with open(args.resume, "rb") as fh:
@@ -169,11 +169,11 @@ def train_recurrent(args):
     def rstep(params_, ob_, carry_, prev_done_, key_):
         logits, value, new_carry = model.apply(
             params_, ob_[None], carry_, prev_done_[None])
-        # carry nao tem dim de tempo: retorna (M,H) inteiro ([0] aqui
-        # colapsaria para (H,) e quebraria o h0 do update no iter seguinte).
+        # carry has no time dimension: returns whole (M,H) ([0] here
+        # would collapse to (H,) and break h0 of update in next iter).
         return logits[0], value[0], new_carry
     key, kw = jax.random.split(key)
-    if False:  # warmup desativado p/ diagnostico (compila no 1o update)
+    if False:  # Warmup disabled for diagnostics (compiles on 1st update)
         state, _ = update(
             state, jnp.zeros((T, 4, venv.obs_dim)), jnp.zeros((T, 4), jnp.int32),
             jnp.zeros((T, 4)), jnp.zeros((T, 4)), jnp.zeros((T, 4)),
@@ -182,7 +182,7 @@ def train_recurrent(args):
 
     M = N * A
     carry = np.zeros((M, REC_H), np.float32)
-    done_steps = it0 * T * N  # alinhado com a retomada (cada it = T*N steps)
+    done_steps = it0 * T * N  # aligned with resume (each it = T*N steps)
     ep_wins, ep_rets, cur, curve = [], [], np.zeros(N), []
     t0 = _time.perf_counter()
     n_iters = max(1, (args.timesteps + N * T - 1) // (N * T))
@@ -274,7 +274,7 @@ def train_recurrent(args):
 
 
 def _save_ppo_ckpt(path, state, it):
-    """Checkpoint atomico: (params, opt_state, it) em msgpack."""
+    """Atomic checkpoint: (params, opt_state, it) in msgpack."""
     from flax.serialization import msgpack_serialize
     import os
     blob = msgpack_serialize(
@@ -286,7 +286,7 @@ def _save_ppo_ckpt(path, state, it):
 
 
 def evaluate_recurrent(venv, args, state, model, NA, device, key):
-    """Eval greedy com carry (win-rate padrao SMAC)."""
+    """Greedy eval with carry (standard SMAC win-rate)."""
     from jax_port.marl.recurrent import REC_H
     from jax_port.marl.smax_vec import SmaxVec
     ev = SmaxVec(args.map, num_envs=args.eval_envs, seed=args.seed + 1000)
@@ -329,7 +329,7 @@ def train(args):
                       os.environ.get("JAX_PORT_CACHE", "/tmp/jax_port_cache"))
     assert args.algo in ("ippo", "mappo")
     if getattr(args, "recurrent", False):
-        assert args.algo == "ippo", "recorrente: IPPO (MAPPO recorrente e follow-up)"
+        assert args.algo == "ippo", "recurrent: IPPO (recurrent MAPPO is follow-up)"
         return train_recurrent(args)
     rng = np.random.default_rng(args.seed)
     key = jax.random.PRNGKey(args.seed)
@@ -342,7 +342,7 @@ def train(args):
     NA = venv.n_actions
     opt = make_optimizer(lr=getattr(args, "lr", 3e-4))
     if args.algo == "ippo":
-        # MlpBackbone = mesma convencao MLP do estudo ([64,64] tanh).
+        # MlpBackbone = same MLP convention as study ([64,64] tanh).
         model = ActorCritic(backbone=MlpBackbone(), n_actions=NA)
         key, k0 = jax.random.split(key)
         params = model.init(k0, jnp.zeros((1, venv.obs_dim)), None)
@@ -437,7 +437,7 @@ def train(args):
                     ep_wins.append(bool(win[i]))
                     ep_rets.append(float(cur_ret[i]))
                     cur_ret[i] = 0.0
-        # GAE por (env, agente)
+        # GAE per (env, agent)
         Tn = T * N * A
         adv = np.empty((T, N, A), np.float32)
         last_v = b_val[-1] * (1 - b_done[-1].astype(np.float32))
@@ -496,7 +496,7 @@ def train(args):
 
 
 def evaluate(venv, args, forward_fn, state, n_actions, device, key):
-    """Win-rate greedy + retorno (padrao SMAC)."""
+    """Greedy win-rate + return (SMAC standard)."""
     from jax_port.marl.smax_vec import SmaxVec
     ev = SmaxVec(args.map, num_envs=args.eval_envs, seed=args.seed + 1000,
                  walls_cause_death=not args.no_walls)
@@ -529,9 +529,9 @@ def main():
     ap.add_argument("--algo", default="ippo", choices=["ippo", "mappo"])
     ap.add_argument("--map", default="3m")
     ap.add_argument("--no-walls", action="store_true",
-                    help="walls_cause_death=False (default do env e True)")
+                    help="walls_cause_death=False (env default is True)")
     ap.add_argument("--recurrent", action="store_true",
-                    help="GRU-128 (padrao JaxMARL p/ SMAX; so IPPO)")
+                    help="GRU-128 (JaxMARL default for SMAX; IPPO only)")
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--ent", type=float, default=0.01)
     ap.add_argument("--timesteps", type=int, default=1000000)
@@ -543,9 +543,9 @@ def main():
     ap.add_argument("--eval-envs", type=int, default=8)
     ap.add_argument("--out", default="jax_port/marl_train.json")
     ap.add_argument("--ckpt", default=None,
-                    help="path p/ checkpoint (params+opt a cada it)")
+                    help="path for checkpoint (params+opt every it)")
     ap.add_argument("--resume", default=None,
-                    help="retoma de checkpoint salvo (params+opt)")
+                    help="resume from saved checkpoint (params+opt)")
     train(ap.parse_args())
 
 

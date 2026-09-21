@@ -1,14 +1,14 @@
-"""Dreamer completo em Flax: treino no mundo real, comportamento no sonho.
+"""Full Dreamer in Flax: real-world training, behavior in dreams.
 
-Loop: coleta real com o actor (N envs) -> buffer em anel uint8 ->
-updates do world model em sequencias BxL -> imaginacao H=15 a partir
-de posteriores -> updates actor/critic em lambda-returns -> repete.
-Actor e critic: mesma arquitetura (ActorCriticLatent), pesos
-independentes; critic-alvo em EMA (tau=0.02). Eval final + video
-imaginado (decode de rollout latente).
+Loop: real collection with actor (N envs) -> uint8 ring buffer ->
+world model updates on BxL sequences -> imagination H=15 from
+posteriors -> actor/critic updates on lambda-returns -> repeat.
+Actor and critic: same architecture (ActorCriticLatent), independent
+weights; target critic with EMA (tau=0.02). Final eval + imagined video
+(decode of latent rollout).
 Hparams: WM Adam 1e-4, actor/critic 8e-5, KL dyn 0.5/rep 0.1,
-lambda 0.95, gamma 0.99, H=15, entropia 3e-4, buffer 100k.
-Uso: train_dreamer.py --game coinrun --frames 1000000 --seed 42
+lambda 0.95, gamma 0.99, H=15, entropy 3e-4, buffer 100k.
+Usage: train_dreamer.py --game coinrun --frames 1000000 --seed 42
 """
 
 import argparse
@@ -62,8 +62,8 @@ class WorldModel(nn.Module):
         a0 = jnp.zeros((B,), jnp.int32)
         act_p = jnp.concatenate([a0[:, None], act[:, :-1]], axis=1)
         keys = jax.random.split(key, L)
-        # loop Python desenrolado (L estatico): evita lax.scan sobre
-        # chamadas a metodos de submodulo (vazamento de tracer no XLA).
+        # Unrolled Python loop (static L): avoids lax.scan over
+        # submodule method calls (tracer leak in XLA).
         h, z = jnp.zeros((B, DET)), jnp.zeros((B, STOCH))
         posts, prs = [], []
         for t in range(L):
@@ -118,7 +118,7 @@ def make_wm_update(wm, opt, reward_mode="raw", w_dyn=0.5, w_rep=0.1):
 
 def evaluate_dreamer(wparams_w, astate, args, device, num_levels, seed,
                      deterministic, n_eps, n_envs=8):
-    """Eval com estado recorrente carregado (actor puro, sem explorer)."""
+    """Eval with loaded recurrent state (pure actor, without explorer)."""
     from jax_port.dreamer import ActorCriticLatent, Encoder, RSSM
     ev = ProcgenGym3Env(num=n_envs, env_name=args.game, num_levels=num_levels,
                         distribution_mode="easy", rand_seed=seed)
@@ -134,7 +134,7 @@ def evaluate_dreamer(wparams_w, astate, args, device, num_levels, seed,
 
     @jax.jit
     def esteps(wp, ap, obs_f, h, z, a_prev, key):
-        # deterministic capturado por closure (estatico p/ o JIT).
+        # deterministic captured via closure (static for JIT).
         feat = Encoder().apply({"params": wp["params"]["encoder"]}, obs_f)
         post = RSSM().apply({"params": wp["params"]["rssm"]},
                             {"h": h, "z": z}, a_prev, feat, key,
@@ -217,8 +217,8 @@ def main():
     @jax.jit
     def ac_train(a_s, c_s, ct, rssm_p, dec_p, f0, key, ent_coef):
         keys = jax.random.split(key, IMAG_H)
-        # loop Python desenrolado (idem WorldModel): sem lax.scan sobre
-        # chamadas Flax.
+        # Unrolled Python loop (same as WorldModel): no lax.scan over
+        # Flax calls.
         h0 = f0[:, :DET]
         z0 = f0[:, DET:]
         s, kk = {"h": h0, "z": z0}, keys[0]
@@ -273,7 +273,7 @@ def main():
         c_s = (optax.apply_updates(c_s[0], uc), n_cos)
         return a_s, c_s, tot, al, cl
 
-    # --- buffer em anel uint8 ---
+    # --- uint8 ring buffer ---
     CAP = 100000
     b_o = np.empty((CAP, 64, 64, 3), np.uint8)
     b_a = np.empty(CAP, np.int32)
@@ -299,7 +299,7 @@ def main():
         dd = np.stack([b_d[(s + np.arange(L)) % CAP] for s in s0])
         return oo, aa, rr, dd
 
-    # --- warmup fora da medida ---
+    # --- warmup outside timing ---
     key, kw = jax.random.split(key)
     wparams_w, wopt_w, _ = wm_upd(
         wstate[0], wstate[1],
@@ -317,7 +317,7 @@ def main():
     ep_rets, cur = [], np.zeros(N)
     curve, t0 = [], time.perf_counter()
     CYCLE = 2048
-    # --- coleta real com o actor (estado recorrente carregado) ---
+    # --- real collection with actor (loaded recurrent state) ---
     carry_h = jnp.zeros((N, DET))
     carry_z = jnp.zeros((N, STOCH))
     carry_a = jnp.zeros((N,), jnp.int32)
@@ -344,7 +344,7 @@ def main():
 
     while frames < args.frames:
         it += 1
-        # 1. coleta real com o actor
+        # 1. real collection with actor
         for _ in range(CYCLE // N):
             ob = jnp.asarray(obs, device=device).astype(jnp.float32) / 255.0
             key, kf = jax.random.split(key)
@@ -372,7 +372,7 @@ def main():
             frames += N
             if frames >= args.frames:
                 break
-        # 2. updates WM em sequencias
+        # 2. WM updates on sequences
         for _ in range(4):
             oo, aa, rr, dd = buf_seq(SEQ_B, SEQ_L)
             key, kwm = jax.random.split(key)
@@ -383,7 +383,7 @@ def main():
                 jnp.asarray(rr, device=device),
                 (1 - jnp.asarray(dd, device=device)).astype(jnp.float32), kwm)
         wstate = (wparams_w, wopt_w)
-        # 3. imaginacao + actor/critic (f0 = posterior de obs reais)
+        # 3. imagination + actor/critic (f0 = posterior from real obs)
         for _ in range(4):
             oo, _, _, _ = buf_seq(IMAG_B, 1)
             key, kf2, kac = jax.random.split(key, 3)
@@ -420,7 +420,7 @@ def main():
         out["eval_unseen_det"] = evaluate_dreamer(
             wparams_w, astate, args, device, 0, args.seed + 1000, True,
             args.eval_det_eps)
-    # video imaginado: actor age no sonho, decoder mostra os frames
+    # Imagined video: actor acts in dream, decoder renders frames
     oo, _, _, _ = buf_seq(8, 1)
     key, kf3 = jax.random.split(key)
     f0 = post0(wparams_w, jnp.asarray(oo[:, 0], device=device).astype(

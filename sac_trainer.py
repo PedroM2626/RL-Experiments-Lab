@@ -11,7 +11,7 @@ import os
 
 class ReplayBuffer:
     """
-    Replay Buffer para SAC
+    Replay Buffer for SAC
     """
     
     def __init__(self, capacity=100000):
@@ -52,12 +52,12 @@ class ReplayBuffer:
 
 class SACTrainer:
     """
-    Implementação do SAC (Soft Actor-Critic)
+    Implementation of SAC (Soft Actor-Critic)
     
-    Componentes:
-    - Actor: Política estocástica
+    Components:
+    - Actor: Stochastic policy
     - Critic: Q-functions (Q1, Q2)
-    - Target Critic: Q-functions alvo para suavização
+    - Target Critic: Target Q-functions for Polyak smoothing
     """
     
     def __init__(
@@ -99,11 +99,11 @@ class SACTrainer:
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=lr)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=lr)
         
-        # Learning rate schedulers (criados posteriormente quando conhecemos num_steps)
+        # Learning rate schedulers (created later once num_steps is known)
         self.actor_scheduler = None
         self.critic_scheduler = None
         
-        # Entropy coefficient (alpha) - corrigido: log_alpha = log(alpha)
+        # Entropy coefficient (alpha) - corrected: log_alpha = log(alpha)
         self.alpha = alpha
         self.target_entropy = -np.prod(env.action_space.shape).item()
         self.log_alpha = torch.tensor(np.log(alpha), dtype=torch.float32, requires_grad=True, device=device)
@@ -119,7 +119,7 @@ class SACTrainer:
         
     def select_action(self, state, deterministic=False):
         """
-        Seleciona ação usando a política atual
+        Selects action using current policy
         """
         state = torch.FloatTensor(state).unsqueeze(0).to(self.device) / 255.0
         
@@ -130,37 +130,37 @@ class SACTrainer:
     
     def update_critic(self, state, action, reward, next_state, done):
         """
-        Atualiza o Critic usando target Q-value
+        Updates Critic using target Q-value
         """
-        # Converter para tensors e normalizar observações para [0,1]
+        # Convert to tensors and normalize observations to [0, 1]
         state = torch.FloatTensor(state).to(self.device) / 255.0
         action = torch.FloatTensor(action).to(self.device)
         reward = torch.FloatTensor(reward).unsqueeze(1).to(self.device)
         next_state = torch.FloatTensor(next_state).to(self.device) / 255.0
         done = torch.FloatTensor(done).unsqueeze(1).to(self.device)
         
-        # Calcular target Q-value
+        # Compute target Q-value
         with torch.no_grad():
-            # Amostrar ação do actor (Actor retorna action, log_prob já com tanh correction e sum)
+            # Sample action from actor (Actor returns action, log_prob with tanh correction and sum)
             next_action, next_log_prob = self.actor(next_state)
-            # next_log_prob já tem shape (B,1), não precisa sum; mantido para compatibilidade se Actor retornar (B, action_dim)
+            # next_log_prob already has shape (B,1), no sum needed; kept for compatibility if Actor returns (B, action_dim)
             if next_log_prob.dim() > 1 and next_log_prob.shape[-1] != 1:
                 next_log_prob = next_log_prob.sum(dim=-1, keepdim=True)
             
-            # Calcular Q-values target
+            # Compute target Q-values
             target_q1, target_q2 = self.critic_target(next_state, next_action)
             target_q = torch.min(target_q1, target_q2) - self.alpha * next_log_prob
             
             # Target Q-value
             target_q = reward + (1 - done) * self.gamma * target_q
         
-        # Calcular Q-values atuais
+        # Compute current Q-values
         current_q1, current_q2 = self.critic(state, action)
         
         # Critic loss (MSE)
         critic_loss = F.mse_loss(current_q1, target_q) + F.mse_loss(current_q2, target_q)
         
-        # Atualizar critic
+        # Update critic
         self.critic_optimizer.zero_grad()
         critic_loss.backward()
         torch.nn.utils.clip_grad_norm_(self.critic.parameters(), max_norm=0.5)
@@ -170,16 +170,16 @@ class SACTrainer:
     
     def update_actor(self, state):
         """
-        Atualiza o Actor maximizando o Q-value esperado - entropia
+        Updates Actor by maximizing expected Q-value minus entropy
         """
         state = torch.FloatTensor(state).to(self.device) / 255.0
         
-        # Amostrar ação e calcular log prob (Actor já aplica tanh e correção)
+        # Sample action and compute log prob (Actor already applies tanh and correction)
         action, log_prob = self.actor(state)
         if log_prob.dim() > 1 and log_prob.shape[-1] != 1:
             log_prob = log_prob.sum(dim=-1, keepdim=True)
         
-        # Calcular Q-value
+        # Compute Q-value
         q1, q2 = self.critic(state, action)
         q = torch.min(q1, q2)
         
@@ -283,26 +283,26 @@ class SACTrainer:
         for step in range(num_steps):
             self.step_count += 1
             
-            # Selecionar ação
+            # Select action
             if step < self.warmup_steps:
-                # Ação aleatória durante warmup
+                # Random action during warmup
                 action = self.env.action_space.sample()
             else:
                 action = self.select_action(state, deterministic=False)
             
-            # Step no ambiente
+            # Step in environment
             next_state, reward, terminated, truncated, _ = self.env.step(action)
             done = terminated or truncated
             
-            # Armazenar no replay buffer
+            # Store in replay buffer
             self.replay_buffer.push(state, action, reward, next_state, done)
             
-            # Atualizar estado
+            # Update state
             state = next_state
             episode_reward += reward
             episode_length += 1
             
-            # Treinar
+            # Train
             if step >= self.warmup_steps and step % self.update_frequency == 0:
                 train_info = self.train_step()
                 
@@ -321,7 +321,7 @@ class SACTrainer:
                     self.writer.add_scalar('LR/actor', self.actor_optimizer.param_groups[0]['lr'], step)
                     self.writer.add_scalar('LR/critic', self.critic_optimizer.param_groups[0]['lr'], step)
             
-            # Reset se episódio terminou
+            # Reset if episode terminated
             if done:
                 self.episode_count += 1
                 
@@ -335,25 +335,25 @@ class SACTrainer:
                 episode_reward = 0
                 episode_length = 0
             
-            # Avaliação periódica
+            # Periodic evaluation
             if step % eval_frequency == 0 and step > 0:
                 eval_reward = self.evaluate(num_episodes=5)
                 self.writer.add_scalar('Reward/eval', eval_reward, step)
                 print(f"Step {step}: Eval Reward = {eval_reward:.2f}")
             
-            # Salvar checkpoint
+            # Save checkpoint
             if step % save_frequency == 0 and step > 0:
                 self.save_checkpoint(step)
         
         total_time = time.time() - start_time
-        print(f"\nTreinamento concluído em {total_time/60:.1f} minutos")
-        print(f"Total de episódios: {self.episode_count}")
+        print(f"\nTraining completed in {total_time/60:.1f} minutes")
+        print(f"Total episodes: {self.episode_count}")
         
         self.writer.close()
     
     def evaluate(self, num_episodes=5, deterministic=True):
         """
-        Avalia a política atual
+        Evaluates current policy
         """
         eval_rewards = []
         
@@ -374,7 +374,7 @@ class SACTrainer:
     
     def save_checkpoint(self, step):
         """
-        Salva checkpoint do modelo
+        Saves model checkpoint
         """
         checkpoint_dir = os.path.join(self.writer.log_dir, 'checkpoints')
         os.makedirs(checkpoint_dir, exist_ok=True)
@@ -393,11 +393,11 @@ class SACTrainer:
         }
         
         torch.save(checkpoint, os.path.join(checkpoint_dir, f'checkpoint_{step}.pt'))
-        print(f"Checkpoint salvo no step {step}")
+        print(f"Checkpoint saved at step {step}")
      
     def load_checkpoint(self, checkpoint_path):
         """
-        Carrega checkpoint do modelo
+        Loads model checkpoint
         """
         checkpoint = torch.load(checkpoint_path, map_location=self.device)
         
@@ -408,17 +408,17 @@ class SACTrainer:
         self.critic_optimizer.load_state_dict(checkpoint['critic_optimizer_state_dict'])
         self.alpha_optimizer.load_state_dict(checkpoint['alpha_optimizer_state_dict'])
         self.alpha = checkpoint['alpha']
-        # Restaura log_alpha corretamente mantendo requires_grad e device
+        # Restore log_alpha correctly maintaining requires_grad and device
         log_alpha_val = checkpoint.get('log_alpha_value', checkpoint['log_alpha'].item() if torch.is_tensor(checkpoint['log_alpha']) else checkpoint['log_alpha'])
         self.log_alpha.data = torch.tensor(log_alpha_val, dtype=torch.float32, device=self.device).data
-        # Recria optimizer para garantir referência correta ao novo tensor
-        # Se o tensor foi substituído, precisamos atualizar o optimizer param group
+        # Recreate optimizer to guarantee correct reference to new tensor
+        # If the tensor was replaced, we need to update the optimizer param group
         if self.alpha_optimizer.param_groups[0]['params'][0] is not self.log_alpha:
             self.alpha_optimizer.param_groups[0]['params'][0] = self.log_alpha
         
-        print(f"Checkpoint carregado do step {checkpoint['step']}")
+        print(f"Checkpoint loaded from step {checkpoint['step']}")
 
 
 if __name__ == "__main__":
-    # Teste básico
-    print("SAC Trainer módulo carregado com sucesso!")
+    # Basic test
+    print("SAC Trainer module loaded successfully!")

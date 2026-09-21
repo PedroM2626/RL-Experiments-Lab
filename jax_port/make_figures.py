@@ -1,14 +1,14 @@
-"""Figuras JAX-vs-SB3 a partir de analysis_full.json + JSONs pareados.
+"""JAX-vs-SB3 figures from analysis_full.json + paired JSONs.
 
-Sem GPU (matplotlib CPU). Saida: jax_port/figures/*.png
-  01_global_ci.png      top-8 global com IC95 (n=5)
-  02_speedup.png        SPS pareado A/B/C + eval-full
-  03_budget.png         curvas 100k/250k/500k (mlp vs resnet18)
-  04_hrl.png            4 bracos x jumper/plunder
-  05_algo.png           policy vs value por jogo
-  06_top10.png          cluster top-5 com n=10
-  07_temporal_bakeoff.png  memória: 100k-easy vs 500k-hard
-Uso: python -m jax_port.make_figures  (raiz do repo, qualquer python+mpl)
+No GPU required (matplotlib CPU). Output: jax_port/figures/*.png
+  01_global_ci.png        global top-8 with 95% CI (n=5)
+  02_speedup.png          paired SPS A/B/C + full eval
+  03_budget.png           100k/250k/500k curves (mlp vs resnet18)
+  04_hrl.png              4 branches x jumper/plunder
+  05_algo.png             policy vs value per game
+  06_top10.png            top-5 cluster with n=10
+  07_temporal_bakeoff.png memory: 100k-easy vs 500k-hard
+Usage: python -m jax_port.make_figures (from repo root, any python+mpl)
 """
 
 import json
@@ -41,7 +41,7 @@ def fig_global():
     fig, ax = plt.subplots(figsize=(8, 5))
     errbar(ax, [x["cell"] for x in r], [x["mean"] for x in r],
            [x["ci95"][0] for x in r], [x["ci95"][1] for x in r],
-           "Global top-8 (JAX, 3 games, 5 seeds, eval 100 eps)", "mean ± IC95")
+           "Global top-8 (JAX, 3 games, 5 seeds, eval 100 eps)", "mean ± 95% CI")
     fig.tight_layout()
     fig.savefig(f"{FIG}/01_global_ci.png", dpi=120)
     plt.close(fig)
@@ -52,10 +52,10 @@ def fig_speedup():
     b = json.load(open("jax_port/paired_sb3_n64.json"))["sps"]
     c = json.load(open("jax_port/pa2_coinrun_100k_rerun.json"))["sps"]
     fig, ax = plt.subplots(figsize=(7, 4))
-    ax.bar(["SB3 n=1\n(estudo)", "SB3 n=64", "JAX n=64"], [a, b, c])
+    ax.bar(["SB3 n=1\n(study)", "SB3 n=64", "JAX n=64"], [a, b, c])
     for i, v in enumerate((a, b, c)):
         ax.text(i, v + 80, f"{v:.0f}", ha="center", fontsize=9)
-    ax.set_title("SPS de treino pareado (coinrun 100k, mesma RTX 4070)")
+    ax.set_title("Paired training SPS (coinrun 100k, same RTX 4070)")
     ax.set_ylabel("steps/s")
     fig.tight_layout()
     fig.savefig(f"{FIG}/02_speedup.png", dpi=120)
@@ -121,7 +121,7 @@ def fig_algo():
 
 
 def fig_top10():
-    """Cluster top-5 com n=10 (grade + follow-up top10)."""
+    """Top-5 cluster with n=10 (grid + top10 follow-up)."""
     import glob
     import numpy as np
     vals = {}
@@ -149,7 +149,7 @@ def fig_top10():
         sds = [float(np.std(vals[(c, game)], ddof=1)) for c in labs]
         ax.bar(labs, ms, yerr=np.array(sds) / np.sqrt(10) * 2.262,
                capsize=3)
-        ax.set_title(f"{game} (n=10 ± IC95)")
+        ax.set_title(f"{game} (n=10 ± 95% CI)")
         plt.setp(ax.get_xticklabels(), rotation=25, ha="right")
     fig.suptitle("Top-5 cluster at n=10: nobody separates")
     fig.tight_layout()
@@ -158,7 +158,7 @@ def fig_top10():
 
 
 def fig_temporal():
-    """Bake-off de memoria: 100k-easy vs 500k-hard por arquitetura."""
+    """Memory bake-off: 100k-easy vs 500k-hard by architecture."""
     import numpy as np
     order = ["mlp", "cnn1d", "tcn", "lstm", "gru", "transformer",
              "transformer_xl", "mamba", "s4", "s5"]
@@ -201,8 +201,8 @@ def fig_temporal():
         ax.set_title(f"{game} 500k (hard)")
         ax.grid(axis="x", alpha=0.3)
         col += 1
-    axes[0].set_xlabel("eval unseen ± IC95")
-    fig.suptitle("Temporal bake-off: memória não separa, transformer não sobe",
+    axes[0].set_xlabel("eval unseen ± 95% CI")
+    fig.suptitle("Temporal bake-off: memory does not separate, transformer does not climb",
                  fontsize=11)
     fig.tight_layout()
     fig.savefig(f"{FIG}/07_temporal_bakeoff.png", dpi=120)

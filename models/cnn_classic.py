@@ -5,9 +5,9 @@ import torch.nn.functional as F
 
 class ClassicCNN(nn.Module):
     """
-    CNN Clássica para SAC - Processa 4 frames grayscale 64x64
+    Classic CNN for SAC - Processes 4 grayscale frames 64x64
     
-    Arquitetura:
+    Architecture:
     Input: (4, 64, 64)
     Conv2d(32, 8x8, stride 4) → ReLU
     Conv2d(64, 4x4, stride 2) → ReLU
@@ -18,28 +18,28 @@ class ClassicCNN(nn.Module):
     def __init__(self, action_dim=3, feature_dim=512):
         super(ClassicCNN, self).__init__()
         
-        # Camadas convolucionais
+        # Convolutional layers
         self.conv1 = nn.Conv2d(4, 32, kernel_size=8, stride=4)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
         self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
         
-        # Calcular tamanho da saída após as convoluções
+        # Calculate output size after convolutions
         # Input: 4x64x64
         # Conv1: 32x14x14 ( (64-8)/4 + 1 = 14 )
         # Conv2: 64x6x6 ( (14-4)/2 + 1 = 6 )
         # Conv3: 64x4x4 ( (6-3)/1 + 1 = 4 )
         self.flatten_size = 64 * 4 * 4
         
-        # Camadas fully connected
+        # Fully connected layers
         self.fc1 = nn.Linear(self.flatten_size, feature_dim)
         self.fc2 = nn.Linear(feature_dim, action_dim)
         
     def forward(self, x):
         """
         Forward pass
-        x: (batch_size, 4, 64, 64) - já normalizado para [0, 1]
+        x: (batch_size, 4, 64, 64) - normalized to [0, 1]
         """
-        # Convoluções
+        # Convolutions
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
@@ -55,7 +55,7 @@ class ClassicCNN(nn.Module):
     
     def get_features(self, x):
         """
-        Retorna features antes da última camada (útil para debug/visualização)
+        Returns features before the final layer (useful for debug/visualization)
         """
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
@@ -67,8 +67,8 @@ class ClassicCNN(nn.Module):
 
 class ClassicCNNWithFeatureDim(nn.Module):
     """
-    Versão flexível que permite especificar diferentes dimensões de features
-    Útil para o Actor e Critic do SAC
+    Flexible version allowing custom feature dimensions.
+    Useful for SAC Actor and Critic.
     """
     
     def __init__(self, action_dim=3, feature_dim=512):
@@ -93,8 +93,8 @@ class ClassicCNNWithFeatureDim(nn.Module):
 
 class ClassicCNNActor(nn.Module):
     """
-    Actor network para SAC usando CNN clássica
-    Output: ação com tanh + log_prob corrigido (SAC)
+    Actor network for SAC using classic CNN.
+    Output: squashed action via tanh + corrected log_prob (SAC)
     """
     
     def __init__(self, action_dim=3, feature_dim=512, action_scale=1.0):
@@ -108,9 +108,9 @@ class ClassicCNNActor(nn.Module):
         
     def forward(self, x):
         """
-        Forward com reparametrização + tanh squashing
-        Retorna: action (B, action_dim), log_prob (B, 1)
-        Compatível com SACTrainer.update_*: action, log_prob = actor(state)
+        Forward pass with reparameterization + tanh squashing.
+        Returns: action (B, action_dim), log_prob (B, 1)
+        Compatible with SACTrainer.update_*: action, log_prob = actor(state)
         """
         features = self.feature_extractor(x)
         mean = self.fc_mean(features)
@@ -118,13 +118,13 @@ class ClassicCNNActor(nn.Module):
         log_std = torch.clamp(log_std, -20, 2)
         std = torch.exp(log_std)
 
-        # Reparametrização
+        # Reparameterization trick
         normal = torch.distributions.Normal(mean, std)
         x_t = normal.rsample()  # (B, action_dim)
         y_t = torch.tanh(x_t)
         action = y_t * self.action_scale
 
-        # Log prob com correção tanh: log_prob = log N(x_t) - sum log(1 - tanh^2 + eps)
+        # Log prob with tanh squashing correction: log_prob = log N(x_t) - sum log(1 - tanh^2 + eps)
         log_prob = normal.log_prob(x_t)
         # Enforce correction
         log_prob -= torch.log(self.action_scale * (1 - y_t.pow(2)) + 1e-6)
@@ -133,7 +133,7 @@ class ClassicCNNActor(nn.Module):
         return action, log_prob
 
     def get_mean_log_std(self, x):
-        """Retorna mean e log_std sem sampling (útil para debug)"""
+        """Returns mean and log_std without sampling (useful for debug)"""
         features = self.feature_extractor(x)
         mean = self.fc_mean(features)
         log_std = torch.clamp(self.fc_log_std(features), -20, 2)
@@ -141,7 +141,7 @@ class ClassicCNNActor(nn.Module):
     
     def get_action(self, x, deterministic=False):
         """
-        Retorna apenas ação (sem log_prob), usado em select_action/evaluate
+        Returns action only (without log_prob), used in select_action/evaluate.
         deterministic=True -> tanh(mean)
         """
         if deterministic:
@@ -152,13 +152,13 @@ class ClassicCNNActor(nn.Module):
             return action
 
     def evaluate_log_prob(self, x):
-        """Helper para compatibilidade: retorna mean, log_std e log_prob se necessário"""
+        """Helper for compatibility: returns mean, log_std and log_prob if needed"""
         return self.forward(x)
 
 
 class ClassicCritic(nn.Module):
     """
-    Critic network (Q-function) para SAC usando CNN clássica
+    Critic network (Q-function) for SAC using classic CNN.
     """
     
     def __init__(self, action_dim=3, feature_dim=512):
@@ -173,7 +173,7 @@ class ClassicCritic(nn.Module):
             nn.Linear(256, 1)
         )
         
-        # Q2 network (para target network smoothing)
+        # Q2 network (for target network smoothing)
         self.q2 = nn.Sequential(
             nn.Linear(feature_dim + action_dim, 256),
             nn.ReLU(),
@@ -183,7 +183,7 @@ class ClassicCritic(nn.Module):
     def forward(self, x, action):
         features = self.feature_extractor(x)
         
-        # Concatenar features com ação
+        # Concatenate features with action
         x_action = torch.cat([features, action], dim=-1)
         
         q1 = self.q1(x_action)
@@ -192,14 +192,14 @@ class ClassicCritic(nn.Module):
         return q1, q2
     
     def q1_forward(self, x, action):
-        """Retorna apenas Q1 (útil para cálculo de target)"""
+        """Returns Q1 only (useful for target computation)"""
         features = self.feature_extractor(x)
         x_action = torch.cat([features, action], dim=-1)
         return self.q1(x_action)
 
 
 if __name__ == "__main__":
-    # Teste da rede
+    # Test network
     model = ClassicCNN(action_dim=3)
     
     # Input batch: (batch_size, 4, 64, 64)
@@ -207,15 +207,15 @@ if __name__ == "__main__":
     
     output = model(x)
     print("Output shape:", output.shape)
-    print("Teste concluído!")
+    print("Test completed successfully!")
     
-    # Teste do Actor
+    # Test Actor
     actor = ClassicCNNActor(action_dim=3)
     mean, log_std = actor(x)
     print("Actor mean shape:", mean.shape)
     print("Actor log_std shape:", log_std.shape)
     
-    # Teste do Critic
+    # Test Critic
     critic = ClassicCritic(action_dim=3)
     action = torch.randn(2, 3)
     q1, q2 = critic(x, action)

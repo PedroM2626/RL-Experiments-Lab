@@ -1,12 +1,12 @@
-"""Paradigmas MARL avancados (extensao; paridade com a fase antiga §3.4).
+"""Advanced MARL paradigms (extension; parity with earlier phase §3.4).
 
-MA-POCA: critico centralizado com atencao sobre agentes + baseline
-  contrafactual estilo COMA + actor PPO clipado.
-CTE: controlador conjunto sobre o espaco-produto (8^A acoes; asserts
-  produto <= 4096 — demo em 3m: 512 acoes).
-Explicit Communication (TarMAC): mensagens com assinatura + atencao
-  (query=propria assinatura, key/value=dos outros); actor(obs, inbox)
-  + critico centralizado MAPPO-style.
+MA-POCA: centralized critic with attention over agents + counterfactual
+  baseline COMA-style + clipped PPO actor.
+CTE: joint controller over product space (8^A actions; asserts
+  product <= 4096 — demo on 3m: 512 actions).
+Explicit Communication (TarMAC): signed messages + attention
+  (query=own signature, key/value=others'); actor(obs, inbox)
+  + MAPPO-style centralized critic.
 """
 
 import flax.linen as nn
@@ -23,7 +23,7 @@ class AgentEncoder(nn.Module):
 
 
 class PolicyHead(nn.Module):
-    """Policy linear sobre embeddings (actor do MA-POCA)."""
+    """Linear policy over embeddings (MA-POCA actor)."""
     n_actions: int
 
     @nn.compact
@@ -32,7 +32,7 @@ class PolicyHead(nn.Module):
 
 
 class JointBackbone(nn.Module):
-    """Backbone da policy conjunta do CTE (obs concatenada)."""
+    """CTE joint policy backbone (concatenated obs)."""
 
     @nn.compact
     def __call__(self, x):
@@ -41,7 +41,7 @@ class JointBackbone(nn.Module):
 
 
 class AttnCritic(nn.Module):
-    """Q(s, u) centralizado: atencao sobre agentes + acao conjunta."""
+    """Centralized Q(s, u): attention over agents + joint action."""
     n_actions: int
     heads: int = 4
 
@@ -64,7 +64,7 @@ class TarMACActor(nn.Module):
     @nn.compact
     def __call__(self, obs):
         # obs: (B,A,O)
-        sig = nn.Dense(self.msg_dim)(obs)  # assinatura/mensagem
+        sig = nn.Dense(self.msg_dim)(obs)  # signature/message
         q = nn.Dense(self.msg_dim)(obs)
         att = nn.MultiHeadAttention(num_heads=self.heads)(q, sig)
         h = jnp.concatenate([obs, att], -1)
@@ -75,10 +75,10 @@ class TarMACActor(nn.Module):
 
 def make_mapoca_update(encoder, critic, actor, optimizer, n_actions,
                        clip_range=0.2, ent_coef=0.01):
-    """Actor clipado com vantagem contrafactual + critico TD.
+    """Clipped actor with counterfactual advantage + TD critic.
 
     A^a = Q(s,u) - sum_{a'} pi(a'|tau_a) Q(s,(u_-a,a')). Q via AttnCritic
-    (atencao sobre agentes). Retorna (actor_state, critic_state, loss).
+    (attention over agents). Returns (actor_state, critic_state, loss).
     """
 
     @jax.jit
@@ -93,8 +93,8 @@ def make_mapoca_update(encoder, critic, actor, optimizer, n_actions,
             logp = jnp.take_along_axis(logp_all, act[..., None], -1).squeeze(-1)
             oh = jax.nn.one_hot(act, NA)
             q = critic.apply(cp, embs, oh, state)
-            # juntas candidatas J[b,g,ap,gg,:]: oh[b,gg] exceto em gg==g,
-            # onde vale onehot(ap). Formas: (B,G,NA,G,NA).
+            # Joint candidates J[b,g,ap,gg,:]: oh[b,gg] except at gg==g,
+            # where onehot(ap) applies. Shapes: (B,G,NA,G,NA).
             eye5 = jnp.broadcast_to(jnp.eye(NA).reshape(1, 1, NA, 1, NA),
                                     (B, G, NA, G, NA))
             oh5 = jnp.broadcast_to(oh[:, :, None, None, :], (B, G, NA, G, NA))
@@ -103,8 +103,8 @@ def make_mapoca_update(encoder, critic, actor, optimizer, n_actions,
                  jnp.arange(G).reshape(1, G, 1, 1)).reshape(1, G, 1, G),
                 (B, G, NA, G))[..., None]
             J = jnp.where(mask5, eye5, oh5)
-            # batch explicito (Bg=G*NA candidatos com contexto completo):
-            # vmap quebraria a forma (B,A,E) que o AttnCritic exige.
+            # Explicit batch (Bg=G*NA candidates with full context):
+            # vmap would break (B,A,E) shape required by AttnCritic.
             Bg = B * G * NA
             embs_ctx = jnp.broadcast_to(embs[:, None, None, :, :],
                                         (B, G, NA, G, embs.shape[-1]))
@@ -115,7 +115,7 @@ def make_mapoca_update(encoder, critic, actor, optimizer, n_actions,
                 st_ctx.reshape(Bg, -1)).reshape(B, G, NA)
             pi = jax.nn.softmax(jax.lax.stop_gradient(logits))
             baseline = (pi * qb).sum(-1)
-            # COMA: um Q(s,u) global menos baseline por agente.
+            # COMA: one global Q(s,u) minus baseline per agent.
             adv = jax.lax.stop_gradient(q[:, None] - baseline)
             ratio = jnp.exp(logp - old_logp)
             pg = -jnp.mean(jnp.minimum(

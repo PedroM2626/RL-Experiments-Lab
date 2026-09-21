@@ -1,5 +1,5 @@
 #!/bin/bash
-# MARL positive control: QMIX-rec 10M em 2s3z (o paper JaxMARL resolve).
+# MARL positive control: QMIX-rec 10M on 2s3z (JaxMARL paper solves).
 set -u
 export PYTHONPATH=/mnt/c/Users/Acer/Downloads/MLE
 PY=/root/procgen-jax/bin/python
@@ -13,4 +13,4 @@ for seed in 42 43 44; do
       --timesteps 10000000 --seed "$seed" \
       --out "$OUT/qmix_rec__2s3z__seed${seed}__10M.json" >> "$LOG" 2>&1
 done
-echo "=== 2s3z CONCLUIDO $(date) ===" >> "$LOG"
+echo "=== 2s3z COMPLETED $(date) ===" >> "$LOG"

@@ -1,20 +1,20 @@
-"""Zoo temporal — bake-off de memoria sobre frames empilhados (EXTENSAO).
+"""Temporal zoo — memory bake-off over stacked frames (EXTENSION).
 
-Todos recebem (B,64,64,12) = 4 frames NHWC (ou (B,64,64,3*K)) e devolvem
-512D, plugaveis no loop PPO (frame_stack via StackGym3/train --stack).
-mlp: mean-pool 16x16 + MLP[256,256] (baseline sem tempo).
+All receive (B,64,64,12) = 4 frames NHWC (or (B,64,64,3*K)) and return
+512D, pluggable into the PPO loop (frame_stack via StackGym3/train --stack).
+mlp: mean-pool 16x16 + MLP[256,256] (timeless baseline).
 cnn1d: encoder/frame + Conv1D k3 + mean.
-tcn: encoder/frame + Conv1D causal dilatada d=1,2 + residual, last-step.
-lstm/gru: encoder/frame + recorrencia real sobre a pilha (carry so
-  dentro da pilha; entre steps stateless — upgrade fiel do fake-repeat
-  do estudo) + last hidden.
+tcn: encoder/frame + dilated causal Conv1D d=1,2 + residual, last-step.
+lstm/gru: encoder/frame + real recurrence over the stack (carry only
+  inside the stack; stateless between steps — faithful upgrade of fake-repeat
+  from the study) + last hidden.
 transformer: encoder/frame + pos + Transformer x2 + mean.
-transformer_xl: como transformer + memoria de segmento (mems do stack
-  anterior, carry no loop de treino) — unico com estado entre steps.
-mamba: selective scan simplificado (B,C,Δ dependentes de x, SiLU gate,
-  sem conv1d-prelude do paper) sobre Dense(128) dos frames.
-s4: S4D diagonal real (A=-exp, FFT conv) por canal.
-s5: SSM MIMO (HiPPO-diag, associative scan) + skip.
+transformer_xl: like transformer + segment memory (mems from previous
+  stack, carry in training loop) — only architecture with state across steps.
+mamba: simplified selective scan (x-dependent B,C,Δ, SiLU gate,
+  without conv1d-prelude of the paper) over Dense(128) of frames.
+s4: real diagonal S4D (A=-exp, FFT conv) per channel.
+s5: MIMO SSM (HiPPO-diag, associative scan) + skip.
 """
 
 import flax.linen as nn
@@ -275,11 +275,11 @@ MEM_LEN = 4
 
 def make_mem_fns(model, optimizer, clip_range=0.2, vf_coef=0.5,
                  ent_coef=0.01):
-    """Irmaos com memoria de ppo.make_update_fn (só p/ transformer_xl).
+    """Memory-enabled counterparts of ppo.make_update_fn (for transformer_xl).
 
-    rollout/update/forward levam (obs, mem) e devolvem new_mem; a
-    matematica PPO e identica. Mems guardadas no rollout e reusadas
-    nos updates (padrao RecurrentPPO/SB3-contrib).
+    rollout/update/forward take (obs, mem) and return new_mem; PPO
+    math is identical. Mems stored during rollout and reused
+    in updates (standard RecurrentPPO/SB3-contrib pattern).
     """
     import jax
     import jax.numpy as jnp

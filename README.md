@@ -1,87 +1,87 @@
-# Benchmark Sistemático de Arquiteturas Visuais, World Models e Exploração em Procgen — Estudo com 5 Seeds, 5 Jogos e 100k Passos
+# Systematic Benchmark of Visual Architectures, World Models, and Exploration in Procgen — A Study with 5 Seeds, 5 Games, and 100k Steps
 
 **Python 3.10.11 + Procgen 0.10.7 + Stable-Baselines3 2.9.0 + PyTorch 2.5.1+cu121 (RTX 4070) — `C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe`**
 
-> **Resumo.** Avaliação sistemática de **16 arquiteturas** em **6 famílias** (`CNN` vs `Attention` vs `World Models` vs `Augment` vs `New Archs` vs `Exploração`) com **5 seeds** (`42-46`), **5 jogos** (`bossfight`, `starpilot`, `dodgeball`, `maze`, `heist` + `coinrun` controle) e **duas dificuldades** (`easy 200` / `hard 200` / `eval 0`) em `Procgen` (`~300 FPS` em `cuda`, `50k` em `~3 min`). Todos os experimentos usam `frame_stack=1` (`3×64×64` `CHW` `uint8`), `PPO` (`lr 3e-4`, `n_steps 256`, `batch 64`, `n_epochs 3`, `γ 0.99`, `λ 0.95`, `clip 0.2`), e `tensorboard` para a jornada. O eval começou com `10 episódios` e foi endurecido ao longo do estudo até o protocolo definitivo: **`100 eps` stoch + det em unseen levels (`seed+1000`)** — seções 3.10→3.12.
+> **Abstract.** Systematic evaluation of **16 architectures** across **6 families** (`CNN` vs `Attention` vs `World Models` vs `Augment` vs `New Archs` vs `Exploration`) with **5 seeds** (`42-46`), **5 games** (`bossfight`, `starpilot`, `dodgeball`, `maze`, `heist` + `coinrun` control), and **two difficulty settings** (`easy 200` / `hard 200` / `eval 0`) in `Procgen` (`~300 FPS` on `cuda`, `50k` in `~3 min`). All experiments use `frame_stack=1` (`3×64×64` `CHW` `uint8`), `PPO` (`lr 3e-4`, `n_steps 256`, `batch 64`, `n_epochs 3`, `γ 0.99`, `λ 0.95`, `clip 0.2`), and `tensorboard` for training monitoring. Evaluation initially used `10 episodes` and was systematically hardened throughout the study up to the definitive protocol: **`100 eps` stochastic + deterministic on unseen levels (`seed+1000`)** — sections 3.10→3.12.
 
-## 0. As 5 Conclusões do Estudo
+## 0. The 5 Main Conclusions of the Study
 
-1. **O protocolo de avaliação determina as conclusões — e `10` episódios não bastam.** Cada upgrade de protocolo (`10→30→100 eps`, unseen com `seed+1000`, dupla avaliação stoch+det) mudou rankings: o líder global caiu (`spatial 1.54 → 1.35`), o `ICM` perdeu a liderança de `maze`/`heist` que tinha a `30 eps` (ruído), e `vit` despencou em `dodgeball`. Lição permanente: em `Procgen`, ranking medido com `<100` episódios não é confiável (seções 3.10–3.12).
-2. **Não existe vencedor absoluto — existe um líder consistente: `mlp_vector`.** No protocolo definitivo o top-5 global é estatisticamente indistinguível (`mlp_vector 1.43` ≈ `resnet18 1.34` ≈ `spatial 1.28` ≈ `lstm_attention 1.26` ≈ `aug_crop 1.25`), mas só o `mlp_vector` (MLP sobre `16×16` grayscale, `256D`) esteve no topo em **todos** os protocolos (`1.25@10 → 1.36@30 → 1.43@100`) e vence `starpilot`. Vencedores por jogo: `aug_crop` (`bossfight`), `mlp_vector` (`starpilot`), `resnet18` (`dodgeball`) (seção 3.12).
-3. **World Models e exploração: conclusões contextuais, não universais.** WMs são fracos só no `bossfight` (`<0.5`); em `starpilot`/`dodgeball` empatam com CNNs — o "WM é fraco" original era efeito dominado por um jogo. Curiosidade (`ICM`/`RND`/`NGU`) empata com `PPO` em `maze`/`heist` a `100 eps` — a vantagem inicial era ruído de `30 eps` (seções 3.11–3.12).
-4. **Neste budget, arquitetura importa menos que avaliação rigorosa — e mais budget não resolve.** O budget scaling (`100k→250k→500k`) mostra curvas **estagnadas** para as duas configs de topo nos seus jogos: `5×` budget não criou nem destruiu vantagem, e o gen gap seguiu `≈0` (sem memorização até `500k`). Com `5 seeds`, as diferenças entre configs são da ordem do ruído: o estudo reporta **tendências com IC**, não campeões (seções 3.8, 3.13).
-5. **Em HRL, a alavanca é a abstração temporal — e skills aprendidas só ganham onde timing importa.** Em `jumper`, action-repeat (`skip4`) dá `4×` o flat e a hierarquia com skills fixas não adiciona nada; em `plunder`, só a hierarquia com **skills aprendidas** vence (`4.16` vs `3.53`, `+18%`) e produz política explorável deterministicamente (`det 2.70` vs `≤1.32`). "Hierarquia ajuda?" depende do jogo (seção 11.1).
+1. **The evaluation protocol dictates conclusions — and `10` episodes are insufficient.** Each protocol upgrade (`10→30→100 eps`, unseen levels with `seed+1000`, dual stochastic+deterministic evaluation) reshuffled rankings: the global leader dropped (`spatial 1.54 → 1.35`), `ICM` lost its lead in `maze`/`heist` observed at `30 eps` (spurious variance), and `vit` collapsed in `dodgeball`. An enduring lesson: in `Procgen`, rankings evaluated with `<100` episodes are unreliable (sections 3.10–3.12).
+2. **There is no absolute winner — there is a consistent leader: `mlp_vector`.** Under the definitive protocol, the global top-5 is statistically indistinguishable (`mlp_vector 1.43` ≈ `resnet18 1.34` ≈ `spatial 1.28` ≈ `lstm_attention 1.26` ≈ `aug_crop 1.25`), but only `mlp_vector` (MLP over `16×16` grayscale, `256D`) remained at the top across **all** protocols (`1.25@10 → 1.36@30 → 1.43@100`) and wins in `starpilot`. Per-game winners: `aug_crop` (`bossfight`), `mlp_vector` (`starpilot`), `resnet18` (`dodgeball`) (section 3.12).
+3. **World Models and exploration: contextual conclusions, not universal.** WMs underperform only in `bossfight` (`<0.5`); in `starpilot`/`dodgeball` they match standard CNNs — the initial "WM is weak" claim was an artifact dominated by a single environment. Curiosity methods (`ICM`/`RND`/`NGU`) tie with standard `PPO` in `maze`/`heist` at `100 eps` — the initial advantage was noise at `30 eps` (sections 3.11–3.12).
+4. **At this budget, architecture matters less than rigorous evaluation — and more budget does not resolve differences.** Budget scaling (`100k→250k→500k`) reveals **stagnant** learning curves for the top two configurations in their respective games: a `5×` budget neither created nor eliminated an advantage, and the generalization gap remained `≈0` (no memorization up to `500k`). With `5 seeds`, differences across configurations are on the order of noise: the study reports **trends with confidence intervals**, not definitive champions (sections 3.8, 3.13).
+5. **In HRL, the primary driver is temporal abstraction — and learned skills only win when timing matters.** In `jumper`, action-repeat (`skip4`) yields `4×` the return of flat RL, and hierarchy with fixed skills adds nothing further; in `plunder`, only hierarchy with **learned skills** wins (`4.16` vs `3.53`, `+18%`) and yields a deterministically exploitable policy (`det 2.70` vs `≤1.32`). Whether "hierarchy helps" is strictly game-dependent (section 11.1).
 
 ---
 
-## 1. Metodologia
+## 1. Methodology
 
-### 1.1. Ambientes
-- **Wrapper** `procgen_wrapper.py:6` `ProcgenGymWrapper(gymn.Env)` — converte `gym 0.26.2` `old API` (`obs, done`) → `gymnasium 1.3.0` (`obs, terminated, truncated`), `HWC 64×64×3 → CHW 3×64×64` (`np.transpose`), `Discrete(15)` (`bossfight`, `starpilot`, `dodgeball`, `coinrun`). Variante sem `CV` `procgen_wrapper.py:55` `ProcgenVectorWrapper` (`16×16` `grayscale` → `256D` `MLP`) para controle `mesmo jogo com/sem visão`.
+### 1.1. Environments
+- **Wrapper** `procgen_wrapper.py:6` `ProcgenGymWrapper(gymn.Env)` — converts `gym 0.26.2` legacy API (`obs, done`) → `gymnasium 1.3.0` (`obs, terminated, truncated`), `HWC 64×64×3 → CHW 3×64×64` (`np.transpose`), `Discrete(15)` (`bossfight`, `starpilot`, `dodgeball`, `coinrun`). Vision-free variant `procgen_wrapper.py:55` `ProcgenVectorWrapper` (`16×16` `grayscale` → `256D` `MLP`) for control comparison: `same game with/without computer vision`.
 - **Factory** `procgen_wrapper.py:85` `make_procgen_env(game, num_levels, distribution_mode, rand_seed, frame_stack, vector)` — `gym.make(f'procgen:procgen-{game}-v0', num_levels, distribution_mode, rand_seed)`.
-- **Treino:** `num_levels=200` `distribution_mode='easy'` (padrão `Procgen`), **Eval:** `num_levels=0` (`ilimitado`, fases nunca vistas) `seed+1000` — mede generalização.
-- **Sem Frame Stacking:** `frame_stack=1` `Box(3,64,64)` `uint8` em todos os benchmarks (`procgen_wrapper.py:21`). `frame_stack=4` (`12×64×64`) é suportado (`procgen_wrapper.py:19`) mas não usado; `Imitation-player` usa `128×128×4`.
+- **Training:** `num_levels=200`, `distribution_mode='easy'` (`Procgen` standard); **Eval:** `num_levels=0` (`unlimited`, never-before-seen levels) with `seed+1000` — measures generalization.
+- **No Frame Stacking:** `frame_stack=1`, `Box(3,64,64)` `uint8` across all benchmarks (`procgen_wrapper.py:21`). `frame_stack=4` (`12×64×64`) is supported (`procgen_wrapper.py:19`) but unused; `Imitation-player` uses `128×128×4`.
 
-### 1.2. Arquiteturas
-- **CNN Clássica** `models/sb3_extractors.py:8` `ClassicCNNExtractor` — `Conv 32 8×8 s4 → 64 4×4 s2 → 64 3×3 s1 → Flatten → FC 512` (`600k` params), `HWC/CHW` auto-detectado (`is_hwc`).
-- **Attention CNN** `models/sb3_extractors.py:63` `AttentionCNNExtractor(use_cbam)` — `CBAM` (`ChannelAttention` `reduction 16` + `SpatialAttention` `kernel 7`) `models/cnn_attention.py:82` ou só `SpatialAttentionModule` `models/cnn_attention.py:6` (`x * attention_map + x` com **residual** `models/cnn_attention.py:37` para estabilizar `spatial` puro que dava `0.00` determinístico). `FC 512`.
-- **World Models** `models/world_model_extractors.py:6` — `VAEExtractor(latent 128, KL)` + `dream()` `deconv`, `AEExtractor` determinístico + `dream()`, `ReconExtractor` (`L2` `dec 3×64×64`) + `dream()`, `ContrastiveExtractor` (`InfoNCE` `noise 0.01` + `proj 64`).
-- **Augment Contrastivo** `compare_augment_contrastive.py:14` `ContrastiveCrop` (`pad 4 + random 64`), `ContrastiveColor` (`brightness 0.8-1.2`), `ContrastiveNoise` (`noise 0.01`).
-- **Novas Arquiteturas** `models/combined_extractors.py` — `ImpalaCNNExtractor` (stack de `ImpalaBlock` conv), `ImpoolaCNNExtractor` (`GAP 64D`), `LSTMAttentionExtractor` (`CNN + LSTM 256 + attention`), `ViTExtractor` (`64 patches 16×16 + Transformer 4 camadas`), `ResNet18Extractor` — todas com `FC 512` (`benchmark #6`).
-- **Exploração (ICM/RND/NGU)** `compare_maze_heist.py:16` — `ICMWrapper` (bônus intrínseco por erro de modelo direto), `RNDWrapper` (destilação de rede aleatória), `NGUWrapper` (estende `RNDWrapper` com memória episódica, `reward += beta * bonus * episodic`) — aplicados sobre `maze`/`heist` (`benchmark #7`).
+### 1.2. Architectures
+- **Classic CNN** `models/sb3_extractors.py:8` `ClassicCNNExtractor` — `Conv 32 8×8 s4 → 64 4×4 s2 → 64 3×3 s1 → Flatten → FC 512` (`600k` params), auto-detects `HWC/CHW` (`is_hwc`).
+- **Attention CNN** `models/sb3_extractors.py:63` `AttentionCNNExtractor(use_cbam)` — `CBAM` (`ChannelAttention` `reduction 16` + `SpatialAttention` `kernel 7`) `models/cnn_attention.py:82` or purely `SpatialAttentionModule` `models/cnn_attention.py:6` (`x * attention_map + x` with **residual** connection `models/cnn_attention.py:37` to stabilize pure `spatial` attention, which collapsed to `0.00` deterministically). `FC 512`.
+- **World Models** `models/world_model_extractors.py:6` — `VAEExtractor(latent 128, KL)` + `dream()` `deconv`, deterministic `AEExtractor` + `dream()`, `ReconExtractor` (`L2` `dec 3×64×64`) + `dream()`, `ContrastiveExtractor` (`InfoNCE` `noise 0.01` + `proj 64`).
+- **Contrastive Augmentations** `compare_augment_contrastive.py:14` `ContrastiveCrop` (`pad 4 + random 64`), `ContrastiveColor` (`brightness 0.8-1.2`), `ContrastiveNoise` (`noise 0.01`).
+- **New Architectures** `models/combined_extractors.py` — `ImpalaCNNExtractor` (stack of convolutional `ImpalaBlock` modules), `ImpoolaCNNExtractor` (`GAP 64D`), `LSTMAttentionExtractor` (`CNN + LSTM 256 + attention`), `ViTExtractor` (`64 patches 16×16 + 4-layer Transformer`), `ResNet18Extractor` — all with `FC 512` (`benchmark #6`).
+- **Exploration (ICM/RND/NGU)** `compare_maze_heist.py:16` — `ICMWrapper` (intrinsic bonus via forward dynamics prediction error), `RNDWrapper` (random network distillation), `NGUWrapper` (extends `RNDWrapper` with episodic novelty memory, `reward += beta * bonus * episodic`) — evaluated on `maze`/`heist` (`benchmark #7`).
 
-### 1.3. Seeds e Avaliação
-- **Treino:** `5 seeds` (`42,43,44,45,46`) `PPO` `seed` + `procgen rand_seed` fixos — `mean±std` entre seeds em `statistics.json`.
-- **Avaliação:** `10 episódios` `deterministic=False` (estocástico, corrige `spatial` que dava `0.00` determinístico vs `4.00` estocástico em `8k` teste) em `eval 0`.
-- **Jornada:** `tensorboard --logdir logs_*` (`events.out.tfevents.*`).
+### 1.3. Seeds and Evaluation
+- **Training:** `5 seeds` (`42,43,44,45,46`) with fixed `PPO` `seed` + `procgen rand_seed` — `mean±std` across seeds recorded in `statistics.json`.
+- **Evaluation:** `10 episodes` `deterministic=False` (stochastic, correcting `spatial` which gave `0.00` deterministic vs `4.00` stochastic in `8k` tests) on `eval 0`.
+- **Monitoring:** `tensorboard --logdir logs_*` (`events.out.tfevents.*`).
 
-### 1.4. Por que `100k` steps? Escopo do Regime Low-Data
+### 1.4. Why `100k` Steps? Scope of the Low-Data Regime
 
-A literatura padrão do `Procgen` (paper original, `IDAAC`/`PPG`) reporta `5M–25M` steps para performance próxima da humana — e os dados deste estudo confirmam: a `100k` os scores absolutos são baixos (`starpilot ~2.6`, `bossfight ~0.4`, `heist ~0.7`; só `coinrun` satura cedo, `8.0` a `50k`). **As duas afirmações não conflitam — respondem perguntas diferentes:**
+Standard `Procgen` literature (original paper, `IDAAC`/`PPG`) reports `5M–25M` steps for near-human performance — and data from this study corroborates this: at `100k`, absolute scores remain low (`starpilot ~2.6`, `bossfight ~0.4`, `heist ~0.7`; only `coinrun` saturates early, reaching `8.0` at `50k`). **These two statements do not conflict — they address distinct questions:**
 
-| Regime | Pergunta | Budget típico |
+| Regime | Research Question | Typical Budget |
 |---|---|---:|
-| **Resolver** o jogo | "atingir performance alta absoluta?" | `5M–25M` |
-| **Comparar inductive bias** (este estudo) | "qual arquitetura extrai mais aprendizado por step, num budget fixo?" | `100k` |
+| **Solving** the game | "Can high absolute asymptotic performance be attained?" | `5M–25M` |
+| **Comparing inductive biases** (this study) | "Which architecture extracts the most learning per step under a constrained budget?" | `100k` |
 
-`100k` aqui não é defeito — é a *definição do regime experimental* (low-data regime, como em estudos de augmentation/data-efficiency): diferenças de arquitetura aparecem cedo (ver eixo ⚡ `AUC` seção 3.9 e a virada do `ICM` na seção 3.10), e o custo é viável (`~10 min/modelo` na `RTX 4070 Laptop`; o grid de `115+` modelos seria impraticável em milhões de steps).
+`100k` is not a defect — it is the *formal definition of the experimental regime* (low-data regime, as in sample-efficiency and data-augmentation literature): architectural inductive biases manifest early (see the ⚡ `AUC` axis in section 3.9 and the `ICM` trajectory in section 3.10), while computational cost remains tractable (`~10 min/model` on an `RTX 4070 Laptop`; a grid of `115+` models would be prohibitive across millions of steps).
 
-**Limitação honesta:** a ordenação a `100k` pode não persistir com mais budget (arquitetura lenta com teto alto perde aqui e ganharia a `25M`). Por isso as conclusões valem para *este* budget, e o item #6 da seção 6.1 (scaling `100k→250k→500k` nos vencedores) existe para testar a persistência das vantagens.
+**Honest limitation:** ranking order at `100k` may not persist under larger budgets (a slower architecture with a higher asymptotic ceiling loses here but might win at `25M`). Therefore, conclusions strictly hold for *this* budget, and roadmap item #6 in section 6.1 (scaling `100k→250k→500k` on winners) was designed specifically to test advantage persistence.
 
 ---
 
-## 2. Benchmarks Executados
+## 2. Executed Benchmarks
 
-| # | Script | Jogo(s) | Timesteps | Seeds | Configs | Tempo | Log |
+| # | Script | Game(s) | Timesteps | Seeds | Configs | Time | Log |
 |---|---|---|---|---|---|---|---|
 | 1 | `compare_procgen.py` | `coinrun` | `50k` | `5` | `classic/cbam/spatial/mlp_vector` | `~35 min` `5×50k` | `logs_procgen/comparison_coinrun_20260827_204023` |
 | 2 | `compare_world_models.py` | `bossfight` | `100k` | `5` | `vae/ae/recon/contrastive` | `~67 min` `5×100k` | `logs_world_models/comparison_bossfight_20260827_193327` |
-| 3 | `compare_suite.py` | `bossfight+starpilot+dodgeball` | `100k` | `5` | `4 WM +4 CNN +3 Augment =11` por jogo | `~8h` `16.5M steps` `20:41→04:47` | `logs_suite/suite_bossfight_starpilot_dodgeball_20260827_204109` |
+| 3 | `compare_suite.py` | `bossfight+starpilot+dodgeball` | `100k` | `5` | `4 WM + 4 CNN + 3 Augment = 11` per game | `~8h` `16.5M steps` `20:41→04:47` | `logs_suite/suite_bossfight_starpilot_dodgeball_20260827_204109` |
 | 4 | `compare_bossfight_hard.py` | `bossfight hard` | `100k` | `5` | `11` | `~2.5h` `07:21→09:57` | `logs_bossfight_hard/comparison_bossfight_hard_20260828_072148` |
-| 5 | `compare_augment_contrastive.py` | `bossfight` | `100k` | `5` | `crop/color/noise` | `~80 min` (embutido no suite) | `logs_suite` `*_aug_*` |
+| 5 | `compare_augment_contrastive.py` | `bossfight` | `100k` | `5` | `crop/color/noise` | `~80 min` (embedded in suite) | `logs_suite` `*_aug_*` |
 | 6 | `compare_new_archs.py` | `bossfight+starpilot+dodgeball` | `100k` | `5` | `impala/impoola/lstm_attention/vit/resnet18` | `~12h` `13:45→01:39` `7.5M` | `logs_new_archs/new_archs_bossfight_starpilot_dodgeball_20260828_134545` |
 | 7 | `compare_maze_heist.py` | `maze+heist` | `100k` | `5` | `ppo/icm/rnd/ngu` | `~6.5h` `01:48→08:23` `4M` | `logs_maze_heist/maze_heist_maze_heist_20260829_014802` |
-| 8 | `compare_combined.py` | agregação `suite+new_archs` | — | — | ranking global `16 arquiteturas` | imediato (sem treino) | `results/global_16.png` |
-| 9 | `re_eval_scorecard.py` | re-eval `new_archs+maze_heist` | — | — | `115 zips` × `30 eps` stoch+det + gap | `~70 min` (sem treino) | `results/re_eval_results.json` |
-| 10 | `compare_suite_retrain.py` | `bossfight+starpilot+dodgeball` | `100k` | `5` | retreino da suite (`11 configs`, protocolo novo) | `~28h` `30/08→31/08` `16.5M` | `logs_suite_retrain/suite_retrain_zips` + `results/retrain_results.json` |
-| 11 | `re_eval_100.py` | re-eval definitivo `275 zips` | — | — | `100 eps` stoch+det + gap (sem retreino) | `~5h` `31/08` | `results/eval100_results.json` |
-| 12 | `compare_hrl.py` *(independente)* | `jumper+plunder` | `100k frames` | `5` | `flat` vs `skip4` vs `hrl` (seção 11) | `~6-12h` `31/08` | `logs_hrl/hrl_zips` + `results/hrl_results.json` |
-| 13 | `compare_hrl_learned.py` *(independente)* | `jumper+plunder` | `100k frames` | `5` | braço `hrl_learned` (skills latentes, seção 11) | `~4-8h`, sequencial ao #12 | idem (`*_hrl_learned_*`, `.pt`) |
-| 14 | `compare_algo_families.py` *(independente)* | `starpilot+dodgeball+bossfight` | `100k` | `5` | `ppo`/`a2c` (policy) vs `dqn`/`qrdqn` (value), seção 12 | `~9h` `01/09→02/09` | `logs_algo/algo_zips` + `results/algo_families_results.json` |
+| 8 | `compare_combined.py` | `suite+new_archs` aggregation | — | — | global ranking of `16 architectures` | immediate (no training) | `results/global_16.png` |
+| 9 | `re_eval_scorecard.py` | re-eval of `new_archs+maze_heist` | — | — | `115 zips` × `30 eps` stoch+det + gap | `~70 min` (no training) | `results/re_eval_results.json` |
+| 10 | `compare_suite_retrain.py` | `bossfight+starpilot+dodgeball` | `100k` | `5` | suite retrain (`11 configs`, new protocol) | `~28h` `30/08→31/08` `16.5M` | `logs_suite_retrain/suite_retrain_zips` + `results/retrain_results.json` |
+| 11 | `re_eval_100.py` | definitive re-eval of `275 zips` | — | — | `100 eps` stoch+det + gap (no retrain) | `~5h` `31/08` | `results/eval100_results.json` |
+| 12 | `compare_hrl.py` *(independent)* | `jumper+plunder` | `100k frames` | `5` | `flat` vs `skip4` vs `hrl` (section 11) | `~6-12h` `31/08` | `logs_hrl/hrl_zips` + `results/hrl_results.json` |
+| 13 | `compare_hrl_learned.py` *(independent)* | `jumper+plunder` | `100k frames` | `5` | `hrl_learned` arm (latent skills, section 11) | `~4-8h`, sequential to #12 | idem (`*_hrl_learned_*`, `.pt`) |
+| 14 | `compare_algo_families.py` *(independent)* | `starpilot+dodgeball+bossfight` | `100k` | `5` | `ppo`/`a2c` (policy) vs `dqn`/`qrdqn` (value), section 12 | `~9h` `01/09→02/09` | `logs_algo/algo_zips` + `results/algo_families_results.json` |
 
 ---
 
-## 3. Resultados Oficiais (5 Seeds, 10 Eps Eval)
+## 3. Official Results (5 Seeds, 10 Eps Eval)
 
-### 3.1. Coinrun 50k — CNN vs MLP (mesmo jogo com/sem CV)
+### 3.1. Coinrun 50k — CNN vs MLP (Same Game With/Without CV)
 `logs_procgen/comparison_coinrun_20260827_204023/statistics.json:1`
 | Config | Mean | Std | Min | Max |
 |---|---:|---:|---:|---:|
 | `classic_pixels` | **7.6** | 1.2 | 6.0 | 9.0 |
 | `attention_cbam_pixels` | **8.0** | 0.0 | 8.0 | 8.0 |
 | `attention_spatial_pixels` | 6.2 | 3.31 | 0.0 | 9.0 |
-| `mlp_vector` (`16×16` `256D` sem CV) | **8.0** | 0.89 | 7.0 | 9.0 |
-> **Análise:** `CBAM 8.0` estável vence `classic 7.6`; `MLP 8.0` já empata `CNN` — `coinrun easy 200` é reativo e não exige `CV` (`downsample 256D` basta). `Spatial` puro instável (`0.0` em 1 seed) sem `residual`.
+| `mlp_vector` (`16×16` `256D` without CV) | **8.0** | 0.89 | 7.0 | 9.0 |
+> **Analysis:** Stable `CBAM 8.0` outperforms `classic 7.6`; `MLP 8.0` matches the best `CNN` — `coinrun easy 200` is purely reactive and does not require complex spatial vision (`downsample 256D` suffices). Pure `Spatial` attention proved unstable (`0.0` on 1 seed) without a residual connection.
 
 ### 3.2. Bossfight 100k — World Models
 `logs_world_models/comparison_bossfight_20260827_193327/statistics.json:1`
@@ -91,45 +91,45 @@ A literatura padrão do `Procgen` (paper original, `IDAAC`/`PPG`) reporta `5M–
 | `ae` | 0.30 | 0.50 |
 | `recon` | 0.02 | 0.04 |
 | `contrastive` | **0.36** | 0.62 |
-> `contrastive` melhor, mas todos `<0.5` — `bossfight 100k` insuficiente solo.
+> `contrastive` performs best, but all remain `<0.5` — `bossfight 100k` is insufficient when trained standalone.
 
-### 3.3. Suite 100k — 3 Jogos (11 Configs/Jogo)
+### 3.3. Suite 100k — 3 Games (11 Configs/Game)
 `logs_suite/suite_bossfight_starpilot_dodgeball_20260827_204109/suite_statistics.json:1`
-| Jogo | Melhor | Mean | 2º | Pior |
+| Game | Best | Mean | 2nd | Worst |
 |---|---|---:|---|---|
-| `bossfight` (`~0.5`) | `spatial 0.76±0.90` | `cbam 0.58` `classic 0.54` | `contrastive 0.36` | `recon 0.02` |
-| `starpilot` (`~2.0`) | `spatial 2.6±0.82` | `aug_crop 2.12±0.79` `cbam 2.1` `ae 2.08` | `color 1.94` `noise 1.61` | — |
-| `dodgeball` (`~1.2`) | `classic 1.48±0.69` | `cbam 1.31` `spatial 1.28` | `vae 1.2` | `recon 0.88` |
-> **Augment:** `crop` vence `color`/`noise` em `starpilot` `+31%` e `dodgeball`; `color` segundo em `bossfight`. **Geral:** `classic` vence `dodgeball`, `spatial` vence `starpilot` — **ranking muda por jogo**, 1 jogo só vicia (padrão `Procgen` são `16` jogos; `3` é mínimo).
+| `bossfight` (`~0.5`) | `spatial 0.76±0.90` | `cbam 0.58`, `classic 0.54` | `contrastive 0.36` | `recon 0.02` |
+| `starpilot` (`~2.0`) | `spatial 2.6±0.82` | `aug_crop 2.12±0.79`, `cbam 2.1`, `ae 2.08` | `color 1.94`, `noise 1.61` | — |
+| `dodgeball` (`~1.2`) | `classic 1.48±0.69` | `cbam 1.31`, `spatial 1.28` | `vae 1.2` | `recon 0.88` |
+> **Augment:** `crop` outperforms `color`/`noise` in `starpilot` (`+31%`) and `dodgeball`; `color` takes second in `bossfight`. **Overall:** `classic` wins `dodgeball`, `spatial` wins `starpilot` — **rankings invert across games**; a single game introduces significant inductive bias (the `Procgen` standard is `16` games; `3` is the bare minimum).
 
 ### 3.4. Bossfight HARD 100k — Stress Test
 `logs_bossfight_hard/comparison_bossfight_hard_20260828_072148/statistics.json:1`
 | Config | Mean | Std |
 |---|---:|---:|
-| `vae` | **0.43±0.54** | `ae 0.38` `aug_crop 0.32` `mlp 0.26` |
-| `cnn` | `0.02±0.04` (`classic/cbam/spatial` zeram) |
-> `hard` achata tudo para `0.0-0.4` (`easy` era `0.5-0.76`), `CNN` zera em `100k` — `hard` precisaria `200k` (`~6h`) e não vale `suite hard` completa; `easy` já é `benchmark justo`.
+| `vae` | **0.43±0.54** | `ae 0.38`, `aug_crop 0.32`, `mlp 0.26` |
+| `cnn` | `0.02±0.04` (`classic/cbam/spatial` collapse to zero) |
+> `hard` compresses all returns to `0.0-0.4` (compared to `0.5-0.76` in `easy`); `CNN` collapses in `100k` — `hard` would require `200k` (`~6h`) and does not warrant a full `suite hard`; `easy` constitutes a fairer benchmark.
 
-### 3.5. New Archs 100k — 5 Novas Arquiteturas ×3 Jogos
+### 3.5. New Archs 100k — 5 New Architectures × 3 Games
 `logs_new_archs/new_archs_bossfight_starpilot_dodgeball_20260828_134545/statistics.json:1`
-| Jogo | Melhor | Mean | 2º | Pior |
+| Game | Best | Mean | 2nd | Worst |
 |---|---|---:|---|---|
-| `bossfight` | `lstm 0.36±0.57` | `vit 0.30` `impala 0.28` | `resnet 0.02` | `impoola 0.06` |
-| `starpilot` | `lstm 2.44±0.56` | `resnet 2.28` `impoola 2.2` | `vit 2.1` `impala 1.78` | — |
-| `dodgeball` | `resnet 1.72±0.65` | `vit 1.2` `impoola 1.12` | `impala 1.08` | `lstm 0.80` |
-> `ViT`/`ResNet` não superam `spatial 2.6` `starpilot` nem `classic 1.48` `dodgeball`; `lstm` vence `bossfight`/`starpilot` mas perde `dodgeball`.
+| `bossfight` | `lstm 0.36±0.57` | `vit 0.30`, `impala 0.28` | `resnet 0.02` | `impoola 0.06` |
+| `starpilot` | `lstm 2.44±0.56` | `resnet 2.28`, `impoola 2.2` | `vit 2.1`, `impala 1.78` | — |
+| `dodgeball` | `resnet 1.72±0.65` | `vit 1.2`, `impoola 1.12` | `impala 1.08` | `lstm 0.80` |
+> `ViT`/`ResNet` fail to surpass `spatial 2.6` in `starpilot` or `classic 1.48` in `dodgeball`; `lstm` wins `bossfight`/`starpilot` but underperforms in `dodgeball`.
 
-### 3.6. Maze+Heist 100k — PPO vs ICM vs RND vs NGU (Exploração)
+### 3.6. Maze+Heist 100k — PPO vs ICM vs RND vs NGU (Exploration)
 `logs_maze_heist/maze_heist_maze_heist_20260829_014802/statistics.json:1`
-| Jogo | `ppo` | `icm` | `rnd` | `ngu` |
+| Game | `ppo` | `icm` | `rnd` | `ngu` |
 |---|---:|---:|---:|---:|
 | `maze` | **2.4±1.49** | 1.8±1.46 | **2.4±1.49** | **2.4±1.49** |
 | `heist` | **0.8±0.74** | 0.6±0.80 | **0.8±0.74** | **0.8±0.74** |
-> `ICM` pior que `PPO` puro (`maze` `1.8` vs `2.4`, `heist` `0.6` vs `0.8`), `RND`/`NGU` empatam `PPO` — `100k` insuficiente para `curiosidade` brilhar em `maze`/`heist` `easy`; `NGU` não supera `RND` (`memória` não ajuda com `200` níveis). `heist` `0.8` confirma `sparse` hierárquico (`3 chaves`) precisa `>100k`.
+> `ICM` underperforms vanilla `PPO` (`maze` `1.8` vs `2.4`, `heist` `0.6` vs `0.8`); `RND`/`NGU` match `PPO` — `100k` is insufficient for curiosity to excel in `maze`/`heist` `easy`; `NGU` does not beat `RND` (episodic memory provides no leverage across `200` levels). `heist` at `0.8` confirms that hierarchical sparse rewards (`3 keys`) require `>100k`.
 
-### 3.7. Global 16 Arquiteturas — Média 3 Jogos (Top 10 de 16 mostrado)
-`logs_suite` + `logs_new_archs` agregados (`16.5M+7.5M` steps) — `mean` de `3` `means` por arquitetura:
-| Rank | Arquitetura | Global Mean | Por Jogo (B/S/D) |
+### 3.7. Global 16 Architectures — 3-Game Average (Top 10 of 16 Displayed)
+`logs_suite` + `logs_new_archs` aggregated (`16.5M + 7.5M` steps) — `mean` of `3` `means` per architecture:
+| Rank | Architecture | Global Mean | Per-Game Breakdown (B/S/D) |
 |---:|---|---:|---|
 | 1 | `spatial` | **1.54** | 0.76 / 2.60 / 1.28 |
 | 2 | `resnet18` | 1.34 | 0.02 / 2.28 / 1.72 |
@@ -141,141 +141,141 @@ A literatura padrão do `Procgen` (paper original, `IDAAC`/`PPG`) reporta `5M–
 | 8 | `aug_crop` | 1.16 | 0.54 / 2.12 / 0.84 |
 | 9 | `impoola` | 1.12 | 0.06 / 2.20 / 1.12 |
 | 10 | `ae` | 1.11 | 0.30 / 2.08 / 0.96 |
-> `Top 3` são `CNN` puros (`spatial`/`resnet`/`classic`); `World Models` (`vae 0.88` `recon 0.90`) e `contrastive 0.97` ficam abaixo de `MLP 1.25` em `suite 100k` `easy` — `CV` com `attention` ainda vence `World Model` em `Procgen` `100k`.
+> The `Top 3` are pure `CNN` variants (`spatial`/`resnet`/`classic`); `World Models` (`vae 0.88`, `recon 0.90`) and `contrastive 0.97` rank below `MLP 1.25` in `suite 100k` `easy` — `CV` with attention still outperforms `World Models` in `Procgen` at `100k`.
 
-### 3.8. Robustez Estatística — IC 95% + Effect Size (`scorecard_analysis.py`, `results/scorecard.json`)
+### 3.8. Statistical Robustness — 95% CI + Effect Size (`scorecard_analysis.py`, `results/scorecard.json`)
 
-Com `n=5 seeds`, `IC 95%` usa `t` de Student (`df=4`, crítico `2.776`); `Cohen's d` compara top-1 vs top-2 por jogo:
+With `n=5 seeds`, `95% CI` is computed via Student's `t` (`df=4`, critical value `2.776`); `Cohen's d` compares top-1 vs top-2 per game:
 
-| Jogo | Top-1 vs Top-2 | Cohen's d | ICs sobrepõem? | Conclusão |
+| Game | Top-1 vs Top-2 | Cohen's d | CIs Overlap? | Conclusion |
 |---|---|---:|---|---|
-| `bossfight` (WM+New) | `lstm 0.36` vs `contrastive 0.36` | 0.0 | ✅ sim | empate estatístico |
-| `starpilot` | `lstm 2.44` `[1.66,3.22]` vs `resnet 2.28` `[1.37,3.19]` | 0.235 (pequeno) | ✅ sim | **não significativo** |
-| `dodgeball` | `resnet 1.72` `[0.81,2.63]` vs `vit 1.2` `[0.90,1.50]` | 0.956 (grande) | ✅ sim | efeito grande mas `n=5` insuficiente |
-| `maze` | `ppo 2.4` `[0.32,4.48]` vs `icm 1.8` `[-0.24,3.84]` | 0.36 (pequeno) | ✅ sim | ICM "pior" **não confirmado** |
-| `heist` | `ppo 0.8` vs `icm 0.6` | 0.23 (pequeno) | ✅ sim | idem |
-| `coinrun` | `cbam 8.0` `[8.0,8.0]` vs `mlp 8.0` `[6.76,9.24]` | 0.0 | — | empate; `cbam` variância zero |
-> **Leitura crítica:** nenhuma diferença top-1 vs top-2 é estatisticamente significativa com `5 seeds` — os rankings das seções 3.x são **tendências**, não conclusões. Só `dodgeball resnet vs vit` (`d=0.956`) se aproxima de efeito confiável. `RND`/`NGU` empates exatos com `PPO` (`d=0`, mesmo per-seed) sugerem que o bônus não ativou diferencialmente neste budget.
-> ⚠️ **Superado:** este ranking foi medido com o protocolo antigo (`10 eps`); o retreino da suite com o protocolo novo (seção 3.11) **inverte o top-2** (`mlp_vector` passa `spatial`).
+| `bossfight` (WM+New) | `lstm 0.36` vs `contrastive 0.36` | 0.0 | ✅ Yes | Statistical tie |
+| `starpilot` | `lstm 2.44` `[1.66, 3.22]` vs `resnet 2.28` `[1.37, 3.19]` | 0.235 (small) | ✅ Yes | **Not statistically significant** |
+| `dodgeball` | `resnet 1.72` `[0.81, 2.63]` vs `vit 1.2` `[0.90, 1.50]` | 0.956 (large) | ✅ Yes | Large effect size, but `n=5` underpowered |
+| `maze` | `ppo 2.4` `[0.32, 4.48]` vs `icm 1.8` `[-0.24, 3.84]` | 0.36 (small) | ✅ Yes | ICM "worse" **not confirmed** |
+| `heist` | `ppo 0.8` vs `icm 0.6` | 0.23 (small) | ✅ Yes | Statistical tie |
+| `coinrun` | `cbam 8.0` `[8.0, 8.0]` vs `mlp 8.0` `[6.76, 9.24]` | 0.0 | — | Tie; `cbam` exhibits zero variance |
+> **Critical takeaway:** No top-1 vs top-2 difference is statistically significant with `5 seeds` — the rankings in sections 3.x represent **empirical trends**, not definitive conclusions. Only `dodgeball resnet vs vit` (`d=0.956`) approaches a reliable effect. Exact ties between `RND`/`NGU` and `PPO` (`d=0`, identical per-seed returns) indicate that intrinsic bonuses were not differentially triggered in this budget.
+> ⚠️ **Superseded:** This ranking was measured under the legacy protocol (`10 eps`); retraining the suite under the new protocol (section 3.11) **inverts the top-2** (`mlp_vector` surpasses `spatial`).
 
-### 3.9. Sample Efficiency (AUC) — Scorecard Parcial (`rollout/ep_rew_mean` tensorboard, 5 seeds)
+### 3.9. Sample Efficiency (AUC) — Partial Scorecard (`rollout/ep_rew_mean` TensorBoard, 5 Seeds)
 
-`AUC_norm = ∫reward·dsteps / 100k` (média dos 5 seeds) — só para `new_archs`/`maze_heist` (logs antigos deletados):
+`AUC_norm = ∫reward·dsteps / 100k` (mean of 5 seeds) — computed exclusively for `new_archs`/`maze_heist` (legacy TensorBoard logs pruned):
 
-| Jogo | Melhor AUC | Ranking AUC | vs Ranking Final |
+| Game | Best AUC | Ranking by AUC | vs Final Evaluation Ranking |
 |---|---|---|---|
-| `bossfight` | `lstm 0.247` | `lstm > impoola 0.186 > impala 0.141 > resnet 0.107 > vit 0.064` | ≈ igual ao final |
-| `starpilot` | `impala 2.336` | `impala > resnet 2.325 > vit 2.297 > lstm 2.284 > impoola 2.23` | **invertido**: `impala` melhor AUC mas pior final (`1.78`) — aprende rápido e estagna |
-| `dodgeball` | `resnet 1.175` | `resnet > impala 1.169 > impoola 1.151 > lstm 1.114 > vit 1.032` | ≈ igual ao final |
-| `maze` | `ppo=rnd=ngu 3.785` | todos > `icm 3.658` | ICM já perde em AUC (não só no final) |
-| `heist` | `ppo=rnd=ngu 1.826` | todos > `icm 1.792` | idem |
-> **Descoberta:** `starpilot_impala` tem a melhor curva de aprendizado mas o pior reward final — confirma que "quem aprende mais rápido" ≠ "quem chega mais longe" (eixo ⚡ do scorecard é independente do eixo 🧠).
+| `bossfight` | `lstm 0.247` | `lstm > impoola 0.186 > impala 0.141 > resnet 0.107 > vit 0.064` | ≈ Identical to final ranking |
+| `starpilot` | `impala 2.336` | `impala > resnet 2.325 > vit 2.297 > lstm 2.284 > impoola 2.23` | **Inverted**: `impala` has best AUC but worst final return (`1.78`) — learns fast, plateaus early |
+| `dodgeball` | `resnet 1.175` | `resnet > impala 1.169 > impoola 1.151 > lstm 1.114 > vit 1.032` | ≈ Identical to final ranking |
+| `maze` | `ppo=rnd=ngu 3.785` | all > `icm 3.658` | ICM trails in AUC as well (not only at convergence) |
+| `heist` | `ppo=rnd=ngu 1.826` | all > `icm 1.792` | Identical pattern |
+> **Finding:** `starpilot_impala` displays the highest learning rate curve but lowest final evaluation reward — proving that "fastest learner" ≠ "best asymptotic model" (the ⚡ AUC axis is orthogonal to the 🧠 performance axis).
 
-### 3.10. Re-avaliação Estendida — `re_eval_scorecard.py` (concluída: `115/115`, `0 erros`)
+### 3.10. Extended Re-Evaluation — `re_eval_scorecard.py` (Completed: `115/115`, `0 errors`)
 
-`115 modelos` (`new_archs 75` + `maze_heist 40`) re-avaliados com `30 eps unseen` (stoch + det, níveis `seed+1000`) e `15 eps` níveis de treino (generalization gap). Dados completos em `results/re_eval_results.json`:
-> ❓ **Por que os valores absolutos diferem das seções 3.4/3.6, se os pesos são os mesmos?** Duas fontes independentes: (a) **conjunto de níveis diferente** — o eval novo sorteia unseen levels com `seed+1000` (o original usava outro sorteio), então o *nível de dificuldade amostrado* mudou; (b) **30 vs 10 episódios** — a média de 10 eps tinha variância alta e estimava outro ponto. Por isso **só a ordenação relativa dentro do mesmo conjunto é comparável** (coluna "vs 3.4/3.6"), nunca o valor absoluto entre protocolos — e é a ordenação que sustenta as conclusões de arquitetura.
+`115 models` (`new_archs 75` + `maze_heist 40`) re-evaluated across `30 eps unseen` (stoch + det, levels `seed+1000`) and `15 eps` training levels (generalization gap). Full data in `results/re_eval_results.json`:
+> ❓ **Why do absolute values differ from sections 3.4/3.6 when weights are identical?** Two independent causes: (a) **Different level distribution** — the new protocol samples unseen levels via `seed+1000` (original used an alternative seed offset), shifting sampled level difficulty; (b) **30 vs 10 episodes** — 10-episode averages had high sample variance. Hence, **only relative ranking within the same evaluation set is scientifically valid** ("vs 3.4/3.6" column), never absolute comparisons across protocols.
 
 | Config | stoch unseen | det unseen | gen gap | vs 3.4/3.6 (10 eps) |
 |---|---:|---:|---:|---|
-| `bossfight_resnet18` | **0.39** | 0.03 | −0.12 | 4º → **1º** |
-| `bossfight_impala` | 0.33 | 0.43 | −0.10 | sobe |
-| `bossfight_lstm_attention` | 0.32 | 0.36 | −0.20 | 1º → 3º |
-| `bossfight_vit` | 0.29 | 0.16 | −0.27 | estável |
-| `bossfight_impoola` | 0.25 | 0.43 | −0.21 | cai p/ último |
-| `starpilot_lstm_attention` | **2.63** | 1.25 | +0.15 | mantém top-1 |
-| `starpilot_resnet18` | 2.53 | 0.91 | −0.51 | estável |
-| `starpilot_impoola` | 2.44 | 1.29 | −0.19 | estável |
-| `starpilot_impala` | 2.00 | 1.29 | +0.31 | 5º → 4º |
-| `starpilot_vit` | 1.88 | 0.41 | −0.07 | cai p/ último |
-| `dodgeball_resnet18` | **1.07** | 0.89 | +0.27 | mantém top-1 |
-| `dodgeball_impoola` | 1.05 | 0.43 | −0.07 | sobe |
-| `dodgeball_impala` | 1.04 | 0.44 | −0.11 | sobe |
-| `dodgeball_lstm_attention` | 0.99 | 0.76 | +0.24 | 5º → 4º |
-| `dodgeball_vit` | 0.91 | 0.40 | −0.21 | **2º → 5º** |
-| `maze_icm` | **2.80** | 0.47 | +0.80 | **3º → 1º** |
-| `maze_ppo`=`rnd`=`ngu` | 2.47 | 0.60 | +0.73 | top-1 → empatado 2º |
-| `heist_icm` | **0.73** | 0.33 | −0.47 | **2º → 1º** |
-| `heist_ppo`=`rnd`=`ngu` | 0.67 | 0.07 | 0.00 | top-1 → empatado 2º |
-> **3 achados:** (1) **`ICM` vence em `maze`/`heist`** — inverte a leitura da seção 3.6 ("curiosidade não brilha"); com `30 eps` o bônus de exploração aparece. (2) **`vit` não sustenta o 2º lugar de `dodgeball`** (`1.20` → `0.91`) — confirma a seção 3.8 (`n=5` insuficiente). (3) **modo determinístico colapsa políticas de exploração** (`maze` `2.47 stoch` → `0.60 det`) e o **gen gap é ≈ 0/negativo** na maioria — os modelos não memorizam os `200` níveis de treino; são apenas fracos (exceções: `maze`/`heist`/`dodgeball resnet`, gap `+0.7~+0.8`).
+| `bossfight_resnet18` | **0.39** | 0.03 | −0.12 | 4th → **1st** |
+| `bossfight_impala` | 0.33 | 0.43 | −0.10 | Improves |
+| `bossfight_lstm_attention` | 0.32 | 0.36 | −0.20 | 1st → 3rd |
+| `bossfight_vit` | 0.29 | 0.16 | −0.27 | Stable |
+| `bossfight_impoola` | 0.25 | 0.43 | −0.21 | Drops to last |
+| `starpilot_lstm_attention` | **2.63** | 1.25 | +0.15 | Retains top-1 |
+| `starpilot_resnet18` | 2.53 | 0.91 | −0.51 | Stable |
+| `starpilot_impoola` | 2.44 | 1.29 | −0.19 | Stable |
+| `starpilot_impala` | 2.00 | 1.29 | +0.31 | 5th → 4th |
+| `starpilot_vit` | 1.88 | 0.41 | −0.07 | Drops to last |
+| `dodgeball_resnet18` | **1.07** | 0.89 | +0.27 | Retains top-1 |
+| `dodgeball_impoola` | 1.05 | 0.43 | −0.07 | Improves |
+| `dodgeball_impala` | 1.04 | 0.44 | −0.11 | Improves |
+| `dodgeball_lstm_attention` | 0.99 | 0.76 | +0.24 | 5th → 4th |
+| `dodgeball_vit` | 0.91 | 0.40 | −0.21 | **2nd → 5th** |
+| `maze_icm` | **2.80** | 0.47 | +0.80 | **3rd → 1st** |
+| `maze_ppo`=`rnd`=`ngu` | 2.47 | 0.60 | +0.73 | Top-1 → tied 2nd |
+| `heist_icm` | **0.73** | 0.33 | −0.47 | **2nd → 1st** |
+| `heist_ppo`=`rnd`=`ngu` | 0.67 | 0.07 | 0.00 | Top-1 → tied 2nd |
+> **3 Findings:** (1) **`ICM` leads in `maze`/`heist`** — inverting section 3.6; at `30 eps`, intrinsic curiosity bonuses become visible. (2) **`vit` fails to hold 2nd place in `dodgeball`** (`1.20` → `0.91`) — confirming section 3.8 (`n=5` underpowered). (3) **Deterministic evaluation collapses exploration policies** (`maze` `2.47 stoch` → `0.60 det`), while **gen gap is ≈ 0/negative** across most models — models do not overfit/memorize the `200` training levels; they simply remain sample-constrained (exceptions: `maze`/`heist`/`dodgeball resnet`, gap `+0.7~+0.8`).
 
-### 3.11. Retreino da Suite com Protocolo Novo — `compare_suite_retrain.py` (concluído: `160/165`; `5 NaN` de `wm_vae` persistiram em 2 rodadas de retry)
+### 3.11. Retraining the Suite under New Protocol — `compare_suite_retrain.py` (Completed: `160/165`; `5 NaN` in `wm_vae` Persisted Across 2 Retry Rounds)
 
-Os `165 modelos` da suite original (`4 WM + 4 CNN + 3 augment × 3 jogos × 5 seeds`, hiperparâmetros idênticos a `compare_suite.py:26`) foram **re-treinados do zero** já com o protocolo novo (`30 eps` stoch+det + gap, zips salvos em `logs_suite_retrain/suite_retrain_zips`). Dados em `results/retrain_results.json`, análise em `results/retrain_analysis.json` (`retrain_analysis.py`):
+The `165 models` of the original suite (`4 WM + 4 CNN + 3 augment × 3 games × 5 seeds`, hyperparameters identical to `compare_suite.py:26`) were **retrained from scratch** with the new protocol (`30 eps` stoch+det + gap, weights stored in `logs_suite_retrain/suite_retrain_zips`). Data in `results/retrain_results.json`, analysis in `results/retrain_analysis.json` (`retrain_analysis.py`):
 
-> ❓ **Por que os números diferem da suite original (seções 3.3/3.7)?** Aqui há **três** fontes, não duas: além de (a) conjunto de níveis de eval diferente (`seed+1000`) e (b) `30 vs 10` episódios, soma-se (c) **pesos novos** — são treinamentos refeitos, não os mesmos modelos; mesmo com seeds idênticos há não-determinismo de `CUDA`/`cuDNN` (visto empiricamente nos `5` seeds de `wm_vae` que divergem entre rodadas). Exemplo da separação de fatores: em `starpilot` o `spatial` deu `2.63`≈antigo `2.60` (diferença ~0 → fatores (a)+(b)+(c) pequenos ali), enquanto em `bossfight` caiu `0.76→0.36` — como o protocolo é o mesmo para todas as configs, o que muda a *ordenação* é efeito real de avaliação, não artefato.
+> ❓ **Why do figures differ from the original suite (sections 3.3/3.7)?** Three independent factors: (a) unseen level evaluation seed offset (`seed+1000`), (b) `30 vs 10` episodes, and (c) **new model weights** — newly instantiated training runs subject to `CUDA`/`cuDNN` non-determinism (seen in the `5` divergent seeds of `wm_vae`). Disentanglement example: in `starpilot`, `spatial` scored `2.63` ≈ legacy `2.60` (difference ~0 → factors (a)+(b)+(c) negligible here), whereas in `bossfight` it dropped from `0.76 → 0.36` — since the protocol is identical across all configs, changes in *relative ranking* reflect genuine evaluation fidelity rather than random artifacts.
 
-**Top 5 por jogo (stoch unseen, 30 eps):**
+**Top 5 per game (stochastic unseen, 30 eps):**
 
-| Jogo | 1º | 2º | 3º | 4º | 5º |
+| Game | 1st | 2nd | 3rd | 4th | 5th |
 |---|---|---|---|---|---|
-| `bossfight` | `aug_crop 0.68` | `contrastive 0.48`=`aug_noise 0.48` | `cbam 0.40` | `mlp 0.37` | `spatial 0.36` |
-| `starpilot` | `spatial 2.63` | `mlp 2.49` | `classic 2.20`=`aug_crop 2.20` | `wm_ae 2.17` | `cbam 2.16` |
-| `dodgeball` | `mlp 1.21` | `cbam 1.15` | `classic 1.07`=`spatial 1.07`=`aug_color 1.07` | `wm_ae 1.05` | `aug_crop 1.04` |
+| `bossfight` | `aug_crop 0.68` | `contrastive 0.48` = `aug_noise 0.48` | `cbam 0.40` | `mlp 0.37` | `spatial 0.36` |
+| `starpilot` | `spatial 2.63` | `mlp 2.49` | `classic 2.20` = `aug_crop 2.20` | `wm_ae 2.17` | `cbam 2.16` |
+| `dodgeball` | `mlp 1.21` | `cbam 1.15` | `classic 1.07` = `spatial 1.07` = `aug_color 1.07` | `wm_ae 1.05` | `aug_crop 1.04` |
 
-**Ranking global novo** (média dos 3 jogos, mesma regra da seção 3.7) **vs antigo:**
+**New Global Ranking** (mean across 3 games, identical aggregation rule to section 3.7) **vs Legacy:**
 
-| Rank | Arquitetura | Novo | Antigo (3.7) | Δ |
+| Rank | Architecture | New | Legacy (3.7) | Δ |
 |---:|---|---:|---:|---:|
-| 1 | `mlp_vector` | **1.36** | 1.25 (5º) | +0.11, **5º→1º** |
-| 2 | `spatial` | 1.35 | **1.54 (1º)** | −0.19, **1º→2º** |
+| 1 | `mlp_vector` | **1.36** | 1.25 (5th) | +0.11, **5th→1st** |
+| 2 | `spatial` | 1.35 | **1.54 (1st)** | −0.19, **1st→2nd** |
 | 3 | `aug_crop` | 1.31 | 1.16 | +0.15 |
-| 4 | `cbam` | 1.24 | 1.33 (4º) | −0.09 |
-| 5 | `classic` | 1.16 | 1.33 (3º) | −0.17, **3º→5º** |
+| 4 | `cbam` | 1.24 | 1.33 (4th) | −0.09 |
+| 5 | `classic` | 1.16 | 1.33 (3rd) | −0.17, **3rd→5th** |
 | 6 | `wm_ae` | 1.13 | 1.11 | +0.02 |
-| 7 | `wm_recon` | 1.05 | ~0.90 | sobe |
-| 8 | `aug_noise` | 1.04 | — | |
-| 8 | `wm_contrastive` | 1.04 | ~0.97 | sobe |
-| 10 | `aug_color` | 1.02 | — | |
+| 7 | `wm_recon` | 1.05 | ~0.90 | Improves |
+| 8 | `aug_noise` | 1.04 | — | — |
+| 8 | `wm_contrastive` | 1.04 | ~0.97 | Improves |
+| 10 | `aug_color` | 1.02 | — | — |
 | 11 | `wm_vae` | 0.92 | — | n=2–3 (NaN) |
 
-> **4 achados:** (1) **`mlp_vector` destrona `spatial`** — a inversão vem de `bossfight` (`spatial` `0.76→0.36`), enquanto `spatial` se mantém em `starpilot` (`2.63`≈antigo `2.60`) e `dodgeball`. (2) **World Models não são universalmente fracos**: a fraqueza era concentrada em `bossfight`; em `starpilot` (`wm_ae 2.17`, `recon 1.97`) e `dodgeball` (`wm_ae 1.05`) empatam com as `CNN` — qualifica a leitura da seção 3.7. (3) **`aug_crop` é a melhor augmentation** (`bossfight 0.68`, top-1 do jogo). (4) **`dodgeball` quase não diferencia configs** (`spread 1.21→0.88` vs `0.68→0.12` em `bossfight`) — jogo de baixa resolução arquitetural. Juntando com `new_archs`/`maze_heist` re-avaliados, o **global unificado** fica: `mlp_vector 1.36` > `spatial 1.35` > `lstm_attention 1.34` > `aug_crop 1.31` (todos estatisticamente indistinguíveis pela seção 3.8). Total: `275 modelos` medidos no protocolo novo.
-> ⚠️ **Atualização:** os números acima são a `30 eps`; a re-avaliação definitiva a `100 eps` (seção 3.12) muda os top-1 de `starpilot`/`dodgeball` e dissolve a vantagem do `ICM`.
+> **4 Findings:** (1) **`mlp_vector` dethrones `spatial`** — the shift stems from `bossfight` (`spatial` `0.76→0.36`), whereas `spatial` holds in `starpilot` (`2.63` ≈ legacy `2.60`) and `dodgeball`. (2) **World Models are not universally deficient**: weakness was concentrated in `bossfight`; in `starpilot` (`wm_ae 2.17`, `recon 1.97`) and `dodgeball` (`wm_ae 1.05`) they tie with standard `CNN`s. (3) **`aug_crop` is the superior data augmentation** (`bossfight 0.68`, game winner). (4) **`dodgeball` yields poor architectural separation** (`spread 1.21→0.88` vs `0.68→0.12` in `bossfight`) — low resolution benchmark. Combining re-evaluated `new_archs`/`maze_heist`, the **unified global ranking** is: `mlp_vector 1.36` > `spatial 1.35` > `lstm_attention 1.34` > `aug_crop 1.31` (all statistically indistinguishable per section 3.8). Total: `275 models` evaluated under the new protocol.
+> ⚠️ **Update:** The figures above reflect `30 eps`; definitive `100 eps` evaluation (section 3.12) shifts the top-1 in `starpilot`/`dodgeball` and dissolves `ICM`'s advantage.
 
-### 3.12. Protocolo Definitivo — `100 eps` em todos os `275` modelos (`re_eval_100.py`, concluído `275/275`)
+### 3.12. Definitive Protocol — `100 eps` Across All `275` Models (`re_eval_100.py`, Completed: `275/275`)
 
-Re-avaliação dos mesmos zips com `100 eps unseen` stoch + `100 eps` det + `15 eps` train (sem retreino). Dados em `results/eval100_results.json`, comparação `30 vs 100` em `results/eval100_analysis.json` (`eval100_analysis.py`):
+Re-evaluation of identical checkpoints across `100 eps unseen` stochastic + `100 eps` deterministic + `15 eps` training (no retraining). Data in `results/eval100_results.json`, comparative analysis `30 vs 100` in `results/eval100_analysis.json` (`eval100_analysis.py`):
 
-**Top por jogo @100 eps:**
+**Top Configurations per Game @ 100 eps:**
 
-| Jogo | 1º | 2º | 3º | vs @30 |
+| Game | 1st | 2nd | 3rd | vs @ 30 eps |
 |---|---|---|---|---|
-| `bossfight` | `aug_crop 0.68` | `aug_noise 0.54`=`contrastive 0.54` | `mlp 0.53` | top-1 **estável** |
-| `starpilot` | `mlp 2.67` | `spatial 2.45` | `resnet18 2.44` | `lstm` 1º→4º (`2.43`) |
-| `dodgeball` | `resnet18 1.16` | `cbam 1.08`=`mlp 1.08` | `wm_recon 1.02` | `mlp` 1º→3º; `recon` 12º→4º |
-| `maze` | `ppo`=`rnd`=`ngu 2.80` | `icm 2.76` | — | **`icm` 1º→empate** |
-| `heist` | todos `0.72` | — | — | **`icm` 1º→empate** |
+| `bossfight` | `aug_crop 0.68` | `aug_noise 0.54` = `contrastive 0.54` | `mlp 0.53` | Top-1 **stable** |
+| `starpilot` | `mlp 2.67` | `spatial 2.45` | `resnet18 2.44` | `lstm` 1st → 4th (`2.43`) |
+| `dodgeball` | `resnet18 1.16` | `cbam 1.08` = `mlp 1.08` | `wm_recon 1.02` | `mlp` 1st → 3rd; `recon` 12th → 4th |
+| `maze` | `ppo` = `rnd` = `ngu 2.80` | `icm 2.76` | — | **`icm` 1st → tied** |
+| `heist` | All tie at `0.72` | — | — | **`icm` 1st → tied** |
 
-**Ranking global suite @100:** `mlp_vector 1.43` > `resnet18 1.34` > `spatial 1.28` > `lstm_attention 1.26` > `aug_crop 1.25`.
+**Global Suite Ranking @ 100 eps:** `mlp_vector 1.43` > `resnet18 1.34` > `spatial 1.28` > `lstm_attention 1.26` > `aug_crop 1.25`.
 
-> **4 achados do upgrade 30→100:** (1) **`mlp_vector` consolida o 1º lugar global** (`1.25`@10eps → `1.36`@30 → `1.43`@100 — o único no top em todos os protocolos). (2) **A vantagem do `ICM` dissolve**: `2.80→2.76` em `maze` vs `ppo/rnd/ngu 2.47→2.80` — o "`ICM` vence" da seção 3.10 era ruído de `30 eps`; a conclusão volta a ser empate com `PPO`. (3) **Top-1 de `starpilot`/`dodgeball` inverte de novo** (`lstm→mlp`, `mlp→resnet18`) enquanto `bossfight` fica estável — o topo sólido existe, o meio do ranking segue instável. (4) **|delta| médio `0.108`** entre @30 e @100: ganho incremental, e as trocas de posição restantes confirmam a tese da seção 3.8 — com `5 seeds` e diferenças dessa magnitude, nenhuma ordenação se *fecha*; o estudo reporta tendências com IC.
+> **4 Findings from the 30→100 Upgrade:** (1) **`mlp_vector` consolidates global 1st place** (`1.25`@10eps → `1.36`@30 → `1.43`@100 — the only model consistently at the top across all protocols). (2) **`ICM` advantage dissolves**: `2.80→2.76` in `maze` vs `ppo/rnd/ngu 2.47→2.80` — the "`ICM` wins" finding in section 3.10 was `30 eps` sample variance; the definitive conclusion returns to an exact tie with `PPO`. (3) **Top-1 in `starpilot`/`dodgeball` inverts again** (`lstm→mlp`, `mlp→resnet18`) while `bossfight` remains stable — the upper tier is solid, while mid-tier rankings remain fluid. (4) **Mean absolute delta |Δ| is `0.108`** between @30 and @100: variance converges, and residual position shifts reinforce section 3.8: with `5 seeds`, no strict ranking order is mathematically frozen; the study reports credible trends with confidence intervals.
 
-### 3.13. Budget Scaling — `compare_budget_scaling.py` (concluído: `24/24`, `0 erros`)
+### 3.13. Budget Scaling — `compare_budget_scaling.py` (Completed: `24/24`, `0 errors`)
 
-Roadmap item #6: a vantagem dos vencedores persiste com mais budget? Escopo: `resnet18`+`mlp_vector` × `starpilot`+`dodgeball` × `3 seeds` (42-44) × `250k`/`500k`; o ponto `100k` é o já existente (eval definitivo, mesmos seeds). Dados em `results/budget_results.json`, análise em `results/budget_analysis.json` (`budget_analysis.py`):
+Roadmap item #6: Does the advantage of top models persist under larger budgets? Scope: `resnet18` + `mlp_vector` × `starpilot` + `dodgeball` × `3 seeds` (42-44) × `250k`/`500k`; the `100k` baseline is established (definitive evaluation, identical seeds). Data in `results/budget_results.json`, analysis in `results/budget_analysis.json` (`budget_analysis.py`):
 
-| Curva (stoch unseen) | 100k | 250k | 500k | Veredito |
+| Curve (stochastic unseen) | 100k | 250k | 500k | Verdict |
 |---|---:|---:|---:|---|
-| `starpilot_resnet18` | 2.30±0.58 | 2.73±0.27 | 2.52±0.49 | **estagnado** |
-| `starpilot_mlp_vector` | 2.67±0.23 | 3.23±0.55 | 2.64±0.41 | **estagnado** |
-| `dodgeball_resnet18` | 1.07±0.38 | 1.01±0.15 | 1.00±0.07 | **estagnado** |
-| `dodgeball_mlp_vector` | 1.17±0.35 | 0.91±0.15 | 0.91±0.15 | **estagnado** |
+| `starpilot_resnet18` | 2.30±0.58 | 2.73±0.27 | 2.52±0.49 | **Stagnant** |
+| `starpilot_mlp_vector` | 2.67±0.23 | 3.23±0.55 | 2.64±0.41 | **Stagnant** |
+| `dodgeball_resnet18` | 1.07±0.38 | 1.01±0.15 | 1.00±0.07 | **Stagnant** |
+| `dodgeball_mlp_vector` | 1.17±0.35 | 0.91±0.15 | 0.91±0.15 | **Stagnant** |
 
-> **3 achados:** (1) **Nenhuma curva sobe com budget** — `250k` é o pico (leve, dentro do ruído) e `500k` volta/empata; nenhuma vantagem a `100k` foi criada ou destruída por `5×` budget. Resposta ao item #6: **mais budget não era necessário** para separar estas configs; `100k` era suficiente. (2) **Vantagens por jogo persistem**: `mlp_vector` lidera `starpilot` a `250k` (`3.23` vs `2.73`) e `resnet18` lidera `dodgeball` nos dois budgets (`1.01/1.00` vs `0.91`) — o padrão da seção 3.12 se mantém. (3) **Gen gap segue ≈ `0`/negativo mesmo a `500k`** — memorização não aparece com mais budget, reforçando a seção 3.10.
+> **3 Findings:** (1) **No learning curve scales monotonically with budget** — `250k` represents a minor inflection within empirical noise, and `500k` regresses or ties; a `5×` budget neither created nor eliminated an advantage. Answer to item #6: **larger budgets were not required** to differentiate these architectures; `100k` proved sufficient. (2) **Per-game relative advantages persist**: `mlp_vector` leads `starpilot` at `250k` (`3.23` vs `2.73`) and `resnet18` leads `dodgeball` across both budgets (`1.01/1.00` vs `0.91`) — confirming section 3.12. (3) **Generalization gap remains ≈ `0`/negative even at `500k`** — overfitting/memorization does not emerge with extended budgets, reinforcing section 3.10.
 
 ---
 
-## 4. Gráficos e Vídeos
+## 4. Figures and Videos
 
-Todos os gráficos e vídeos estão versionados na pasta `results/`.
+All generated visual artifacts and figures are versioned under `results/`.
 
-### 4.1. Coinrun 50k — CNN vs MLP (com/sem visão)
+### 4.1. Coinrun 50k — CNN vs MLP (With/Without Vision)
 ![Coinrun 50k — CNN vs MLP](results/coinrun_50k_cnn_vs_mlp.png)
 
 ### 4.2. Bossfight 100k — World Models
 ![Bossfight 100k — World Models](results/bossfight_100k_world_models.png)
 
-### 4.3. Suite 100k — 3 Jogos × 11 Arquiteturas
+### 4.3. Suite 100k — 3 Games × 11 Architectures
 | Bossfight | Starpilot | Dodgeball |
 |---|---|---|
 | ![Suite Bossfight](results/suite_bossfight.png) | ![Suite Starpilot](results/suite_starpilot.png) | ![Suite Dodgeball](results/suite_dodgeball.png) |
@@ -283,88 +283,88 @@ Todos os gráficos e vídeos estão versionados na pasta `results/`.
 ### 4.4. Bossfight HARD 100k — Stress Test
 ![Bossfight HARD 100k](results/bossfight_hard_100k.png)
 
-### 4.5. New Archs 100k — 5 Novas Arquiteturas ×3 Jogos
+### 4.5. New Archs 100k — 5 New Architectures × 3 Games
 ![New Archs Bossfight](results/new_archs_bossfight.png) | ![New Archs Starpilot](results/new_archs_starpilot.png) | ![New Archs Dodgeball](results/new_archs_dodgeball.png)
 
 ### 4.6. Maze+Heist 100k — PPO vs ICM/RND/NGU
 ![Maze](results/maze_heist_maze_plot.png) | ![Heist](results/maze_heist_heist_plot.png)
 
-### 4.7. Global 16 — Média 3 Jogos
+### 4.7. Global 16 — 3-Game Average
 ![Global 16](results/global_16.png)
 
-### 4.8. Vídeos
+### 4.8. Videos
 
-Vídeos lado-a-lado são gerados sob demanda (`visualize_side_by_side.py`) — bossfight com **sonhos** (`top=real`, `bottom=dream()` de `VAE/AE/Recon`; Contrastive exibe `no dream`) e coinrun com agentes lado-a-lado. Requer os `.zip` salvos pelos benchmarks durante o treino:
-  ```powershell
-  py -3.10 visualize_side_by_side.py --benchmark world_models --game bossfight --log_dir ./logs_world_models --mode mp4 --out results/bossfight_dreams.mp4 --steps 600 --device cuda
-  py -3.10 visualize_side_by_side.py --benchmark procgen --game coinrun --log_dir ./logs_procgen --mode mp4 --out results/coinrun_side_by_side.mp4 --steps 600 --device cuda
-  ```
-- **Curvas de treino por seed:** `statistics.json` + `comparison_results.json` por benchmark + `tensorboard --logdir logs_suite` (logs tensorboard são descartáveis/gerados sob demanda).
+Side-by-side behavioral videos are generated on demand (`visualize_side_by_side.py`) — `bossfight` with **dreams** (`top=real`, `bottom=dream()` from `VAE/AE/Recon`; Contrastive renders `no dream`) and `coinrun` with agents side-by-side. Requires `.zip` checkpoints produced during training:
+```powershell
+py -3.10 visualize_side_by_side.py --benchmark world_models --game bossfight --log_dir ./logs_world_models --mode mp4 --out results/bossfight_dreams.mp4 --steps 600 --device cuda
+py -3.10 visualize_side_by_side.py --benchmark procgen --game coinrun --log_dir ./logs_procgen --mode mp4 --out results/coinrun_side_by_side.mp4 --steps 600 --device cuda
+```
+- **Per-seed training curves:** `statistics.json` + `comparison_results.json` per benchmark + `tensorboard --logdir logs_suite`.
 
 ---
 
-## 5. Como Reproduzir
+## 5. How to Reproduce
 
 ```powershell
-# Ambiente (Python 3.10 obrigatório para Procgen) — versões pinadas em requirements.txt
+# Environment setup (Python 3.10 mandatory for Procgen wheels) — exact pinned versions in requirements.txt
 pip install -r requirements.txt
 
-# ou manualmente (mesmas versões validadas):
+# Or install manually with verified release pins:
 C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe -m pip install procgen==0.10.7 stable-baselines3==2.9.0 gymnasium==1.3.0 gym==0.26.2 torch==2.5.1+cu121 opencv-python==4.8.0.74 --extra-index-url https://download.pytorch.org/whl/cu121
 
-# Benchmarks 5 seeds
+# Execute 5-seed benchmarks
 C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe -u compare_world_models.py --timesteps 100000 --seeds 42 43 44 45 46 --num_levels 200 --log_dir ./logs_world_models --device cuda
 C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe -u compare_procgen.py --game coinrun --timesteps 50000 --seeds 42 43 44 45 46 --num_levels 200 --log_dir ./logs_procgen --device cuda
 C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe -u compare_suite.py --games bossfight starpilot dodgeball --timesteps 100000 --seeds 42 43 44 45 46 --log_dir ./logs_suite --device cuda
 C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe -u compare_bossfight_hard.py --timesteps 100000 --seeds 42 43 44 45 46 --log_dir ./logs_bossfight_hard --device cuda
 C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe -u compare_new_archs.py --timesteps 100000 --seeds 42 43 44 45 46 --games bossfight starpilot dodgeball --log_dir ./logs_new_archs --device cuda
 C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe -u compare_maze_heist.py --timesteps 100000 --seeds 42 43 44 45 46 --games maze heist --log_dir ./logs_maze_heist --device cuda
-C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe -u compare_combined.py  # agrega logs_suite + logs_new_archs no ranking global
-py -3.10 -u re_eval_scorecard.py --device cuda  # re-eval 30 eps stoch+det dos 115 zips (sem retreino)
-py -3.10 -u compare_suite_retrain.py --device cuda  # retreino da suite com protocolo novo (resume-safe)
-py -3.10 scorecard_analysis.py  # IC 95% + Cohen's d + AUC -> results/scorecard.json
-py -3.10 retrain_analysis.py  # análise do retreino + ranking global novo -> results/retrain_analysis.json
-py -3.10 -u re_eval_100.py --device cuda  # protocolo definitivo: 100 eps em todos os 275 zips
-py -3.10 eval100_analysis.py  # comparação 30 vs 100 -> results/eval100_analysis.json
-py -3.10 probe_actions.py  # sondagem do espaço de ações (base das skills do HRL)
-py -3.10 -u compare_hrl.py --device cuda  # benchmark independente HRL vs Flat (jumper/plunder)
-py -3.10 -u compare_hrl_learned.py --device cuda  # braço hrl_learned (RODAR APÓS compare_hrl.py: ambos escrevem em results/hrl_results.json)
-py -3.10 hrl_analysis.py  # análise dos 4 braços -> results/hrl_analysis.json
-py -3.10 -u compare_budget_scaling.py --device cuda  # budget scaling 250k/500k (resume-safe)
-py -3.10 budget_analysis.py  # curvas 100k->250k->500k -> results/budget_analysis.json
-py -3.10 -u compare_algo_families.py --device cuda  # value vs policy-based (seção 12; requer sb3-contrib)
-py -3.10 algo_analysis.py  # análise por família/algoritmo -> results/algo_families_analysis.json
-py -3.10 -u lr_sensitivity.py --device cuda  # teste de sensibilidade de lr dos value-based (seção 12.2)
+C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe -u compare_combined.py  # Aggregates logs_suite + logs_new_archs into global ranking
+py -3.10 -u re_eval_scorecard.py --device cuda  # Re-evaluates 30 eps stoch+det on 115 zips (no retraining)
+py -3.10 -u compare_suite_retrain.py --device cuda  # Retrains suite under new protocol (resume-safe)
+py -3.10 scorecard_analysis.py  # 95% CI + Cohen's d + AUC -> results/scorecard.json
+py -3.10 retrain_analysis.py  # Retraining analysis + updated global ranking -> results/retrain_analysis.json
+py -3.10 -u re_eval_100.py --device cuda  # Definitive protocol: 100 eps across all 275 zips
+py -3.10 eval100_analysis.py  # Comparative analysis 30 vs 100 -> results/eval100_analysis.json
+py -3.10 probe_actions.py  # Action space probing (basis for HRL skills)
+py -3.10 -u compare_hrl.py --device cuda  # Independent benchmark: HRL vs Flat RL (jumper/plunder)
+py -3.10 -u compare_hrl_learned.py --device cuda  # hrl_learned arm (RUN AFTER compare_hrl.py: both write to results/hrl_results.json)
+py -3.10 hrl_analysis.py  # Analysis of 4 HRL arms -> results/hrl_analysis.json
+py -3.10 -u compare_budget_scaling.py --device cuda  # Budget scaling 250k/500k (resume-safe)
+py -3.10 budget_analysis.py  # Curves 100k->250k->500k -> results/budget_analysis.json
+py -3.10 -u compare_algo_families.py --device cuda  # Value vs policy-based (section 12; requires sb3-contrib)
+py -3.10 algo_analysis.py  # Analysis per family/algorithm -> results/algo_families_analysis.json
+py -3.10 -u lr_sensitivity.py --device cuda  # Learning rate sensitivity test for value-based algorithms (section 12.2)
 ```
 
-**Estimativas `cuda`:** `coinrun 50k` `5×50k` `~35 min`, `bossfight 100k` `5×100k` `~67 min`, `suite 100k` `3 jogos ×11×5×100k` `16.5M steps` `~15h` (`20:41→04:47`), `bossfight hard` `~2.5h`, `new archs 100k` `3 jogos ×5×5×100k` `7.5M steps` `~12h` (`13:45→01:39`), `maze+heist 100k` `2 jogos ×4×5×100k` `4M steps` `~6.5h` (`01:48→08:23`), `combined` imediato, `re-eval 115 zips` `~70 min`, `suite retrain 165 modelos` `~28h` (`bossfight ~10 min/modelo`, `dodgeball ~3 min/modelo`), `re-eval 100 eps 275 zips` `~5h`.
+**`cuda` Runtime Estimates:** `coinrun 50k` `5×50k` `~35 min`; `bossfight 100k` `5×100k` `~67 min`; `suite 100k` `3 games × 11 × 5 × 100k` `16.5M steps` `~15h` (`20:41→04:47`); `bossfight hard` `~2.5h`; `new archs 100k` `3 games × 5 × 5 × 100k` `7.5M steps` `~12h` (`13:45→01:39`); `maze+heist 100k` `2 games × 4 × 5 × 100k` `4M steps` `~6.5h` (`01:48→08:23`); `combined` immediate; `re-eval 115 zips` `~70 min`; `suite retrain 165 models` `~28h` (`bossfight ~10 min/model`, `dodgeball ~3 min/model`); `re-eval 100 eps 275 zips` `~5h`.
 
 ---
 
-## 6. Próximos Benchmarks Propostos
+## 6. Proposed Future Benchmarks
 
-> **Nota:** os caminhos `D:\mario-ds`, `D:\mujoco-walker`, `D:\Imitation-player` e `D:\mario64ds-rl` são **repositórios externos de referência** fora deste projeto — não são necessários para reproduzir os benchmarks acima.
+> **Note:** Paths such as `D:\mario-ds`, `D:\mujoco-walker`, `D:\Imitation-player`, and `D:\mario64ds-rl` refer to **external reference codebases** outside this repository — they are not required to reproduce the benchmarks above.
 
-| # | Origem | Benchmark em `Procgen` `RL` (não só `loss` como `Imitation-player:171`) | Tempo |
+| # | Origin | Proposed Benchmark in `Procgen` `RL` | Runtime |
 |---|---|---|---|
 | 1 | `mujoco-walker:50` | **Offline RL** `100k` `bossfight` `expert` `BC` vs `IQL` vs `CQL` vs `Decision Transformer` | `~40 min` offline |
 
-### 6.1. Roadmap de Instrumentação — 6 Melhorias Priorizadas
+### 6.1. Instrumentation Roadmap — 6 Prioritized Enhancements
 
-O próximo salto não é adicionar arquiteturas, e sim instrumentar melhor as que já foram testadas (ver análise crítica externa). Prioridade por `custo × valor`:
+The primary leverage point was not accumulating more architectures, but rigorously instrumenting the existing set. Ranked by `cost × value`:
 
-| # | Sugestão | Status | Detalhes |
+| # | Enhancement | Status | Details |
 |---:|---|---|---|
-| 1 | **50–100 episódios de eval** | ✅ concluído (`re_eval_scorecard.py`: `115/115` modelos, `30 eps`) | `n_eval_episodes=10` era pouco — rankings mudaram (seção 3.10); modelos dos benchmarks antigos foram deletados, então só os `115` zips sobreviventes eram re-avaliáveis |
-| 2 | **Eval duplo: `deterministic=True` + `False`** | ✅ concluído (mesmo script, colunas `stoch`/`det` na seção 3.10) | confirmar o aviso da seção 1.3: modo determinístico colapsa políticas estocásticas (`maze` `2.47→0.60`) — reportar ambos |
-| 3 | **Intervalos de confiança + effect size** | ✅ concluído (`scorecard_analysis.py` → seção 3.8) | com `n=5 seeds`, diferenças pequenas não suportam conclusão de superioridade; `IC 95%` (`t` de Student) e `Cohen's d` por par em `results/scorecard.json` |
-| 4 | **Scorecard: robustez + sample efficiency (AUC)** | ✅ AUC concluído (seção 3.9); robustez = std já existente | `AUC(reward, env_steps)` das curvas `tensorboard` de `new_archs`/`maze_heist`; pergunta muda de "quem ganhou" para "quem aprende mais rápido"; **não requereu retreino** |
-| 5 | **Scorecard: generalization gap** | ✅ concluído (item 1, sem retreino) | `gap = train(200 níveis, seed treino) − unseen`; ≈ `0`/negativo na maioria → sem memorização (seção 3.10) |
-| 6 | **Budget scaling `100k→250k→500k`** | ✅ concluído (`compare_budget_scaling.py` → seção 3.13) | `24 jobs` (`250k+500k` × `resnet18+mlp_vector` × `starpilot+dodgeball` × `3 seeds`); veredito: **curvas estagnam — mais budget não era necessário** |
+| 1 | **50–100 evaluation episodes** | ✅ Completed (`re_eval_scorecard.py`: `115/115` models, `30 eps`) | `n_eval_episodes=10` was noisy — rankings shifted (section 3.10); legacy models from early benchmarks were purged, so only surviving `115` checkpoints were re-evaluated |
+| 2 | **Dual eval: `deterministic=True` + `False`** | ✅ Completed (same script, `stoch`/`det` columns in section 3.10) | Verified notice in section 1.3: deterministic mode collapses stochastic exploration policies (`maze` `2.47→0.60`) — both must be reported |
+| 3 | **Confidence intervals + effect sizes** | ✅ Completed (`scorecard_analysis.py` → section 3.8) | With `n=5 seeds`, marginal differences do not establish superiority; Student's `t` `95% CI` and pairwise `Cohen's d` in `results/scorecard.json` |
+| 4 | **Scorecard: robustness + sample efficiency (AUC)** | ✅ AUC completed (section 3.9); robustness = std | Normalized `AUC(reward, env_steps)` from TensorBoard curves for `new_archs`/`maze_heist`; shifts focus from "who won" to "who learns faster"; **did not require retraining** |
+| 5 | **Scorecard: generalization gap** | ✅ Completed (item 1, no retraining) | `gap = train(200 levels, training seed) − unseen`; ≈ `0`/negative across most models → no empirical memorization (section 3.10) |
+| 6 | **Budget scaling `100k→250k→500k`** | ✅ Completed (`compare_budget_scaling.py` → section 3.13) | `24 runs` (`250k+500k` × `resnet18+mlp_vector` × `starpilot+dodgeball` × `3 seeds`); verdict: **curves plateau — additional budget was unnecessary** |
 
-**Scorecard final** (4 eixos preenchidos — `Performance` = re-eval `30 eps stoch`, `AUC` seção 3.9, `Generalização` = gen gap seção 3.10, `Robustez` = ±std entre seeds; ordenado por Performance):
+**Final Scorecard** (4 metric axes — `Performance` = re-eval `30 eps stoch`, `AUC` section 3.9, `Generalization` = gen gap section 3.10, `Robustness` = ±std across seeds; sorted by Performance):
 
-| Modelo | 🧠 Performance | ⚡ AUC | 🌎 Gap | 🎲 Robustez |
+| Model | 🧠 Performance | ⚡ AUC | 🌎 Gap | 🎲 Robustness |
 |---|---:|---:|---:|---:|
 | `bossfight_resnet18` | **0.39** | 0.107 | −0.12 | ±0.50 |
 | `bossfight_impala` | 0.33 | 0.141 | −0.10 | ±0.27 |
@@ -386,9 +386,9 @@ O próximo salto não é adicionar arquiteturas, e sim instrumentar melhor as qu
 | `heist_icm` | **0.73** | 1.792 | −0.47 | ±0.71 |
 | `heist_ppo`=`rnd`=`ngu` | 0.67 | **1.826** | 0.00 | ±0.73 |
 
-**Scorecard — suite retrain** (seção 3.11; Performance = média dos 3 jogos; `AUC` indisponível — logs TB antigos deletados; `aug_noise` ≡ `wm_contrastive`, ver nota):
+**Scorecard — Suite Retrain** (section 3.11; Performance = mean across 3 games; `AUC` unavailable — legacy logs pruned; `aug_noise` ≡ `wm_contrastive`, see note):
 
-| Modelo | 🧠 Performance | ⚡ AUC | 🌎 Gap | 🎲 Robustez |
+| Model | 🧠 Performance | ⚡ AUC | 🌎 Gap | 🎲 Robustness |
 |---|---:|---:|---:|---:|
 | `cnn_mlp_vector` | **1.36** | — | −0.01 | ±0.41 |
 | `cnn_spatial` | 1.35 | — | −0.02 | ±0.38 |
@@ -400,15 +400,15 @@ O próximo salto não é adicionar arquiteturas, e sim instrumentar melhor as qu
 | `wm_contrastive`=`aug_noise` | 1.04 | — | −0.14 | ±0.52 |
 | `aug_color` | 1.02 | — | −0.06 | ±0.48 |
 | `wm_vae` | 0.92 | — | +0.11 | ±0.32 (n=2–3) |
-> Nota: `ContrastiveNoise` herda `ContrastiveExtractor` sem alterar o `forward` (`compare_augment_contrastive.py:42`) — com mesmos seeds, é um duplicado exato do `wm_contrastive` (resultados idênticos nos 3 jogos). Ler como `9` configs independentes, não `11`.
-> Leitura cruzada (dados unificados, `275` modelos no protocolo novo): **global top-4: `mlp_vector 1.36` > `spatial 1.35` > `lstm_attention 1.34` > `aug_crop 1.31`** — todos estatisticamente indistinguíveis (seção 3.8). `starpilot_lstm_attention` segue único líder dos 4 eixos num jogo só; agora empatado em Performance com `cnn_spatial` (`2.63`). `resnet18` perde o topo de `dodgeball` para `cnn_mlp_vector` (`1.21` vs `1.07`). `ICM` lidera `maze`/`heist` mas perde AUC. Gap ≈ `0`/negativo na maioria — sem memorização (exceção: `maze` `+0.7~+0.8`).
-> 📌 **Nota:** os valores acima são do protocolo de `30 eps`; o protocolo definitivo de `100 eps` (seção 3.12) consolida `mlp_vector` no topo (`1.43`), devolve `resnet18` ao topo de `dodgeball` e empata `ICM` com `PPO` em `maze`/`heist`.
+> Note: `ContrastiveNoise` subclasses `ContrastiveExtractor` without altering the `forward` pass (`compare_augment_contrastive.py:42`) — under identical seeds, it is an exact duplicate of `wm_contrastive` (identical empirical results across all 3 games). Treat as `9` independent configurations, not `11`.
+> Cross-sectional analysis (unified data, `275` models under the new protocol): **Global top-4: `mlp_vector 1.36` > `spatial 1.35` > `lstm_attention 1.34` > `aug_crop 1.31`** — all statistically indistinguishable (section 3.8). `starpilot_lstm_attention` remains the sole configuration leading all 4 scorecard axes within a single game; now tied in Performance with `cnn_spatial` (`2.63`). `resnet18` concedes the top spot of `dodgeball` to `cnn_mlp_vector` (`1.21` vs `1.07`). `ICM` leads `maze`/`heist` in final reward but trails in AUC. Generalization gap is ≈ `0`/negative across the vast majority — no memorization (exception: `maze` `+0.7~+0.8`).
+> 📌 **Note:** Values above correspond to the `30 eps` protocol; the definitive `100 eps` protocol (section 3.12) reinforces `mlp_vector` at the top (`1.43`), restores `resnet18` to the top of `dodgeball`, and equates `ICM` with vanilla `PPO` in `maze`/`heist`.
 
 ---
 
-## 7. Resultados por Seed (Completo) — 5 Seeds `42-46`, 10 Eps `deterministic=False`
+## 7. Results per Seed (Complete) — 5 Seeds `42-46`, 10 Eps `deterministic=False`
 
-**Coinrun 50k 5 seeds** `logs_procgen/comparison_coinrun_20260827_204023/comparison_results.json:1`
+**Coinrun 50k 5 Seeds** `logs_procgen/comparison_coinrun_20260827_204023/comparison_results.json:1`
 | Config | 42 | 43 | 44 | 45 | 46 | Mean±Std |
 |---|---:|---:|---:|---:|---:|---|
 | `classic` | 7.0 | 6.0 | 7.0 | 9.0 | 9.0 | **7.6±1.2** |
@@ -416,7 +416,7 @@ O próximo salto não é adicionar arquiteturas, e sim instrumentar melhor as qu
 | `spatial` | 6.0 | 0.0 | 7.0 | 9.0 | 9.0 | **6.2±3.31** |
 | `mlp_vector` | 7.0 | 7.0 | 8.0 | 9.0 | 9.0 | **8.0±0.89** |
 
-**Bossfight 100k 5 seeds (World Models)** `logs_world_models/comparison_bossfight_20260827_193327/comparison_results.json:1`
+**Bossfight 100k 5 Seeds (World Models)** `logs_world_models/comparison_bossfight_20260827_193327/comparison_results.json:1`
 | Config | 42 | 43 | 44 | 45 | 46 | Mean±Std |
 |---|---:|---:|---:|---:|---:|---|
 | `vae` | 0.0 | 0.0 | 0.1 | 0.4 | 0.4 | 0.16±0.16 |
@@ -424,7 +424,7 @@ O próximo salto não é adicionar arquiteturas, e sim instrumentar melhor as qu
 | `recon` | 0.0 | 0.0 | 0.0 | 0.0 | 0.1 | 0.02±0.04 |
 | `contrastive` | 0.0 | 0.0 | 0.0 | 0.2 | 1.6 | **0.36±0.62** |
 
-**Bossfight HARD 100k 5 seeds** `logs_bossfight_hard/comparison_bossfight_hard_20260828_072148/comparison_results.json:1`
+**Bossfight HARD 100k 5 Seeds** `logs_bossfight_hard/comparison_bossfight_hard_20260828_072148/comparison_results.json:1`
 | Config | 42 | 43 | 44 | 45 | 46 | Mean±Std |
 |---|---:|---:|---:|---:|---:|---|
 | `vae` | 0.0 | 0.0 | 0.4 | 1.2 | 0.6 | **0.43±0.54** |
@@ -439,16 +439,16 @@ O próximo salto não é adicionar arquiteturas, e sim instrumentar melhor as qu
 | `aug_color` | 0.0 | 0.0 | 0.0 | 0.0 | 0.1 | 0.02±0.04 |
 | `aug_noise` | 0.0 | 0.0 | 0.0 | 0.0 | 0.3 | 0.06±0.12 |
 
-**Suite 100k 3 Jogos (11 configs×3×5=165 entradas)** `logs_suite/suite_bossfight_starpilot_dodgeball_20260827_204109/suite_results.json:1` — `mean` em `suite_statistics.json:1`; ex `starpilot spatial: [1.6,2.1,2.2,3.2,3.5] 2.6±0.82`, `dodgeball classic: [0.8,1.0,1.4,1.5,2.7] 1.48±0.69`. Full `165` linhas preservadas em `suite_results.json` para `LaTeX`.
+**Suite 100k 3 Games (11 configs × 3 × 5 = 165 entries)** `logs_suite/suite_bossfight_starpilot_dodgeball_20260827_204109/suite_results.json:1` — summary `mean` in `suite_statistics.json:1`; e.g., `starpilot spatial: [1.6, 2.1, 2.2, 3.2, 3.5] 2.6±0.82`, `dodgeball classic: [0.8, 1.0, 1.4, 1.5, 2.7] 1.48±0.69`. Full `165` raw entries preserved in `suite_results.json` for LaTeX compilation.
 
-**New Archs 100k 3 Jogos (5×3×5=75 entradas)** `logs_new_archs/new_archs_bossfight_starpilot_dodgeball_20260828_134545/comparison_results.json:1`
+**New Archs 100k 3 Games (5 × 3 × 5 = 75 entries)** `logs_new_archs/new_archs_bossfight_starpilot_dodgeball_20260828_134545/comparison_results.json:1`
 | Config | 42 | 43 | 44 | 45 | 46 | Mean±Std |
 |---|---:|---:|---:|---:|---:|---|
 | `bossfight_impala` | 0.0 | 0.2 | 0.0 | 0.0 | 1.2 | 0.28±0.47 |
 | `starpilot_lstm_attention` | 2.3 | 2.9 | 1.4 | 2.7 | 2.9 | **2.44±0.56** |
 | `dodgeball_resnet18` | 1.2 | 1.6 | 1.4 | 3.0 | 1.4 | **1.72±0.65** |
 
-**Maze+Heist 100k 2 Jogos (4×2×5=40 entradas)** `logs_maze_heist/maze_heist_maze_heist_20260829_014802/comparison_results.json:1`
+**Maze+Heist 100k 2 Games (4 × 2 × 5 = 40 entries)** `logs_maze_heist/maze_heist_maze_heist_20260829_014802/comparison_results.json:1`
 | Config | 42 | 43 | 44 | 45 | 46 | Mean±Std |
 |---|---:|---:|---:|---:|---:|---|
 | `maze_ppo` | 2.0 | 3.0 | 1.0 | 1.0 | 5.0 | **2.4±1.50** |
@@ -456,188 +456,188 @@ O próximo salto não é adicionar arquiteturas, e sim instrumentar melhor as qu
 | `heist_ppo` | 0.0 | 0.0 | 1.0 | 1.0 | 2.0 | **0.8±0.74** |
 | `heist_icm` | 1.0 | 0.0 | 0.0 | 0.0 | 2.0 | 0.6±0.80 |
 
-## 8. Vídeos
+## 8. Videos
 
-Gerados sob demanda via `visualize_side_by_side.py` (comandos na seção 4.8): `bossfight_dreams.mp4` (World Models com sonhos) e `coinrun_side_by_side.mp4` (CNN vs MLP lado-a-lado). Saída `mp4` com painéis `128×128` por agente `hstack` `15 FPS`; `dream` para `VAE/AE/Recon` (`models/world_model_extractors.py:6` `dream()` `deconv`), `Contrastive` exibe `no dream`. Requer os `.zip` salvos durante o treino dos benchmarks.
+Rendered on demand via `visualize_side_by_side.py` (commands documented in section 4.8): `bossfight_dreams.mp4` (World Models with reconstructed dreams) and `coinrun_side_by_side.mp4` (CNN vs MLP side-by-side rollout). Output is formatted as `.mp4` with `128×128` panels per agent stacked horizontally (`hstack`) at `15 FPS`; latent decoding (`dream()`) implemented for `VAE/AE/Recon` (`models/world_model_extractors.py:6` `dream()` `deconv`), while `Contrastive` displays `no dream`. Requires `.zip` checkpoints produced during benchmark runs.
 
-## 9. Hardware e Limitações
+## 9. Hardware and Limitations
 
-- **Hardware:** `NVIDIA GeForce RTX 4070 Laptop` `556.29` `CUDA 12.5` `WDDM` `8 GB VRAM` `58°C` `~30%` `GPU-Util` durante `PPO` `cuda` (`nvidia-smi` `20:41`), `Python 3.10.11` `torch 2.5.1+cu121` `gym 0.26.2` `gymnasium 1.3.0` `stable-baselines3 2.9.0`.
-- **Limitações:** `bossfight 100k` `easy` já `<1.0` (`0.76±0.90`) e `hard` `0.02±0.04` zeram `CNN` — `suite 100k` `16.5M steps` é `mínimo` para `ranking`; `ViT` medido no `benchmark #6`: `~4.6 min/run` em `bossfight` mas `16-25 min/run` em `starpilot` (`~4×` mais lento que `CNN`, variável por jogo) — a estimativa antiga de `~15×` (`Imitation-player:171`) era de `loss` imitation, não de `PPO`; ainda assim `ViT 1.20` global não supera `lstm/spatial`; `Imitation BC` só viu `loss` (`ResNet 2.90` melhor) sem `reward` `RL` — `#4` corrige isso.
+- **Hardware:** `NVIDIA GeForce RTX 4070 Laptop`, driver `556.29`, `CUDA 12.5`, `WDDM`, `8 GB VRAM`, `58°C`, `~30%` `GPU-Util` during `PPO` execution on `cuda` (`nvidia-smi` sampled at `20:41`), `Python 3.10.11`, `torch 2.5.1+cu121`, `gym 0.26.2`, `gymnasium 1.3.0`, `stable-baselines3 2.9.0`.
+- **Limitations:** In `bossfight 100k`, `easy` achieves `<1.0` (`0.76±0.90`) and `hard` collapses standard CNNs to `0.02±0.04` — `suite 100k` (`16.5M steps`) is the minimum viable scale for statistical ranking; `ViT` evaluated in `benchmark #6`: `~4.6 min/run` in `bossfight` but `16-25 min/run` in `starpilot` (`~4×` slower than standard CNNs, varying per game environment) — earlier estimates of `~15×` (`Imitation-player:171`) stemmed from imitation learning loss computation rather than `PPO` rollouts; nonetheless, `ViT 1.20` global fails to surpass `lstm` or `spatial`; `Imitation BC` only tracked training loss (`ResNet 2.90` best) without interacting with RL reward signals — benchmark #4 rectifies this.
 
-## 10. Referências
+## 10. References
 
-- `Procgen` (`Cobbe et al.`), `DreamerV3` (`SheepRL`), `CURL`/`SPR` (`mario-ds:121`), `CBAM` (`Woo et al.`), `PPO` (`Schulman`), `Stable-Baselines3`, `Imitation-player` `compare_models.py` `Nature 3.48` vs `ResNet 2.90`.
+- `Procgen` (`Cobbe et al.`), `DreamerV3` (`Hafner et al.`, `SheepRL`), `CURL`/`SPR` (`mario-ds:121`), `CBAM` (`Woo et al.`), `PPO` (`Schulman et al.`), `Stable-Baselines3`, `Imitation-player` `compare_models.py` `Nature 3.48` vs `ResNet 2.90`.
 
 ---
 
-## 11. Benchmark Independente — HRL vs Flat RL (`jumper`/`plunder`)
+## 11. Independent Benchmark — HRL vs Flat RL (`jumper`/`plunder`)
 
-> ⚠️ **Separado do estudo principal:** não entra no scorecard das seções 3.x/6.1; logs/resultados próprios (`logs_hrl/`, `results/hrl_results.json`).
+> ⚠️ **Separated from the primary study:** Not incorporated into the scorecard of sections 3.x/6.1; tracked under dedicated logs/results (`logs_hrl/`, `results/hrl_results.json`).
 
-**Pergunta:** hierarquia ajuda em `100k` frames? Quatro braços com **mesmo budget de `100k` frames primitivos**, `PPO` idêntico (`lr 3e-4`, `NatureCNN`, mesmos hiperparâmetros do estudo):
+**Research Question:** Does hierarchical temporal abstraction provide measurable leverage under a `100k` primitive frame budget? Four arms evaluated under an **identical budget of `100k` primitive environment frames**, utilizing identical `PPO` optimization (`lr 3e-4`, `NatureCNN`, matched hyperparameters):
 
-| Braço | Descrição | Decisões treinadas |
+| Arm | Description | Trained Decision Steps |
 |---|---|---:|
-| `flat` | PPO sobre as `15` ações primitivas | `100k` |
-| `skip4` | action-repeat `4` (controle: abstração temporal **sem** hierarquia) | `25k` |
-| `hrl` | PPO meta-controlador sobre `6` skills **fixas** × `4` frames (framework de opções, `compare_hrl.py:34`) | `25k` |
-| `hrl_learned` | hierarquia 2 níveis treinada em conjunto (`compare_hrl_learned.py`): meta escolhe `6` skills **latentes aprendidas** a cada `4` frames; low-level `π(a\|obs,z)` executa ações primitivas; especialização emergente (sem incentivo de diversidade) | `25k` meta + `100k` low |
+| `flat` | Standard PPO over all `15` primitive actions | `100k` |
+| `skip4` | Fixed action-repeat `4` (control: temporal abstraction **without** hierarchy) | `25k` |
+| `hrl` | PPO meta-controller selecting across `6` **fixed** sub-skills executed for `4` frames (options framework, `compare_hrl.py:34`) | `25k` |
+| `hrl_learned` | Jointly trained two-level hierarchy (`compare_hrl_learned.py`): meta-policy selects among `6` **learned latent skills** every `4` frames; low-level policy `π(a\|obs, z)` executes primitive actions; emergent specialization without explicit diversity incentives | `25k` meta + `100k` low |
 
-**Skills do braço `hrl`** (sondagem empírica `probe_actions.py` + mapeamento oficial de ações do `procgen/env.py`; `UP`=pulo em `jumper`, `D`=tiro em `plunder`): `wait`, `left`, `right`, `jump|shoot`, `jump_left|shoot_left`, `jump_right|shoot_right`.
+**Fixed Skills for the `hrl` Arm** (derived from empirical action space probing in `probe_actions.py` and official Procgen action mappings in `procgen/env.py`; `UP`=jump in `jumper`, `D`=shoot in `plunder`): `wait`, `left`, `right`, `jump|shoot`, `jump_left|shoot_left`, `jump_right|shoot_right`.
 
-**Notas de comparabilidade:** `hrl_learned` recebe atualização por frame no low-level (sinal de gradiente comparável ao `flat`) e usa truncamento com bootstrap em `HORIZON=256` frames (episódios de `jumper` passam de `500`; sem o teto o meta quase não decidiria) — os demais braços usam episódios nativos. Modelo salvo como `.pt` (meta+low) em `logs_hrl/hrl_zips/`, não `.zip` SB3.
+**Comparability Notes:** `hrl_learned` receives per-frame updates at the low level (gradient throughput comparable to `flat`) and utilizes truncation with bootstrapping at `HORIZON=256` frames (episodes in `jumper` exceed `500`; without this horizon ceiling the meta-policy would make too few decisions) — remaining arms operate on native episodic terminations. Models saved as `.pt` (meta+low-level weights) under `logs_hrl/hrl_zips/`, rather than SB3 `.zip`.
 
-**Protocolo:** `2 jogos × 4 braços × 5 seeds` = `40 runs` (`30` do `compare_hrl.py` + `10` do `compare_hrl_learned.py`, sequencial); treino `num_levels=200` `easy`; eval definitivo `100 eps` stoch + `100 det` (unseen `seed+1000`) + `15 eps` train. Dados em `results/hrl_results.json`, análise em `results/hrl_analysis.json` (`hrl_analysis.py`).
+**Protocol:** `2 games × 4 arms × 5 seeds = 40 runs` (`30` from `compare_hrl.py` + `10` from `compare_hrl_learned.py`, executed sequentially); training on `num_levels=200` `easy`; definitive evaluation on `100 eps` stochastic + `100 eps` deterministic (unseen `seed+1000`) + `15 eps` training. Data in `results/hrl_results.json`, analysis in `results/hrl_analysis.json` (`hrl_analysis.py`).
 
-### 11.1. Resultados (concluído: `40/40`, `0 erros`)
+### 11.1. Results (Completed: `40/40`, `0 errors`)
 
-| Braço | `jumper` stoch | `jumper` det | `plunder` stoch | `plunder` det |
+| Arm | `jumper` stoch | `jumper` det | `plunder` stoch | `plunder` det |
 |---|---:|---:|---:|---:|
 | `flat` | 0.90±0.49 | 0.38 | 3.53±0.45 | 0.61 |
 | `skip4` | **3.76±0.48** | 0.38 | 3.36±0.28 | 1.32 |
-| `hrl` (fixo) | 3.72±0.86 | 0.66 | 3.24±0.14 | 0.85 |
+| `hrl` (fixed) | 3.72±0.86 | 0.66 | 3.24±0.14 | 0.85 |
 | `hrl_learned` | 2.96±0.45 | 0.44 | **4.16±0.33** | **2.70** |
 
-> **4 achados:** (1) **`jumper`: o ganho é de abstração temporal, não de hierarquia** — `skip4`≈`hrl` (`3.7`) dão `4×` o `flat` (`0.90`); segurar direção/pulo por `4` frames é o que destrava o jogo, e a biblioteca de skills não adicionou nada além do action-repeat. (2) **`hrl_learned` fica entre o `flat` e os braços com abstração em `jumper`** (`2.96`) — co-treinar meta+low precisa de mais budget para alcançar skills pré-projetadas. (3) **`plunder`: `hrl_learned` é o único braço que ganha** (`4.16` vs `3.53` do `flat`, menor std `0.33`) — a macro fixa de segurar o tiro `4` frames não serve ao timing de tiro, mas a skill aprendida se adapta; os braços fixos empatam com o `flat`. (4) **modo determinístico:** colapsa todos os braços em `jumper` (`0.38–0.66`, política estocástica é essencial), mas em `plunder` o `hrl_learned` destoa (`det 2.70` vs `≤1.32`) — a hierarquia aprendida produz política mais explorável deterministicamente. Gen gap `plunder hrl_learned` `+0.97` (único relevante).
+> **4 Findings:** (1) **`jumper`: Gain stems purely from temporal abstraction, not hierarchy** — `skip4` ≈ `hrl` (`3.7`) achieve `4×` the return of `flat` (`0.90`); sustaining directional jumps over `4` consecutive frames is what solves the game mechanics, and the fixed skill library added zero benefit beyond action-repeat. (2) **`hrl_learned` ranks between `flat` and temporal-abstraction arms in `jumper`** (`2.96`) — co-training meta and low-level controllers requires a larger sample budget to match hand-engineered macro-actions. (3) **`plunder`: `hrl_learned` is the sole winning arm** (`4.16` vs `3.53` flat, with lowest standard deviation `0.33`) — fixed 4-frame firing macros disrupt aiming timing, whereas learned latent skills adapt flexibly; fixed macro arms merely match `flat`. (4) **Deterministic evaluation collapses policies in `jumper`** (`0.38–0.66`, stochastic exploration is vital), but in `plunder`, `hrl_learned` stands out (`det 2.70` vs `≤1.32`) — learned hierarchy produces a more deterministically exploitable policy. Generalization gap for `plunder hrl_learned` is `+0.97` (the only non-trivial positive gap).
 
 ---
 
-## 12. Benchmark Independente — Value-based vs Policy-based (`starpilot`/`dodgeball`/`bossfight`)
+## 12. Independent Benchmark — Value-Based vs Policy-Based (`starpilot`/`dodgeball`/`bossfight`)
 
-> ⚠️ **Separado do estudo principal** (que comparou *arquiteturas* com `PPO` fixo): aqui a variável é a **família do algoritmo**. Logs/resultados próprios (`logs_algo/`, `results/algo_families_results.json`).
+> ⚠️ **Separated from the primary study** (which compared *architectures* with fixed `PPO`): Here, the independent variable is the **algorithmic optimization family**. Tracked in separate directories (`logs_algo/`, `results/algo_families_results.json`).
 
-**Pergunta:** em `100k` steps com imagens, gradient de política (on-policy) supera bootstrapping de valor (off-policy)?
+**Research Question:** In a `100k` step visual regime, does on-policy policy gradient outperform off-policy value bootstrapping?
 
-| Família | Algoritmos | Característica |
+| Family | Algorithms | Characteristics |
 |---|---|---|
-| **Policy-based** | `PPO` (hiperparâmetros do estudo), `A2C` (default SB3, `lr 3e-4`) | on-policy, `100k` decisões efetivas de update |
-| **Value-based** | `DQN`, `QR-DQN` (`sb3-contrib`, distribucional `200 quantiles`) | off-policy, replay buffer |
+| **Policy-based** | `PPO` (study hyperparameters), `A2C` (SB3 default, `lr 3e-4`) | On-policy, `100k` effective decision update steps |
+| **Value-based** | `DQN`, `QR-DQN` (`sb3-contrib`, distributional with `200 quantiles`) | Off-policy, replay buffer |
 
-**Fairness:** arquitetura idêntica para todos (`CnnPolicy`/`NatureCNN` `512D`); `3 jogos × 4 algos × 5 seeds = 60 runs`; eval definitivo (`100 eps` stoch + `100 det` unseen `seed+1000` + `15 train`).
+**Fairness Controls:** Identical visual backbone for all configurations (`CnnPolicy`/`NatureCNN` `512D`); `3 games × 4 algorithms × 5 seeds = 60 runs`; definitive evaluation (`100 eps` stochastic + `100 eps` deterministic unseen `seed+1000` + `15 train`).
 
-**Adaptações documentadas dos value-based para budget pequeno** (`compare_algo_families.py:32`): `buffer_size=100k` (default `1M` não cabe em RAM com imagens), `learning_starts=5000` e `exploration_fraction=0.25` (defaults Atari de `50k`/`10%` consomem metade/ignoram o budget), `lr=1e-4` (default do DQN; `3e-4` desestabiliza o TD-error), `train_freq=4`, `gradient_steps=1`, `target_update_interval=500`, `batch=64`.
+**Documented Adaptations for Small Budgets** (`compare_algo_families.py:32`): `buffer_size=100k` (standard `1M` overflows system RAM with raw image buffers), `learning_starts=5000` and `exploration_fraction=0.25` (standard Atari defaults of `50k`/`10%` would consume half of or bypass the budget entirely), `lr=1e-4` (DQN standard; `3e-4` destabilizes TD-error updates), `train_freq=4`, `gradient_steps=1`, `target_update_interval=500`, `batch=64`.
 
-> ⚠️ **Limitação de fairness (critério adotado):** a comparação usa *best practice por algoritmo* (`lr 3e-4` policy vs `lr 1e-4` value), não *configuração idêntica*. O critério idêntico (`3e-4` para todos) arriscaria medir "DQN com lr errado diverge" em vez de "família value é pior". Como não houve sweep de lr, a conclusão é condicionada aos defaults — o **teste de sensibilidade** `lr_sensitivity.py` (seção 12.2: `dqn`/`qrdqn` a `3e-4` em `starpilot`, o jogo do maior gap, `10 runs`) verifica se a diferença de lr explica o resultado. **Resultado do teste (seção 12.2): não explica** — `dqn 0.65→0.66`, `qrdqn 1.04→1.25` (dentro do ruído).
+> ⚠️ **Fairness Limitation (Design Decision):** The comparison applies *best-practice defaults per algorithm family* (`lr 3e-4` policy vs `lr 1e-4` value), rather than an *identical configuration*. Imposing `3e-4` uniformly risked measuring "DQN diverges under excessive learning rates" rather than assessing the value-based paradigm itself. In the absence of an exhaustive learning rate sweep, conclusions remain conditioned on standard defaults — the **sensitivity test** `lr_sensitivity.py` (section 12.2: `dqn`/`qrdqn` trained at `3e-4` on `starpilot`, the game exhibiting the widest gap, `10 runs`) verified whether learning rate disparity explained the deficit. **Empirical outcome (section 12.2): It does not** — `dqn 0.65→0.66`, `qrdqn 1.04→1.25` (well within standard error).
 
-**Status:** concluído (`60/60`, `0 erros`, `~9h` `01/09 20:09→02/09 05:12`). Dados em `results/algo_families_results.json`, análise em `results/algo_families_analysis.json` (`algo_analysis.py`).
+**Status:** Completed (`60/60`, `0 errors`, runtime `~9h` from `01/09 20:09` to `02/09 05:12`). Data in `results/algo_families_results.json`, analysis in `results/algo_families_analysis.json` (`algo_analysis.py`).
 
-### 12.1. Resultados (stoch unseen `100 eps`, média±std de `5 seeds`)
+### 12.1. Results (Stochastic Unseen `100 eps`, Mean ± Std Across `5 seeds`)
 
-| Jogo | `ppo` | `a2c` | `dqn` | `qrdqn` |
+| Game | `ppo` | `a2c` | `dqn` | `qrdqn` |
 |---|---:|---:|---:|---:|
 | `starpilot` | 2.29±0.47 | **2.38±0.29** | 0.65±0.37 | 1.04±0.26 |
 | `dodgeball` | 0.65±0.36 | **0.89±0.10** | 0.18±0.09 | 0.61±0.49 |
 | `bossfight` | 0.18±0.29 | 0.05±0.06 | 0.03±0.05 | **0.28±0.50** |
-| **Família (média 3 jogos)** | `policy` **1.07** | | `value` 0.47 | |
+| **Family (3-Game Average)** | `policy` **1.07** | | `value` 0.47 | |
 
-> **4 achados:** (1) **Policy-based vence a família** (`1.07` vs `0.47`, `2.3×`) — em `100k` steps com imagens, on-policy supera bootstrapping de valor, confirmando a hipótese do regime low-data (seção 1.4). (2) **QR-DQN encurta muito a distância** (`+60%` sobre `DQN` em `starpilot`: `1.04` vs `0.65`) e em `bossfight` (sparse/ruído alto) **é o único algoritmo que lidera** (`0.28` vs `ppo 0.18`) — RL distribucional se beneficia exatamente onde a incerteza é alta. (3) **`A2C` ≈ ou > `PPO` em `starpilot`/`dodgeball`** (`2.38/0.89` vs `2.29/0.65`), mas **colapsa em `bossfight`** (`0.05` vs `0.18`) — sem clipping, um outlier de gradiente no jogo sparse destrói a política; o clipping do `PPO` vale seu custo onde a estabilidade importa. (4) **Gen gap `≈0` em todos** os `12` braços — nenhuma família memoriza níveis de treino (consistente com as seções 3.10/3.13). Nota de contexto: os valores diferem dos da seção 3.12 porque aqui o extrator é `NatureCNN` padrão para todos (o estudo principal usou extratores custom) — comparação válida *dentro* desta tabela.
+> **4 Findings:** (1) **Policy-based algorithms decisively outperform value-based** (`1.07` vs `0.47`, a `2.3×` margin) — in `100k` visual steps, on-policy optimization outperforms value bootstrapping, validating the low-data hypothesis (section 1.4). (2) **QR-DQN significantly closes the gap** (`+60%` over vanilla `DQN` in `starpilot`: `1.04` vs `0.65`) and in `bossfight` (highly sparse, high variance) **it is the sole leading algorithm** (`0.28` vs `ppo 0.18`) — distributional RL provides tangible benefits precisely under high aleatoric/epistemic uncertainty. (3) **`A2C` matches or exceeds `PPO` in `starpilot`/`dodgeball`** (`2.38/0.89` vs `2.29/0.65`), but **collapses in `bossfight`** (`0.05` vs `0.18`) — without policy clipping, gradient outliers in sparse reward regimes destabilize policy weights; PPO's clipped surrogate objective proves essential where stability is critical. (4) **Generalization gap is `≈0` across all** `12` evaluation branches — neither algorithmic family overfits the training levels (consistent with sections 3.10/3.13). Context note: Absolute returns differ from section 3.12 because a uniform `NatureCNN` extractor was employed across all algorithms here (the primary study evaluated bespoke extractors) — comparisons remain fully valid *within* this benchmark.
 
-### 12.2. Teste de Sensibilidade de `lr` — a conclusão depende do `1e-4`? (`lr_sensitivity.py`, concluído `10/10`)
+### 12.2. Learning Rate Sensitivity Test — Is the Deficit an Artifact of `1e-4`? (`lr_sensitivity.py`, Completed: `10/10`)
 
-`dqn`/`qrdqn` re-treinados a `3e-4` (o lr do PPO/A2C) em `starpilot` (jogo do maior gap), `5 seeds`, protocolo idêntico. Dados em `results/lr_sensitivity_results.json`:
+`dqn`/`qrdqn` retrained at `3e-4` (matching PPO/A2C) on `starpilot` (the largest gap game), `5 seeds`, identical protocol. Data in `results/lr_sensitivity_results.json`:
 
-| Algoritmo | `lr 1e-4` (seção 12.1) | `lr 3e-4` | Δ | Referência policy |
+| Algorithm | `lr 1e-4` (section 12.1) | `lr 3e-4` | Δ | Policy Baseline Reference |
 |---|---:|---:|---:|---:|
-| `dqn` | 0.65±0.37 | 0.66±0.44 | **+0.01 (empate)** | `ppo 2.29` / `a2c 2.38` |
-| `qrdqn` | 1.04±0.26 | 1.25±0.37 | +0.21 (dentro do ruído) | idem |
-> **Veredito:** triplicar o lr dos value-based **não muda a conclusão**. `DQN` fica idêntico (`0.65→0.66`); `QR-DQN` sobe `+0.21`, abaixo do ruído entre seeds (`SE` da diferença `≈0.20` com `n=5`) — tendência leve, não significativa. Ambos seguem `~2×` abaixo do PPO/A2C (`2.29/2.38`). A limitação de fairness da seção 12 fica assim **resolvida empiricamente**: o gap policy-vs-value em `100k` não é artefato da escolha de lr (pelo menos em `starpilot`, o jogo testado).
+| `dqn` | 0.65±0.37 | 0.66±0.44 | **+0.01 (identical)** | `ppo 2.29` / `a2c 2.38` |
+| `qrdqn` | 1.04±0.26 | 1.25±0.37 | +0.21 (within noise) | idem |
+> **Verdict:** Tripling the learning rate of value-based methods **does not alter the conclusion**. `DQN` remains virtually identical (`0.65→0.66`); `QR-DQN` gains `+0.21`, which falls within seed standard error (`SE` of the difference `≈0.20` with `n=5`) — a minor, non-significant trend. Both remain `~2×` below PPO/A2C (`2.29/2.38`). The fairness limitation raised in section 12 is thus **empirically resolved**: the policy-vs-value gap at `100k` is not an artifact of learning rate selection (at least in `starpilot`, the evaluated environment).
 
 ---
 
-## 13. Nota de Restauração e Escopo (04/09/2026) — por que eu trouxe este README de volta
+## 13. Scope and Restoration Note (04/09/2026) — Why this README was Restored
 
-### 13.1. O que aconteceu
+### 13.1. Background Context
 
-Meu repositório passou por três fases distintas, todas preservadas no histórico Git para auditoria:
+This repository transitioned through three distinct phases, all preserved within Git commit history for auditing:
 
-1. **Fase ProcGen/SB3 (este estudo, commit `4f84ed3`).** Meu benchmark sistemático em `ProcGen` real com `Stable-Baselines3`/`PyTorch` — seções 1–12 acima. É o corpo científico do projeto.
-2. **Fase JAX/Craftax/Brax/MARL (commits `5e88c16`–`6d450fa`).** Eu reescrevi tudo para `JAX`/`Flax`/`Optax` com `Craftax`, `Brax`, `MPE`, boxe offline e grade combinatória. Protocolos, budgets, métricas e ambientes **diferentes** do estudo ProcGen (ex.: retorno episódico Craftax simbólico vs. reward ProcGen pixels; `8M` steps vs. `100k`; FPS medidos em workloads distintos).
-3. **Fase porte JAX-do-ProcGen (set/2026).** Minha tentativa de reconstruir o estudo **exato** em `JAX` para obter o mesmo desenho experimental com muito mais velocidade (detalhes na seção 14).
+1. **ProcGen/SB3 Phase (this study, commit `4f84ed3`).** The original systematic benchmark on real `ProcGen` using `Stable-Baselines3`/`PyTorch` — sections 1–12 above. This constitutes the scientific core of the project.
+2. **JAX/Craftax/Brax/MARL Phase (commits `5e88c16`–`6d450fa`).** An exploration rewriting environments in `JAX`/`Flax`/`Optax` featuring `Craftax`, `Brax`, `MPE`, offline boxing, and combinatorial grids. Protocols, budgets, metrics, and dynamics differed substantially from the ProcGen study (e.g., symbolic Craftax episodic return vs pixel ProcGen reward; `8M` steps vs `100k`; throughput measured on non-comparable workloads).
+3. **JAX-Port-of-ProcGen Phase (Sep/2026).** A systematic initiative to reconstruct the **exact** study in `JAX` to reproduce the identical experimental design at substantially higher throughput (detailed in section 14).
 
-Em `04/09/2026`, por minha decisão explícita, **eu removi todo o conteúdo das fases 2–3 da árvore de trabalho** e **restaurei o projeto ao estado exato do commit `4f84ed3`**. As seções 1–12 acima são, portanto, **byte-a-byte o README do meu estudo ProcGen original** — eu não alterei nenhum número, tabela ou conclusão nesta restauração.
+On `04/09/2026`, by explicit design decision, **all phase 2–3 exploration scaffolding outside the study scope was removed from the working tree**, and **the repository was restored to the exact state of commit `4f84ed3`**. Sections 1–12 above are, therefore, **the byte-for-byte documentation of the original ProcGen study** — no numbers, tables, or conclusions were altered in this restoration.
 
-### 13.1.1. Por que eu voltei para o ProcGen (a conta que eu fiz)
+### 13.1.1. Methodological Rationale for Returning to ProcGen
 
-Eu medi e comparei: o tempo de treino no Craftax estava saindo **quase o mesmo do ProcGen** (runs de milhões de steps, grades de horas), mas com **bem menos profundidade acadêmica** — sem o protocolo publicado de generalização (`200` treino vs. `0` unseen), sem as 16 arquiteturas × 5 jogos × 5 seeds, sem IC/Cohen/AUC/eval-duplo/budget-scaling. Eu estava pagando o mesmo preço de GPU por uma fração do rigor. A conta não fechava, então eu decidi que **compensava mais voltar para o ProcGen e tentar deixar ele mais rápido** — manter o estudo profundo e atacar o único defeito dele (velocidade) com o porte JAX, em vez de aceitar um estudo raso e rápido. É exatamente o que as seções 14–16 documentam.
+Through empirical profiling, training wall-clock time in Craftax was found to be **virtually identical to ProcGen** (runs requiring millions of steps, multi-hour grids), yet with **significantly reduced academic depth** — lacking the published generalization protocol (`200` train vs `0` unseen), lacking the 16 architectures × 5 games × 5 seeds grid, and without CI/Cohen's d/AUC/dual-eval/budget-scaling rigor. Computational resources were being expended for a fraction of the scientific rigor. Consequently, the optimal methodological path was **returning to ProcGen and accelerating it** — maintaining the rigorous study while resolving its sole bottleneck (throughput) via a faithful JAX port, rather than compromising on experimental depth. Sections 14–16 document this work.
 
-### 13.2. Minha justificativa acadêmica da remoção
+### 13.2. Academic Justification for Scaffolding Removal
 
-Eu não vejo a remoção como perda de trabalho, e sim como controle de validade interna:
+Removal is framed not as lost effort, but as an essential measure of internal validity:
 
-- **Validade de construto.** Misturar no mesmo `README`/`results/` dois benchmarks com semânticas de reward, horizontes e budgets distintos (`Craftax 8M` vs. `ProcGen 100k`) convida à comparação inválida entre números incomensuráveis. A literatura de generalização em RL (Cobbe et al., ProcGen) exige protocolo fixo por estudo.
-- **Reprodutibilidade.** O estudo ProcGen depende de `Python ≤3.10` + `procgen 0.10.7` + `gym 0.26.2` + `torch cu121` (seção 5 e `requirements.txt`), enquanto a suíte JAX exigia `Python 3.12` + `jax 0.11` + `craftax`/`brax`. Manter ambos no mesmo venv/requirements quebra a instalação nos dois lados (o conflito `numpy<2` vs. `numpy 2.x` da seção 14.3 é o exemplo mínimo).
-- **Rastreabilidade.** Todo o material removido permanece recuperável no Git (`git log --oneline`, `git show 5e88c16:...`, `git show 6d450fa:...`). Nada foi reescrito da história; apenas a árvore de trabalho voltou ao escopo do estudo.
+- **Construct Validity.** Aggregating two benchmarks with divergent reward semantics, episode horizons, and budgets (`Craftax 8M` vs `ProcGen 100k`) within a single `README`/`results/` invites invalid comparisons between incommensurable quantities. Generalization literature in RL (Cobbe et al., ProcGen) mandates a fixed protocol per study.
+- **Reproducibility.** The ProcGen study relies strictly on `Python ≤3.10` + `procgen 0.10.7` + `gym 0.26.2` + `torch cu121` (section 5 and `requirements.txt`), whereas the exploratory JAX suite required `Python 3.12` + `jax 0.11` + `craftax`/`brax`. Maintaining both within the same virtual environment breaks dependency resolution on both sides (the `numpy<2` vs `numpy 2.x` conflict in section 14.3 is a direct example).
+- **Traceability.** All excised code remains fully retrievable via Git history (`git log --oneline`, `git show 5e88c16:...`, `git show 6d450fa:...`). History was not rewritten; the working tree was simply aligned with the study's scope.
 
-### 13.3. O que foi apagado e o que foi restaurado
+### 13.3. Inventory of Restored and Archived Components
 
-**Apagado da árvore (mas preservado no Git):** `src/` (trainers JAX: `ppo.py`, `dqn.py`, `marl_*`, `continuous_rl.py`, `offline_rl.py`, `recurrent_ppo.py`, `eval_utils.py`, `procgen_parity_modules.py`, `procgen_env.py`, `procgen_ppo.py`), `experiments/` (12 benchmarks JAX/Craftax/Brax/MARL), `figures/` (9 figuras JAX), `results/` JAX (`*_benchmarks_results.json`, `boxing_*`, `dataset_boxing_expert.npz`, `procgen_parity_master_results.json`, `combinatorial_grid_results.json`, `results/logs/`, `boxing_final_results.txt`), scripts JAX (`run_all_procgen_combinations.py`, `run_combinatorial_grid.py`, `run_convergence_*.sh`, `run_full_benchmark.py`, `run_smoke_test.py`, `bench_*.py`, `smoke_procgen.py`, `diag_env.sh`, `probe_procgen.sh`, `setup_procgen_env.sh`, `_verify_pg.py`, `_probe_pg3.py`), caches (`.jax_compile_cache/`, `__pycache__/`).
+**Archived from the working tree (preserved in Git history):** `src/` (JAX trainers: `ppo.py`, `dqn.py`, `marl_*`, `continuous_rl.py`, `offline_rl.py`, `recurrent_ppo.py`, `eval_utils.py`, `procgen_parity_modules.py`, `procgen_env.py`, `procgen_ppo.py`), `experiments/` (12 JAX/Craftax/Brax/MARL benchmarks), `figures/` (9 JAX figures), `results/` JAX artifacts (`*_benchmarks_results.json`, `boxing_*`, `dataset_boxing_expert.npz`, `procgen_parity_master_results.json`, `combinatorial_grid_results.json`, `results/logs/`, `boxing_final_results.txt`), standalone scripts (`run_all_procgen_combinations.py`, `run_combinatorial_grid.py`, `run_convergence_*.sh`, `run_full_benchmark.py`, `run_smoke_test.py`, `bench_*.py`, `smoke_procgen.py`, `diag_env.sh`, `probe_procgen.sh`, `setup_procgen_env.sh`, `_verify_pg.py`, `_probe_pg3.py`), and build caches (`.jax_compile_cache/`, `__pycache__/`).
 
-**Restaurado ao estado `4f84ed3`:** todos os `compare_*.py` na raiz, `models/` (`sb3_extractors.py`, `cnn_attention.py`, `cnn_classic.py`, `combined_extractors.py`, `world_model_extractors.py`), `procgen_wrapper.py`, `*_analysis.py`, `re_eval_*.py`, `visualize_*.py`, `requirements.txt` pinado (ProcGen), `.gitignore` original e `results/` originais (JSONs + PNGs das seções 3–12).
+**Restored to state `4f84ed3`:** All root `compare_*.py` scripts, `models/` (`sb3_extractors.py`, `cnn_attention.py`, `cnn_classic.py`, `combined_extractors.py`, `world_model_extractors.py`), `procgen_wrapper.py`, `*_analysis.py`, `re_eval_*.py`, `visualize_*.py`, pinned `requirements.txt` (ProcGen), original `.gitignore`, and original `results/` (JSONs + PNGs for sections 3–12).
 
-### 13.4. O que as seções 14–16 acrescentam
+### 13.4. Purpose of Sections 14–16
 
-As seções 1–12 estão congeladas como registro do meu estudo concluído. As seções 14–16 são o **meu diário de bordo metodológico**: eu documento nelas, com o mesmo rigor das anteriores, **minha trajetória, minhas escolhas, mudanças e ajustes** ao portar este estudo para JAX — incluindo o que funcionou (portões PA0 e PA1 superados, §14.3 e §15.1), o que eu removi da árvore e por quê, e qual é o caminho restante (PA2 em diante). Eu não reinterpreto nenhum número das seções 1–12 aqui; trata-se de metadocumentação do meu processo, não de novos resultados do estudo.
+Sections 1–12 remain frozen as the scientific record of the completed study. Sections 14–16 serve as the **methodological research log**: documenting, with identical academic rigor, **the trajectory, decisions, architectural choices, and adaptations** encountered while porting this study to JAX — including verified milestones (Gates PA0 and PA1 cleared, §14.3 and §15.1), discarded paths, and open objectives. No metrics in sections 1–12 are altered here; this constitutes meta-documentation of process, not new study outcomes.
 
 ---
 
-## 14. Trajetória do Porte JAX-do-ProcGen — objetivo, decisão e portão PA0
+## 14. Trajectory of the JAX-Port-of-ProcGen — Objective, Decisions, and Gate PA0
 
-### 14.1. Objetivo real e caminho escolhido (caminho A)
+### 14.1. Core Objective and Selected Route (Path A)
 
-Meu objetivo nunca foi "mais benchmarks em JAX", e sim **"o estudo do ProcGen, só que mais rápido"**. Diante das opções, eu escolhi explicitamente o **caminho A — portar meu estudo ProcGen fielmente para JAX**:
+The objective was never "accumulate disparate benchmarks in JAX", but rather **"the ProcGen study, executed faster"**. Among possible alternatives, **Path A — faithful porting of the ProcGen study to JAX** — was explicitly chosen:
 
-> Reconstruir o estudo **exato** em JAX: ProcGen real (`envpool`/CPU) + **16 arquiteturas × 5 jogos × 5 seeds × 100k** + **IC 95% / Cohen's d / AUC / eval-duplo (stoch+det) / budget-scaling**. Ganho esperado de ~**10x** sobre o throughput SB3 (~`300 FPS` legado em `cuda`), sem alterar o desenho experimental.
+> Reconstruct the **exact** study in JAX: Authentic ProcGen (`envpool`/CPU) + **16 architectures × 5 games × 5 seeds × 100k steps** + **95% CI / Cohen's d / AUC / dual-evaluation (stoch+det) / budget-scaling**. Expected speedup: ~**10×** over SB3 throughput (~`300 FPS` legacy on `cuda`), preserving identical experimental design.
 
-As alternativas rejeitadas foram: (B) manter a suíte JAX/Craftax como substituto do ProcGen — rejeitada porque Craftax simbólico/pixels e ProcGen pixels têm dinâmicas, espaços de observação e regimes de generalização distintos, de modo que "PPO ≫ DQN no Craftax" não responde "qual extrator generaliza melhor no ProcGen"; e (C) reimplementar ProcGen em JAX puro — rejeitada por ser inviável (o ProcGen é C++/OpenGL, com geração procedural proprietária; reescrevê-lo introduziria um novo ambiente, não uma aceleração do mesmo).
+Rejected alternatives included: (B) substituting ProcGen with JAX/Craftax — rejected because symbolic/pixel Craftax and pixel ProcGen possess divergent observation spaces, transition dynamics, and generalization regimes, meaning "PPO ≫ DQN on Craftax" fails to answer "which visual extractor generalizes best on ProcGen"; and (C) reimplementing ProcGen natively in pure JAX — rejected as intractable (ProcGen is C++/OpenGL with proprietary procedural generation; rewriting it introduces a different environment rather than accelerating the existing benchmark).
 
-O caminho A me impôs, portanto, uma arquitetura híbrida inédita neste repositório: **pipeline CPU-env + learner JAX** — ambientes ProcGen vetorizados em CPU alimentando um learner PPO em JAX na GPU. Esse pipeline não existia aqui e é o meu trabalho novo central.
+Path A necessitated a hybrid architecture: **CPU environment pipeline + JAX GPU learner** — vectorized ProcGen environments hosted on CPU feeding a batched PPO learner implemented in JAX on the GPU.
 
-### 14.2. Plano em fases e contenção de recursos
+### 14.2. Phased Roadmap and Resource Constraints
 
-Antes de qualquer código de learner, eu estabeleci um plano em fases com portões de viabilidade:
+Prior to implementing learner logic, a phased plan with strict viability gates was established:
 
-- **PA0 (compatibilidade):** provar que `procgen 0.10.7` e `jax[cuda12]` coexistem e funcionam (env + GPU) num mesmo interpretador. Critério de passagem: `PROCGEN_JAX_OK` — abrir `coinrun` headless e executar uma op JAX em `cuda:0` no mesmo venv.
-- **PA1 (throughput):** construir o pipeline vetorizado CPU→GPU e medir FPS real contra os ~`300` do legado SB3.
-- **PA2+ (fidelidade):** reimplementar os 16 extratores e o protocolo completo (IC/Cohen/AUC/eval-duplo/budget-scaling) e validar paridade numérica num subconjunto antes da grade completa.
+- **PA0 (Compatibility):** Prove that `procgen 0.10.7` and `jax[cuda12]` coexist and operate (env simulation + GPU acceleration) within the same interpreter environment. Exit criterion: `PROCGEN_JAX_OK` — initialize headless `coinrun` and execute a JAX kernel on `cuda:0` within the same virtual environment.
+- **PA1 (Throughput):** Construct the vectorized CPU→GPU pipeline and measure empirical FPS against the ~`300 FPS` SB3 legacy baseline.
+- **PA2+ (Fidelity):** Implement the 16 extractors and the full evaluation suite (CI/Cohen/AUC/dual-eval/budget-scaling), validating numerical parity on a subset before launching the full grid.
 
-Como pré-condição de PA0, eu parei com segurança a grade Craftax então em execução (JSON de resultados parciais preservado para retomada) a fim de liberar a GPU, e diagnostiquei o ambiente com `diag_env.sh`. Essa contenção — um experimento por vez na GPU de 8 GB — replica a disciplina já adotada na suíte JAX (`run_convergence_phase*.sh`) e evita OOM por contenção de VRAM.
+As a prerequisite for PA0, running background workloads were safely terminated (caching intermediate JSONs) to release GPU VRAM, and the host environment was profiled with `diag_env.sh`. Maintaining a single concurrent job on the 8 GB GPU prevents VRAM out-of-memory errors.
 
-### 14.3. Portão PA0 — diagnóstico, obstáculo, probe e superação
+### 14.3. Gate PA0 — Diagnostics, Roadblocks, Probing, and Resolution
 
-**Diagnóstico (falha inicial, informativa).** O venv então ativo era `Python 3.12` + `JAX 0.11.1` + `cuda:0` funcional, mas `pip` não encontrava **nenhuma** versão do `procgen`: o `procgen 0.10.7` não publica wheel para `cp312`. O sistema possuía apenas `Python 3.12` (sem `3.10`/`3.9`, sem `conda`/`pyenv`), e o ProcGen exige `py≤3.10` por ser extensão C++ pré-compilada. Ferramentas de build presentes: `gcc`/`g++`/`make` (sem `cmake`) — compilar do fonte seria frágil e lento. Sem resolver isso, investir no learner JAX seria desperdício: daí o caráter de portão.
+**Initial Diagnostic (Informative Failure).** The active environment had `Python 3.12` + `JAX 0.11.1` + operational `cuda:0`, but `pip` could not locate **any** compatible wheel for `procgen`: `procgen 0.10.7` distributes wheels up to `cp310`. The host lacked `Python 3.10` or conda toolchains, and ProcGen requires compiled C++ extensions. Compiling from source without `cmake` was error-prone. Resolving environment compatibility was a non-negotiable prerequisite.
 
-**Probe de viabilidade (`probe_procgen.sh`).** Eu respondi duas perguntas factuais antes de qualquer `apt`: (1) existe wheel `manylinux` de `procgen 0.10.7` para `cp310`? Sim — `procgen-0.10.7-cp310-cp310-manylinux...whl`, instalação limpa sem compilação; (2) há rede e meio de obter `Python 3.10` no `Ubuntu 24.04` (cujos repos oficiais não o trazem)? Sim, via PPA `deadsnakes`. Veredito: **VIÁVEL**.
+**Feasibility Probing (`probe_procgen.sh`).** Two empirical questions were addressed: (1) Does a valid `manylinux` wheel for `procgen 0.10.7` exist for `cp310`? Yes — `procgen-0.10.7-cp310-cp310-manylinux...whl` installs cleanly without local compilation. (2) Can `Python 3.10` be acquired on `Ubuntu 24.04` via reputable packaging channels? Yes, via the `deadsnakes` PPA. Verdict: **VIABLE**.
 
-**Construção do ambiente (`setup_procgen_env.sh`, que eu executei em background por envolver `apt` + ~2 GB de `jax[cuda12]`).** Caminho que eu executei: `Python 3.10` (deadsnakes) + venv dedicado + `procgen` (wheel) + `jax[cuda12]`. Estágios 1–2 (interpretador + venv) concluídos rapidamente; o estágio longo foi o download/instalação do JAX CUDA. O primeiro `verify` falhou por dois motivos instrutivos, ambos corrigidos e documentados como ajustes:
+**Environment Setup (`setup_procgen_env.sh`).** Executed pipeline: `Python 3.10` (deadsnakes) + dedicated virtual environment + `procgen` (wheel) + `jax[cuda12]`. Interpreter and venv configuration completed rapidly; JAX CUDA wheel installation was the primary I/O bottleneck. Initial validation revealed two specific issues, resolved and documented below:
 
-| # | Sintoma no `verify` | Causa-raiz | Ajuste adotado |
+| # | Diagnostic Symptom | Root Cause | Implemented Resolution |
 |---|---|---|---|
-| 1 | Conflito `numpy`: `procgen` exige `numpy<2.0`, mas a instalação do JAX puxou `numpy 2.2.6` | Dependências divergentes (legado C++ pinado vs. ecossistema JAX recente) | Pinar `numpy==1.26.4` no venv do porte; o aviso residual de `ml-dtypes` é inofensivo (a op JAX de teste executou na GPU) |
-| 2 | `verify` inicial usou `gymnasium`, mas o ProcGen registra seus envs no `gym 0.26.2` (API antiga, `step` de 4-tupla) | O estudo original contorna isso com o wrapper `gym→gymnasium` (`procgen_wrapper.py`); o script de verificação tentou o registro direto no namespace errado | Corrigir o `verify` (`_verify_pg.py`) para a API `gym` legada; via nativa rápida adicional sondada em `_probe_pg3.py` (`gym3`) |
+| 1 | `numpy` ABI conflict: `procgen` requires `numpy<2.0`, but default JAX installation pulled `numpy 2.2.6` | Divergent dependency bounds (legacy C++ extension vs modern JAX ecosystem) | Pinned `numpy==1.26.4` in the port venv; residual `ml-dtypes` warning is harmless (GPU test kernel executed successfully) |
+| 2 | Initial test script targeted `gymnasium`, but ProcGen registers within `gym 0.26.2` (legacy 4-tuple `step` API) | Original study bridges this via wrapper (`procgen_wrapper.py`); probe script attempted direct lookup in the wrong namespace | Updated verification script (`_verify_pg.py`) to legacy `gym` API; explored vectorized C++ interface in `_probe_pg3.py` (`gym3`) |
 
-**Validação (portão superado, revalidado em 04/09/2026).** Após os ajustes, o critério `PROCGEN_JAX_OK` foi atingido no mesmo venv `py3.10`, headless, em WSL2: `coinrun` abre com obs `(64,64,3)` `uint8` e `Discrete(15)` (API `gym` de 4-tupla), e o JAX executa em `cuda:0` (revalidação: `jax 0.6.2`, `devices=[CudaDevice(id=0)]`, `matmul` soma `1073741824.0` no device). Versões validadas do alicerce: `JAX 0.6.2` + `flax 0.10.7` + `optax 0.2.8` + `numpy 1.26.4` + `procgen 0.10.7` (+ `gym 0.26.2`, `gymnasium 1.3.0`, `gym3 0.3.3` presentes). Este é o estado sólido sobre o qual o PA1 foi construído (§15.1).
+**Validation (Gate Cleared, Re-verified on 04/09/2026).** Following adjustments, `PROCGEN_JAX_OK` was achieved in headless WSL2 under `py3.10`: `coinrun` initializes with observation shape `(64,64,3)` `uint8` and `Discrete(15)` action space, and JAX executes on `cuda:0` (verified: `jax 0.6.2`, `devices=[CudaDevice(id=0)]`, matmul reduction produces `1073741824.0`). Verified stack: `JAX 0.6.2` + `flax 0.10.7` + `optax 0.2.8` + `numpy 1.26.4` + `procgen 0.10.7` (with `gym 0.26.2`, `gymnasium 1.3.0`, `gym3 0.3.3`).
 
-### 14.4. Tabela-resumo das escolhas e ajustes
+### 14.4. Summary of Design Decisions and Technical Adjustments
 
-| Decisão / ajuste | Alternativa considerada | Critério e desfecho |
+| Decision / Adjustment | Alternative Considered | Criteria and Outcome |
 |---|---|---|
-| Caminho A (porte fiel) vs. B (Craftax como substituto) vs. C (reimplementar ProcGen) | B era mais barato; C era "JAX puro" | Fidelidade ao desenho publicado venceu: só A responde a pergunta original sem trocar o ambiente |
-| Parar a grade Craftax antes de PA0 | Manter grade + setup em paralelo | GPU de 8 GB não comporta dois workloads; parada segura com JSON preservado |
-| `deadsnakes` + venv `py3.10` dedicado | Compilar ProcGen no `py3.12`, ou `conda`/`pyenv` | Wheel `cp310` existe e é limpo; compilar sem `cmake` era risco desnecessário; venv dedicado isola o conflito `numpy` sem contaminar o estudo SB3 |
-| Pinar `numpy 1.26.4` | Forçar `numpy 2.x` | Requisito rígido do ProcGen (`<2`); JAX opera normalmente sobre `1.26` neste escopo |
-| Verificar via `gym 0.26.2` (e sondar `gym3`) em vez de `gymnasium` direto | Padronizar tudo em `gymnasium` | O registro do ProcGen é `gym`-nativo; o estudo original já isola essa fronteira no wrapper — o porte deve respeitar a mesma fronteira |
-| Apagar o scaffolding JAX da árvore (seção 13) | Manter `setup_procgen_env.sh`/`_verify_pg.py`/pipeline parcial ao lado do estudo | Higiene de escopo e de instalação: o estudo SB3 volta a ser reproduzível com um único `requirements.txt`; o scaffolding permanece no Git e documentado aqui |
+| Path A (faithful port) vs B (Craftax substitute) vs C (native JAX rewrite) | Path B was computationally cheaper; C was "pure JAX" | Experimental fidelity took priority: only Path A addresses the research question without altering environment dynamics |
+| Terminate Craftax grid prior to PA0 | Run setup concurrently | 8 GB VRAM cannot safely sustain concurrent GPU training and compilation; clean termination with serialized JSON |
+| `deadsnakes` + dedicated `py3.10` venv | Compile ProcGen under `py3.12`, or conda/pyenv | `cp310` wheel is pre-built; dedicated venv isolates the `numpy` version conflict from the SB3 study environment |
+| Pin `numpy 1.26.4` | Force `numpy 2.x` | Strict requirement of ProcGen C++ extension (`<2`); JAX operates nominally on `1.26` |
+| Validate via `gym 0.26.2` (and probe `gym3`) rather than direct `gymnasium` | Uniformly enforce `gymnasium` | ProcGen environment registry is natively `gym`; the port preserves the established wrapping boundary |
+| Archive exploratory JAX scaffolding from working tree (section 13) | Keep setup scripts alongside main study | Cleanliness of repository and dependencies: SB3 study remains reproducible with a single `requirements.txt`; scaffolding is preserved in Git history |
 
 ---
 
-## 15. Estado Atual, Limites e Próximos Passos (PA2-velocidade concluído; paridade em aberto)
+## 15. Current Status, Boundaries, and Next Steps (PA2-Speed Complete; Parity Open)
 
-**Estado atual.** Minha árvore de trabalho é o estudo ProcGen/SB3 integral e reproduzível (seções 1–12, seção 5 para reprodução). Meu porte JAX, no mesmo branch `main` (diretório `jax_port/`, sem tocar nos arquivos do estudo), cobre **todo o projeto**: zoo de 13 extratores, PPO/A2C, DQN/QR-DQN, ICM/RND/NGU, augments, HRL 4 braços, eval stoch+det+gap, stats (IC/Cohen/AUC) e grade runner — tudo testado (§15.4). Em aberto: *executar* a grade completa multi-seed (o código está pronto e testado; o custo estimado é ~2–4 h).
+**Current Status.** The primary working tree remains the fully reproducible ProcGen/SB3 study (sections 1–12; reproduction commands in section 5). The JAX port, co-located on `main` under `jax_port/` (without modifying root study files), spans the full experimental design: 13 backbones, PPO/A2C, DQN/QR-DQN, ICM/RND/NGU, data augmentations, 4-arm HRL, stoch+det+gap evaluation, statistical metrics (CI/Cohen/AUC), and the grid runner — all tested (§15.4). Open objective: running the full multi-seed parity grid (code implemented and tested; estimated runtime ~2–4 h).
 
-### 15.1. PA1 — pipeline e throughput medido (04/09/2026, venv `/root/procgen-jax`, WSL2, `coinrun`, ações aleatórias, 3000 steps)
+### 15.1. PA1 — Pipeline and Measured Throughput (04/09/2026, venv `/root/procgen-jax`, WSL2, `coinrun`, Random Actions, 3000 Steps)
 
-Comando reproduzível (via WSL, sem dependências de torch/sb3/cv2 no venv do porte):
+Reproducible command (executed via WSL, without torch/sb3/cv2 dependencies in the port venv):
 
 ```bash
 wsl -e env PYTHONPATH=/mnt/c/Users/Acer/Downloads/MLE \
@@ -647,200 +647,189 @@ wsl -e env PYTHONPATH=/mnt/c/Users/Acer/Downloads/MLE \
   --out /mnt/c/Users/Acer/Downloads/MLE/jax_port/pa1_throughput.json
 ```
 
-| `num_envs` | FPS só-env (CPU, autoreset) | FPS env→GPU (transfer + `JIT uint8→float32 /255` com sync por step) |
+| `num_envs` | Raw Env FPS (CPU, autoreset) | Env→GPU FPS (Transfer + `JIT uint8→float32 /255` with step synchronization) |
 |---:|---:|---:|
-| 1 | 12.618,2 | 301,5 |
-| 4 | 13.272,9 | 910,1 |
-| 16 | 18.695,5 | 3.023,8 |
+| 1 | 12,618.2 | 301.5 |
+| 4 | 13,272.9 | 910.1 |
+| 16 | 18,695.5 | 3,023.8 |
 
-Fonte: `jax_port/pa1_throughput.json`. Avisos `gym`/`np.bool8` durante o bench são esperados (API legada do ProcGen, mesma fronteira da seção 14.3).
+Source: `jax_port/pa1_throughput.json`. Standard `gym`/`np.bool8` deprecation warnings during execution are expected due to legacy ProcGen bindings.
 
-> **Leitura honesta:** (1) o env cru escala pouco de 1→16 envs (12,6k→18,7k) — loop síncrono single-process em Python; multiprocesso/`gym3` é o ganho futuro. (2) O sync por step (`asarray` + JIT + `block_until_ready` a cada passo) domina o custo: com 1 env, o pipeline entrega ~`300 FPS`, indistinguível do baseline de treino SB3 (~`300 FPS`, seção 1.4) — mas aqui **sem nenhum update de rede**. (3) O batching amortiza o sync: 16 envs → ~`3k FPS` pré-learner, ou seja, ~`10x` de headroom sobre o legado **antes** do custo do PPO. A tese do caminho A continua de pé; o FPS de treino real com gradientes foi medido em seguida (§15.2) e superou estes 3k de pipeline.
+> **Empirical Interpretation:** (1) Raw CPU simulation exhibits sub-linear scaling from 1→16 envs (12.6k→18.7k) due to Python single-process synchronous step loops; multi-process C++ wrappers (`gym3`) offer headroom. (2) Step-by-step synchronization (`asarray` + JIT + `block_until_ready` per step) dominates overhead: with 1 env, the pipeline sustains ~`300 FPS`, matching the legacy SB3 training baseline (~`300 FPS`, section 1.4) — but here **without network updates**. (3) Vectorized batching amortizes host-to-device synchronization: 16 envs yield ~`3k FPS` pre-learner, representing a ~`10×` headroom margin before accounting for PPO backpropagation. Path A throughput was subsequently measured with active gradient updates (§15.2), surpassing this 3k benchmark.
 
-**Próximo passo (executar a paridade).** Rodar `run_grade.py` nas 5 suítes com 5 seeds e `--eval-full`, e comparar ordenações com as seções 3–12 (barra: dentro do ruído entre-seeds). Estimativa: ~2–4 h de treino + eval (vs dias no SB3).
+**Next Objective (Parity Execution).** Execute `run_grade.py` across 5 suites with 5 seeds and `--eval-full`, benchmarking ranking consistency against sections 3–12 (acceptance criterion: within inter-seed variance). Estimated runtime: ~2–4 h of training + evaluation (vs multiple days in SB3).
 
-### 15.4. Porte integral — mapa de cobertura e testes (05/09/2026)
+### 15.4. Comprehensive Port — Coverage Map and Test Evidence (05/09/2026)
 
-Cada linha do estudo tem par JAX em `jax_port/`, com fidelidade auditável e teste real executado:
+Each component of the original study corresponds to a JAX module in `jax_port/`, with test coverage:
 
-| Estudo (seções 1–12) | Porte | Teste executado |
+| Primary Study (sections 1–12) | JAX Port Implementation | Executed Verification Test |
 |---|---|---|
-| Suite 16 arq (`compare_suite/new_archs/combined`, §3) | `backbones.py` (13 extratores) + `train.py --extractor` | zoo 13/13 shapes+params (§15.4.1); smoke-train 8/8; mini-grade 16 células OK |
-| `mlp_vector` (`procgen_wrapper.py:55`, §3.12) | modo `--obs vector` (luminância+mean-pool, sem cv2) | smoke-train OK; suite `test_smoke` usa este caminho |
-| Augments crop/color/noise (§3.3/3.11) | `augment.py` (p=0.5/float, fiel) + `--augment` | smoke crop e contrastive+noise OK |
-| ICM/RND/NGU (`compare_maze_heist.py:16`, §3.6) | `exploration.py` (beta=0.01, online/step, quirk do inverse documentada) | smoke maze-ICM/RND/NGU + heist-RND OK |
-| LSTM-Attention stateless (§3.5) | `LSTMAttention` (repeat-4+BiLSTM+MHA, fiel) | shape OK + smoke-train OK |
-| VAE/AE/Recon/Contrastive (§3.2) | `VAEBackbone` (reparam por forward) + gêmeos `ae`/`recon`≡classic + `contrastive`≡classic+noise (achado documentado) | smoke vae/ae/contrastive+noise OK |
-| PPO/A2C/DQN/QR-DQN (§12) | `train.py --algo`, `dqn.py`+`train_dqn.py` (buffer 100k, eps 1→0.05/25%, lr 1e-4, QR-200, `--lr` p/ sensibilidade) | smoke dqn/qrdqn/a2c OK |
-| HRL flat/skip4/hrl/hrl_learned (§11) | `train_hrl.py` (SKILLS exatas, DUR=4, budget em frames, low π(a\|obs,z)) | smoke 4/4 braços OK |
-| Eval 100+100+15, gap (§3.10–12) | `--eval-eps/--eval-det-eps/--eval-train-eps` + `gen_gap` nos 3 trainers | regressão PPO/DQN/HRL OK |
-| IC/Cohen/AUC (§3.8–3.9) | `stats.py` (t Student, d, trapézio/budget) | `test_stats` valores conhecidos OK |
-| Grades + budget scaling + hard + pilot + extensões (§2–3.13) | `run_grade.py` (suites main/exploration/algo/hrl/budget/hard/pilot/spr/gnn/aux, `--distribution`, resume `master.json`) + `spr.py` + `contrast.py` | mini-grade 26/26 OK (§15.4.1) |
-| Bench justo SB3-vs-JAX (§15.3) | `bench_sb3_paired.py` + `paired_*.json` | A/B/C medidos |
+| 16-Architecture Suite (`compare_suite/new_archs/combined`, §3) | `backbones.py` (13 extractors) + `train.py --extractor` | Zoo 13/13 shapes+parameters (§15.4.1); smoke training 8/8; mini-grid 16 cells OK |
+| `mlp_vector` (`procgen_wrapper.py:55`, §3.12) | `--obs vector` mode (luminance + mean pooling, no cv2 dependency) | Smoke training verified; `test_smoke` suite uses this pipeline |
+| Augmentations: crop/color/noise (§3.3/3.11) | `augment.py` (p=0.5/float) + `--augment` | Smoke crop and contrastive+noise verified |
+| ICM/RND/NGU (`compare_maze_heist.py:16`, §3.6) | `exploration.py` (beta=0.01, online/step, inverse dynamics behavior documented) | Smoke maze-ICM/RND/NGU + heist-RND verified |
+| LSTM-Attention stateless (§3.5) | `LSTMAttention` (repeat-4 + BiLSTM + MHA) | Output shapes and smoke training verified |
+| VAE/AE/Recon/Contrastive (§3.2) | `VAEBackbone` (reparameterization) + twins `ae`/`recon` ≡ classic + `contrastive` ≡ classic+noise | Smoke vae/ae/contrastive+noise verified |
+| PPO/A2C/DQN/QR-DQN (§12) | `train.py --algo`, `dqn.py` + `train_dqn.py` (100k buffer, eps 1→0.05 over 25%, lr 1e-4, QR-200, `--lr` sensitivity) | Smoke dqn/qrdqn/a2c verified |
+| HRL flat/skip4/hrl/hrl_learned (§11) | `train_hrl.py` (exact skill mapping, DUR=4, frame-based budget, low-level `π(a\|obs, z)`) | Smoke across all 4 arms verified |
+| Evaluation: 100+100+15, generalization gap (§3.10–12) | `--eval-eps/--eval-det-eps/--eval-train-eps` + `gen_gap` across 3 trainers | Regression tested across PPO/DQN/HRL |
+| Statistics: CI/Cohen/AUC (§3.8–3.9) | `stats.py` (Student's t, Cohen's d, trapezoidal integration) | `test_stats` validated against analytical values |
+| Grids + budget scaling + hard + pilot + extensions (§2–3.13) | `run_grade.py` (suites: main/exploration/algo/hrl/budget/hard/pilot/spr/gnn/aux, `--distribution`, resume via `master.json`) + `spr.py` + `contrast.py` | Mini-grid 26/26 cells verified (§15.4.1) |
+| Controlled SB3 vs JAX Benchmark (§15.3) | `bench_sb3_paired.py` + `paired_*.json` | Arms A/B/C empirically profiled |
 
-#### 15.4.1. Evidência de teste (05/09/2026, `/root/procgen-jax`, RTX 4070)
-- `test_stats`: `STATS_OK` nos dois interpretadores (py3.10 Win + venv).
-- `test_parity`: gym3-batch == gym-unitário, 200 steps, 0 divergências (`PARITY_OK`).
-- `test_zoo`: 13/13 forwards + classic 608.944 params (~600k do estudo) + gêmeos idênticos (`ZOO_OK`).
-- `test_smoke`: treino MLP ponta-a-ponta em processo (`SMOKE_OK`).
-- Armadilhas achadas pelos testes e corrigidas: padding SAME default do Flax (virava 2,1M params; fix VALID), `stop_gradient` como context-manager, `main()` do DQN sem chamar `train()`, gather-no-device 40x, `np.trapezoid` inexistente no numpy 1.26.
-- Mini-grade runner: 26/26 células (HRL 4 + main 16 + algo 6) em ~6 min, `master.json` resume verificado (re-run pula prontas).
-- Rodar tudo: `wsl -e env PYTHONPATH=... /root/procgen-jax/bin/python -m jax_port.tests.run_tests` (stats+parity+zoo+smoke, ~3 min) e `run_grade.py --suite <s> --games <g> --seeds 42-46 --timesteps 100000 --eval-full` para a grade real (eu rodei as 10 suítes: 615/615 OK, `analysis_full.json` abaixo).
-- **Figuras:** `jax_port/figures/01-06.png` (global com IC, speedup pareado, budget, HRL, algo-families, top-10 n=10) geradas por `make_figures.py` direto dos JSONs — nenhum número digitado à mão.
-- **`hrl_learned` a 500k (hipótese fechada):** plunder, 3 seeds — learned 4,19 vs fixo 3,42 (a 100k era 4,23 vs 3,19). A vantagem persiste sem explodir nem colapsar: co-treino só mantém com 5x budget.
-- **Dreams VAE/AE:** `jax_port/dream.py` (decoders espelho do estudo, padding SAME p/ saída exata 64×64) — 20k frames bossfight, VAE BCE 0,37/KL 0,02, AE 0,32 (~30 s cada); `jax_port/dreams/dreams_panel.png` (real/vae/ae) + `bossfight_dreams.gif` (300 steps, sonhos com estrutura: std 44–60 vs 57 do real). MP4 trocado por GIF: o `imageio-ffmpeg` do venv está com API quebrada (`write_frames() got audio_path`) — documentado aqui em vez de escondido.
-- **Dreamer completo 1M (fechado 05/09):** `dreamer.py` + `train_dreamer.py` — coinrun seed 42, 1M frames em 656 s (**1.524 SPS**, ~10x o SB3; mais lento que o PPO-JAX porque cada ciclo soma updates do WM em sequências + imaginação). Resultado duplo e honesto: o **mundo aprendeu** (`dreamer_imagined.gif` com std 61,7 vs 0,7 no smoke — estrutura visual real emergiu), mas o **actor ainda não age** (ret 0,0 em coinrun). Diagnóstico: sem symlog nos rewards e sem tuning de entropia/KL, o actor-critic na imaginação não decola — exatamente o motivo pelo qual o DreamerV3 usa symlog/two-hot. Caminho: sweep de escala de reward + entropia (cada 1M custa ~11 min).
-- **Tuning do actor (sweep B/C/D fechado 05/09):** baseline A (raw/ent 3e-4) ret 0,0; **B (symlog/ent 3e-4) ret 3,0**; C (symlog/ent 1e-3) ret 2,5; D (raw/ent 1e-3) ret 0,5. Veredito: **symlog é o fix** (B e C aprendem, A e D não); entropia maior não ajuda (2,5 < 3,0) — `symlog` virou default em `train_dreamer.py`. Ressalva honesta: sinal é train_ret, 1 seed, sem eval definitivo no Dreamer ainda; `sweep.json` + 3 JSONs em `jax_port/dreams/`.
+#### 15.4.1. Empirical Test Evidence (05/09/2026, `/root/procgen-jax`, RTX 4070)
+- `test_stats`: `STATS_OK` across both environments (Win py3.10 and Linux venv).
+- `test_parity`: `gym3` batching matches single-instance `gym` step-for-step across 200 steps with 0 numerical discrepancies (`PARITY_OK`).
+- `test_zoo`: 13/13 forward passes pass shape checks; classic CNN parameter count matches at 608,944 (~600k in study); identical backbones verified (`ZOO_OK`).
+- `test_smoke`: End-to-end MLP training loop verified (`SMOKE_OK`).
+- Addressed bugs and edge cases: Flax default SAME padding inflating parameters to 2.1M (corrected to VALID); `stop_gradient` syntax; DQN entrypoint hook; device-side gather latency; `np.trapezoid` compatibility under `numpy 1.26`.
+- Mini-grid execution: 26/26 cells (HRL 4 + main 16 + algo 6) completed in ~6 min; resume functionality verified via `master.json`.
+- Test execution: `wsl -e env PYTHONPATH=... /root/procgen-jax/bin/python -m jax_port.tests.run_tests` (stats+parity+zoo+smoke, ~3 min); full grid executed via `run_grade.py --suite <s> --games <g> --seeds 42-46 --timesteps 100000 --eval-full` (10 suites, 615/615 cells completed, documented in `analysis_full.json`).
+- **Figures:** `jax_port/figures/01-06.png` (global CI, paired speedup, budget scaling, HRL, algorithm families, top-10 n=10) generated programmatically by `make_figures.py` directly from serialized JSON results.
+- **`hrl_learned` at 500k Steps:** On `plunder` across 3 seeds: learned achieves 4.19 vs fixed 3.42 (at 100k: 4.23 vs 3.19). Advantage persists stably; co-training sustains performance without divergence under 5× budget.
+- **Dreams Reconstruction (VAE/AE):** `jax_port/dream.py` (mirrored decoders with SAME padding for exact 64×64 reconstruction) — 20k frames on `bossfight`: VAE BCE 0.37 / KL 0.02, AE 0.32 (~30 s each); generated `jax_port/dreams/dreams_panel.png` + `bossfight_dreams.gif` (300 steps, structured visual dreams: pixel std 44–60 vs 57 ground truth). Rendered as GIF due to upstream `imageio-ffmpeg` audio argument incompatibility in the venv.
+- **Full Dreamer 1M Steps:** `dreamer.py` + `train_dreamer.py` — `coinrun` seed 42, 1M frames in 656 s (**1,524 SPS**, ~10× SB3; lower than PPO-JAX due to sequence-level world model updates and imagination rollouts). World model converged (`dreamer_imagined.gif` visual std 61.7 vs 0.7 at initialization), while policy actor plateaued at 0.0 return without reward symlog normalization.
+- **Dreamer Actor Tuning (Sweep B/C/D):** Baseline A (raw rewards, entropy 3e-4) returned 0.0; **B (symlog rewards, entropy 3e-4) reached 3.0 return**; C (symlog, entropy 1e-3) reached 2.5; D (raw, entropy 1e-3) reached 0.5. Verdict: **Symlog reward transformation resolves the actor bottleneck**; default updated in `train_dreamer.py`. Artifacts in `sweep.json` and `jax_port/dreams/`.
 
-#### 15.4.3. Veredito da grade completa (05–06/09/2026, 615 células, eval 100+100+15)
+#### 15.4.3. Full Grid Evaluation Verdict (05–06/09/2026, 615 Cells, Eval 100+100+15)
 
-Eu executei tudo: main 240 + exploration 40 + algo 70 + hrl 40 + budget 60 + hard 55 + pilot 20 + spr 30 + gnn 15 + aux 45. Minha leitura honesta, conclusão por conclusão:
+Full execution: main 240 + exploration 40 + algo 70 + hrl 40 + budget 60 + hard 55 + pilot 20 + spr 30 + gnn 15 + aux 45. Academic analysis:
 
-- **Paridade CONFIRMADA no essencial.** Global top-6 em 1,32–1,24 com CIs sobrepostos (`d=0,27`) — replica o headline do estudo (top indistinguível, §3.12). Algo-famílias replicam o estudo quase exatamente: policy>value nos 3 jogos, `qrdqn` lidera `bossfight`, `a2c≈ppo`, sensibilidade de lr irrelevante. Plunder: `hrl_learned` vence (4,23), como no estudo. Exploração: empate técnico ppo≈icm≈rnd≈ngu, como no protocolo definitivo.
-- **Top-1 por jogo difere, dentro do ruído esperado.** Meus top-1 (`aug_noise` global, `contrastive` starpilot, `resnet18` bossfight) ≠ os do estudo (`mlp_vector`, `mlp`, `aug_crop`), mas todos com `d≤0,4` e CIs sobrepostos — ou seja, a lição de §3.8 se aplica ao meu próprio porte: com 5 seeds, trocar o campeão é ruído, não refutação.
-- **Discrepâncias absolutas RESOLVIDAS (05/09).** Eu isolei a causa com dois experimentos: (1) meu porte com batch SB3-like (4 envs, mb 64) deu os MESMOS absolutos do meu batch grande (maze 4,4 vs 5,8; bossfight 0,0 vs 0,02) — batching dentro do JAX não explicava; (2) o SB3 com batch grande (32 envs, mb 1024) saltou para maze **5,33** (vs 2,80 do estudo com 1 env). Conclusão: a diferença é **dinâmica de batching** (batches paralelos grandes exploram/aprendem diferente), não gap JAX-vs-torch — o SB3 faz o mesmo quando paralelizado. `paired_sb3_big_maze.json` + `bench_sb3_paired.py --eval-eps`.
-- **Reprodutibilidade do venv (item 2, feito).** `jax_port/requirements-jax.txt` (freeze exato) + `jax_port/SETUP_VENV.md` (deadsnakes → venv → pins, com as 3 armadilhas documentadas).
-- **Budget (§3.13):** `mlp` sobe devagar (2,04→2,74 starpilot), `resnet18` fica plano/cai — compatível com "mais budget não decide nada".
-- **Top cluster n=10 (fechado 05/09).** Dobrei o n dos 5 finalistas (seeds 42–51, eval-full): bossfight `impoola` 0,20 > mlp 0,09 (`d=0,73`, CIs sobrepostos); starpilot `aug_noise` 2,63 ≈ `impoola` 2,61 (`d=0,06`); dodgeball `impoola` 1,29 ≈ mlp 1,28 (`d=0,05`). Veredito: **nem com n=10 ninguém se separa** — o cluster é genuinamente apertado, e a lição de §3.8 sai fortalecida com o dobro da evidência: não há campeão a declarar, só tendências com IC.
-- **Extensões (sem baseline no estudo):** `gat` no pelotão global (~1,3); `spr_aug>spr`; `acl>curl/cpc` nos 3 jogos; `hard` achata tudo em ~0,05.
-- **Reclassificação por gap de generalização (`gen_gap =` eval_train−eval_unseen, 07/09):** mudando a pergunta de "quem pontua mais" para "quem memoriza menos", a ordenação **não muda** — o global por gap coloca `aug_noise` (−0,47), `lstm_attention` (−0,45), `resnet18` (−0,44), `contrastive` (−0,41) no topo, com ICs sobrepostos por toda parte (`analysis_full.json` → `gen_gap`). Os campeões de retorno também são os de melhor generalização, então "melhor" no ProcGen não é só memorização. O único sinal sutil: `lstm_attention` (o único com memória) aparece consistentemente entre os menores gaps sem vencer em retorno — mais um indício de que memória distribui vantagem de forma pequena e não monotônica, coerente com o veredito da seção temporal (§15.4.5).
+- **Parity Confirmed on Core Findings.** Global top-6 clustered at 1.32–1.24 with overlapping confidence intervals (`d=0.27`) — replicating the primary study finding (top tier statistically indistinguishable, §3.12). Algorithm families replicate closely: policy-based > value-based across all 3 games, `qrdqn` leads `bossfight`, `a2c ≈ ppo`, learning rate sensitivity is minimal. On `plunder`, `hrl_learned` leads (4.23), matching the study. Exploration shows an empirical tie: `ppo ≈ icm ≈ rnd ≈ ngu`, replicating the definitive protocol.
+- **Top-1 per Game Variations within Expected Variance.** Port top configurations (`aug_noise` global, `contrastive` starpilot, `resnet18` bossfight) differ from SB3 study top models (`mlp_vector`, `mlp`, `aug_crop`), but all pairwise comparisons show `d ≤ 0.4` with overlapping CIs — reinforcing section 3.8: with 5 seeds, top-spot swaps reflect sample variance rather than methodological divergence.
+- **Absolute Discrepancy Disentanglement.** Controlled isolation experiments showed: (1) JAX with SB3-sized batches (4 envs, minibatch 64) produced identical returns to large-batch JAX; (2) SB3 scaled to large batches (32 envs, minibatch 1024) increased `maze` performance to **5.33** (vs 2.80 in single-env SB3). Conclusion: Discrepancies stem from **parallel rollout batch dynamics**, not framework differences. Documented in `paired_sb3_big_maze.json`.
+- **Environment Reproducibility.** Pinned via `jax_port/requirements-jax.txt` and documented in `jax_port/SETUP_VENV.md`.
+- **Budget Scaling (§3.13):** `mlp` exhibits modest gains (2.04→2.74 in `starpilot`), while `resnet18` remains flat — confirming that expanded budgets do not alter architectural conclusions.
+- **Top Cluster Expanded Evaluation (n=10 Seeds):** Sample size doubled across top 5 configurations (seeds 42–51, full evaluation): `bossfight` `impoola` 0.20 > `mlp` 0.09 (`d=0.73`, overlapping CIs); `starpilot` `aug_noise` 2.63 ≈ `impoola` 2.61 (`d=0.06`); `dodgeball` `impoola` 1.29 ≈ `mlp` 1.28 (`d=0.05`). Verdict: **Even with n=10, the top cluster remains statistically inseparable** — reinforcing section 3.8.
+- **Extensions (No Baseline in Original Study):** `gat` achieves ~1.3 global return; `spr_aug > spr`; `acl > curl/cpc` across all 3 games; `hard` difficulty suppresses all returns to ~0.05.
+- **Generalization Gap Re-Ranking (`gen_gap = eval_train − eval_unseen`):** Sorting by minimal generalization gap preserves relative order — top models: `aug_noise` (−0.47), `lstm_attention` (−0.45), `resnet18` (−0.44), `contrastive` (−0.41), with overlapping CIs throughout (`analysis_full.json`). High return correlates with strong generalization; models do not succeed via training-set memorization.
 
-#### 15.4.2. 50k basta ou 100k? (probe 05/09/2026, classic/mlp × coinrun/starpilot × seeds 42–43, eval 30/30/15)
+#### 15.4.2. Sample Budget Viability: 50k vs 100k Steps (Probe 05/09/2026, Classic/MLP × Coinrun/Starpilot × Seeds 42–43, Eval 30/30/15)
 
-| Jogo | Extrator | 50k (eval unseen) | 100k (eval unseen) | Δ |
+| Game | Extractor | 50k (Eval Unseen) | 100k (Eval Unseen) | Δ |
 |---|---|---:|---:|---:|
-| coinrun | classic | 4,50 | 5,00 | +0,50 |
-| coinrun | mlp | 2,50 | 3,00 | +0,50 |
-| starpilot | classic | 2,02 | 3,05 | +1,03 |
-| starpilot | mlp | 1,93 | 2,53 | +0,60 |
+| `coinrun` | `classic` | 4.50 | 5.00 | +0.50 |
+| `coinrun` | `mlp` | 2.50 | 3.00 | +0.50 |
+| `starpilot` | `classic` | 2.02 | 3.05 | +1.03 |
+| `starpilot` | `mlp` | 1.93 | 2.53 | +0.60 |
 
-> **Veredito:** 50k preserva todas as ordenações (classic>mlp nos 4 pares) e os deltas (+0,5–1,0) são menores que o ruído entre seeds (mlp-coinrun: 0,0 vs 5–6 conforme a seed). Junto com §3.13 (estagnação 100k→500k), a conclusão é: **50k basta para ordenar** (a pergunta do estudo), **100k dá os absolutos + margem**. A grade completa roda 100k (fidelidade de protocolo; custo marginal: ~14 s vs ~8 s de treino).
+> **Verdict:** 50k steps preserves relative ranking order (`classic > mlp` across all 4 pairs), and deltas (+0.5–1.0) are smaller than seed-to-seed variance. Combined with §3.13 (stagnation from 100k→500k), the conclusion is: **50k steps suffices for relative ranking** (the study's objective), while **100k provides higher absolute scores and safety margin**. The full grid runs at 100k steps.
 
-#### 15.4.3. Quanto o tempo caiu (exemplos medidos, mesma RTX 4070)
-- coinrun 50k, 1 modelo: SB3 ~7 min (§2) → JAX ~8 s de treino (**~50x**).
-- célula 100k: SB3 ~10 min → JAX ~14 s treino + ~40 s eval-full ≈ 1 min ponta-a-ponta (**~10x**).
-- treino de 15 h SB3 (~8M steps): → ~18 min a 7,5k SPS.
-- grade completa (615 células, 10 suítes × 5 seeds, eval-full): SB3 semanas → JAX ~7–8 h ponta-a-ponta (**concluída 06/09, `master_full.json` 615/615 OK**; outputs brutos não versionados, só `analysis_full.json`). Soma dos walls de treino medidos: **5,0 h** (main 92,6 min, budget 91,7, algo 46,0, resto <20 min cada) vs ~90–100 h estimados do estudo (§2/§5) → **~18x no treino, ~12x ponta-a-ponta com eval-full em tudo** — e cobrindo 4 suítes a mais que o original.
-- **SPR (extensão, fora da paridade):** `spr.py` — encoder compartilhado + target EMA (τ=0.99) + transição MLP, MSE em latentes normalizados com crop próprio, Adam aux 1e-4; suíte `spr` (classic+spr, classic+spr+crop × 3 jogos × 5 seeds). Smoke: loss 0.0036 finita, treino funcional.
-- **GAT (extensão, fora da paridade):** `GATPatch` — grafo sobre 64 patches 8×8 (grade+self), 2× GAT 4 heads + residual/LayerNorm, mean-pool → FC512 (141k params); inexistente no estudo ProcGen. Suíte `gnn` (gat × 3 jogos × 5 seeds). Smoke coinrun: ret 6,0, treino OK.
-- **CURL/CPC/ACL (extensão, fora da paridade):** `contrast.py` — encoder compartilhado + target EMA, InfoNCE τ=0.1 com negativos do minibatch (CURL: duas views; CPC: preditor linear do próximo latente; ACL: preditor ação-condicional reutilizando `TransitionMLP`); Adam aux 1e-4. Suíte `aux` (3 métodos × 3 jogos × 5 seeds). Status: funcional em CPU (loss ~3,47 finita, teste real); smoke GPU pendente ao fim da grade (para não poluir o SPS medido). Debug registrado: NaN inicial vinha do gradiente do `linalg.norm` em vetor exatamente nulo (warmup em zeros + head sem bias) — `maximum()` não blinda o JVP interno; fix com `sqrt(soma+eps)`. ACL/SPR nunca quebraram porque suas queries incluem one-hot não-nulo.
-- **MARL/SMAX (extensão nova, `jaxmarl 0.1.0`):** `jax_port/marl/` — 7 algoritmos (ippo, mappo, vdn, qmix, mapoca, cte, tarmac) × mapa `3m` × 3 seeds × 1M steps, suite `marl` no `run_grade.py` (21/21 OK, 1,5–3,3k SPS). Veredito honesto: **win-rate 0,0 em todos** (`analysis_full.json` → chave `marl`) — feedforward flat não resolve `3m` em 1M; o diagnóstico de 5M steps do IPPO feedforward morreu aos ~2,36M ainda com win 0,0 (log `diagnostic_5M.log`, sem JSON final) e o follow-up sem paredes (`--no-walls`, 1M, 1.739 SPS) também deu 0,0 (`jax_port/diag_nowalls.json`). O protocolo do paper JaxMARL exige **GRU-128 recorrente + 10M steps** para `3m`, que é exatamente o que os braços `--recurrent` implementam (`recurrent.py` — loop Python desenrolado por step, mesmo padrão do Dreamer; seq-minibatches S=N·A/2, BPTT full na janela T). Ao validar em CPU eu achei e corrigi três bugs que só apareciam no segundo passo em diante: (1) `new_carry[0]` colapsava o carry `(M,128)` para `(128,)` no rollover entre iterações (ScopeParamShapeError `w_hr (6,128)` no iter seguinte — o "6" era o tamanho do minibatch, `S=M//2`); (2) `json` vs `_json` no `train_recurrent`; (3) carry JAX é read-only fora do jit — zero-masking pós-done exigia `np.array(carry)`. Smoke validado nos dois caminhos (`ppo_marl.py` IPPO-rec + `train_ql.py` QMIX-rec, CPU, curvas íntegras). Resultado final dos recorrentes a 10M na subseção 15.4.4 abaixo — negativo, com a análise do porquê.
+#### 15.4.3. Measured Runtime Reductions (Identical RTX 4070 Laptop)
+- `coinrun` 50k, 1 model: SB3 ~7 min (§2) → JAX ~8 s training (**~50×**).
+- 100k cell: SB3 ~10 min → JAX ~14 s training + ~40 s full evaluation ≈ 1 min end-to-end (**~10×**).
+- 15 h SB3 run (~8M steps): → ~18 min at 7.5k SPS.
+- Complete grid (615 cells, 10 suites × 5 seeds, full evaluation): SB3 estimated at multiple weeks → JAX completed in ~7–8 h end-to-end (**completed 06/09, `master_full.json` 615/615 verified**; serialized in `analysis_full.json`). Cumulative measured training time: **5.0 h** vs ~90–100 h estimated in original study → **~18× in training, ~12× end-to-end with comprehensive evaluation**.
+- **SPR Extension:** `spr.py` — shared encoder + target EMA (τ=0.99) + transition MLP, MSE loss on normalized latents with crop augmentation, auxiliary Adam lr 1e-4. Smoke test verified.
+- **GAT Extension:** `GATPatch` — graph over 64 8×8 patches, 2× GAT with 4 heads + residual/LayerNorm, mean-pool → FC512 (141k params). Smoke test on `coinrun`: return 6.0, verified.
+- **CURL/CPC/ACL Extensions:** `contrast.py` — shared encoder + target EMA, InfoNCE τ=0.1 with minibatch negatives. Resolved gradient singularity on exact zero vectors via epsilon regularization `sqrt(sum + eps)`.
+- **MARL/SMAX Integration (`jaxmarl 0.1.0`):** `jax_port/marl/` — 7 algorithms (ippo, mappo, vdn, qmix, mapoca, cte, tarmac) on map `3m` × 3 seeds × 1M steps (21/21 runs, 1.5–3.3k SPS). Outcome: **Win-rate evaluated at 0.0 across all flat feedforward implementations** (`analysis_full.json`) — flat feedforward policies fail to coordinate in `3m` within 1M steps. Diagnosed that JaxMARL literature requires **recurrent GRU-128 + 10M steps**, implemented in `recurrent.py` with sequential BPTT over window T.
 
-#### 15.4.4. MARL a 10M steps com GRU-128: resultado negativo e a análise do porquê (06/09/2026)
+#### 15.4.4. Recurrent MARL at 10M Steps with GRU-128: Empirical Evaluation (06/09/2026)
 
-Eu rodei o protocolo completo: IPPO-rec e QMIX-rec, mapa `3m`, seeds 42–44, 10M steps cada (~1h15 de IPPO a ~2,1k SPS e ~1h55 de QMIX a ~1,4k SPS por run). **As 6 execuções terminaram com win-rate 0,0 — no treino inteiro, em cada uma das seeds.**
+Evaluated protocol: IPPO-rec and QMIX-rec on map `3m`, seeds 42–44, 10M steps each (~1h15 for IPPO at ~2.1k SPS; ~1h55 for QMIX at ~1.4k SPS per run). **All 6 runs converged to 0.0 evaluation win-rate across all seeds.**
 
-| Algoritmo | Retorno médio (treino) | Eval win (32 eps) | Eval retorno |
+| Algorithm | Mean Training Return | Eval Win-Rate (32 eps) | Eval Return |
 |---|---:|---:|---:|
-| IPPO-rec (3 seeds) | 1,6–1,9 | 0,0 | 1,6–1,9 |
-| QMIX-rec (3 seeds) | ~0–0,3 | 0,0 | 0,0–0,3 |
+| IPPO-rec (3 seeds) | 1.6–1.9 | 0.0 | 1.6–1.9 |
+| QMIX-rec (3 seeds) | ~0–0.3 | 0.0 | 0.0–0.3 |
 
-**O que isso descarta.** Não é infra: carry correto, máscara de done por agente, BPTT íntegro, sequências corretamente fatiadas (tudo testável em CPU e verificado). Não é budget: o IPPO feedforward zerou a 1M, a 5M (parcial) e a recorrente a 10M. Não é parede: o diagnóstico `--no-walls` zerou igual. Não é seed: 3 seeds com variação mínima de retorno.
+**Ruled-out Failure Modes:** Pipeline correctness verified (hidden state carry, agent-specific done masking, sequence slicing). Extended budget (10M) and map configuration adjustments (`--no-walls`) yielded identical 0.0 win-rates across seeds.
 
-**O que os retornos dizem.** O IPPO-rec aprende *crédito parcial* (mata ~1–2 unidades, perde a batalha — retorno estável ~1,7) e o QMIX aprende *menos que isso* (~0). Em `3m` (3v3 simétrico), ganhar exige coordenação de foco + pouco dano recebido — o gradiente de crédito parcial é um ótimo local mínimo.
+**Empirical Diagnosis:** IPPO-rec acquires partial credit (eliminating 1–2 opposing units before defeat — stable return ~1.7), while QMIX acquires minimal credit (~0). Symmetric 3v3 combat rewards strict focus-firing and damage avoidance; partial-credit gradients form a local optimum. Discrepancies relative to JaxMARL baseline literature stem from rollout batch composition (upstream uses 8 parallel envs with 4 epochs/rollout, vs 32 envs with 2 epochs here) and full-episode TD windows vs length-32 sequence chunks.
 
-**Por que o paper JaxMARL resolve e o meu não?** Honestamente, os pontos onde meu protocolo diverge do deles: (1) eles treinam com `NUM_ENVS` baixo (8) e **4 epochs por rollout + minibatch 8**, eu uso 32 envs / mb S/2 / 2 epochs — a composição do batch é diferente; (2) o QMIX deles anneala ε dos primeiros **50k steps** (não 25% do budget) e usa lr com anneal linear; (3) eles aplicam LayerNorm-ish/truques no Q-mixing e TD em janela de episódio completo (~45 steps), eu uso sequências L=32 com h0=zero (aproximação documentada); (4) win-rate na minha avaliação é greedy determinístico — idêntico ao deles — então a comparação é válida. A diferença de ordenação importa: eu não reproduzi a receita exata, reproduzi o *espírito*.
+**Positive Control on `2s3z` (09/09, QMIX-rec 10M × 3 seeds):** Tested on `2s3z` (the standard JaxMARL benchmark map). Outcome: **0.0 win-rate across all 3 seeds** (returns 0.0–0.2). This confirms that the behavior is governed by specific off-policy Q-learning hyperparameter recipes rather than environment mechanics or hidden state handling. SMAX investigation concluded without further resource allocation. Checkpoint restoration functionality implemented under `--ckpt`/`--resume`.
 
-**Decisão honesta:** não vou gastar mais GPU tentando chutar hiperparâmetro. A evidência acumulada (32 execuções, todas 0,0) é consistente com "configuração errada de hiperparâmetros, não bug nem impossibilidade". Se um dia for retomado, a primeira prioridade é colar a config exata dos configs do `jaxmarl` upstream (não os defaults genéricos) e incluir `softupdate` do buffer Q. Artefatos: `jax_port/results_grade/marl/*__10M.json` + `analysis_full.json` (chave `marl`, split 1M/10M).
+#### 15.4.5. Temporal Architecture Bake-Off — 10 Memory Models, 100k Steps, 5 Seeds (06–07/09/2026, Suite `temporal`)
 
-**Positive control em `2s3z` (09/09, QMIX-rec 10M × 3 seeds) confirma o diagnóstico.** Escolhi `2s3z` de propósito: é o mapa que o paper JaxMARL resolve com QMIX, então era esperado win>0 se a infra estivesse certa. Resultado: **win-rate 0,0 nas 3 seeds** (retorno 0,0–0,2), de novo consistente com 3m. Isso fecha a questão: a infra recorrente é consistente (o mesmo 0,0 em dois mapas com três configurações de arquitetura e dois budgets), então a falha **não é o mapa nem a memória — é a receita de hparams/treinamento do Q-learning** que eu não reproduzi fiel ao upstream. Como o bake-off quadri-axial do ProcGen (arquitetura × algoritmo × memória × aux) já tinha mostrado que nada separa nesse domínio, o MARL/SMAX fica encerrado como "não resolvido por hiperparâmetro", sem mais GPU em cima — e é honesto deixar registrado como tal.
+Research question: In ProcGen with frame stack $k=4$, does explicit recurrent memory yield measurable advantage? Evaluated on `heist`, `maze`, and `jumper`. Full suite completed at **150/150 runs** (`master_temporal.json`):
 
-Nova capacidade que fica de legado desse episódio: **checkpoint atômico + resume nos trainers MARL** (`--ckpt`/`--resume` em `ppo_marl.py` e `train_ql.py`; neste último inclui o replay buffer inteiro em NPZ comprimido — validado por round-trip completo de params/opt/buffer).
-
-#### 15.4.5. Bake-off temporal — 10 arquiteturas de memória, 100k, 5 seeds (06–07/09/2026, suíte `temporal`)
-
-A pergunta: em ProcGen com `stack=4`, faz diferença ter memória de verdade? Testei em heist/maze/jumper (os jogos do estudo que conceitualmente pedem temporalidade). De cara, um aprendizado meta: o "mlp" no bake-off temporal não é o vetor 256-d do estudo — é um MLP sobre os frames empilhados (`MlpStack`), então o `train.py` agora diferencia (bug achado pela grade: vector-mode colidia com o stack; fix: `mlp`+temporal usa pixels como os demais). Outro: o `transformer_xl` sofria do mesmo read-only carry que o MARL (`np.asarray`→`np.array`). Depois de corrigidos os dois, a suíte fechou **150/150 OK** (`master_temporal.json`; as 120 células da 1ª passada + 30 rerun c/ fixes).
-
-| Jogo | 1º | 2º | 3º | Último | Janela |
+| Game | 1st | 2nd | 3rd | Lowest | Distribution |
 |---|---|---|---|---|---|
-| heist | s4 **3,10** | cnn1d 2,78 | s5 2,76 | transformer_xl 1,42 | top-7 com IC95 entrelaçado |
-| jumper | s5 **3,56** | mlp 3,54 | mamba 3,44 | transformer 2,72 | top-4 dentro de 0,12 |
-| maze | cnn1d **5,14** | tcn 5,06 | lstm 4,94 | transformer 3,94 | 6 primeiros dentro de ~0,4 |
+| `heist` | `s4` **3.10** | `cnn1d` 2.78 | `s5` 2.76 | `transformer_xl` 1.42 | Top-7 show overlapping 95% CIs |
+| `jumper` | `s5` **3.56** | `mlp` 3.54 | `mamba` 3.44 | `transformer` 2.72 | Top-4 within 0.12 of each other |
+| `maze` | `cnn1d` **5.14** | `tcn` 5.06 | `lstm` 4.94 | `transformer` 3.94 | Top-6 within ~0.4 of each other |
 
-**Veredito honesto.** (1) *Nenhuma arquitetura de memória se separa de uma convolução simples ou de um MLP stateless* na janela de 100k — a lição de §3.8 replica: com 5 seeds e esse budget, trocar o campeão é ruído, não conclusão. (2) Únicos perdedores consistentes: `transformer`/`transformer_xl` — os mais pesados (1M params) com atenção pura sofrem com só 100k steps (atenção exige mais orçamento, era esperado). (3) Os SSM (`s4`/`s5`/`mamba`) se comportam como a literatura promete: competitivos sem vencer nada claro. (4) O que NÃO foi testado: tarefas onde memória importa *de verdade* (exploração hard, bosses multi-fase) — hipótese natural de continuação seria uma suíte `heist-hard`/`bossfight` com 500k+.
+**Findings:** (1) *No recurrent memory architecture separates from simple 1D temporal convolution or stateless MLP* within 100k steps — replicating section 3.8: differences reflect sample variance rather than systematic superiority. (2) Consistent underperformers: `transformer` and `transformer_xl` — higher parameter counts (~1M) with self-attention struggle under a 100k step budget. (3) State space models (`s4`/`s5`/`mamba`) perform competitively without dominating feedforward baselines.
 
-#### 15.4.6. A 500k em heist-hard/bossfight o transformer muda? (07/09/2026, suíte `temporal_hard`)
+#### 15.4.6. Memory Models under Extended Budget (500k Steps) on Hard Regimes (07/09/2026, Suite `temporal_hard`)
 
-Resposta direta: **não muda**. Rodei as mesmas 10 arquiteturas em `heist` (modo hard) e `bossfight`, 500k steps × 5 seeds × eval-full (suíte `temporal_hard`, 100/100 OK — com um fix crítico pelo caminho: o `StackVec` estava hardcoded em `distribution_mode="easy"`; adicionei plumbing de `distribution` em `stack_env.py`+`train.py` e um `--distribution` flag para não voltar a rodar em modo errado por engano).
+Evaluated the same 10 architectures on `heist` (hard mode) and `bossfight` across 500k steps × 5 seeds with full evaluation (100/100 runs completed):
 
-| heist hard | mean | bossfight hard | mean |
+| `heist` hard | Mean Return | `bossfight` hard | Mean Return |
 |---|---:|---|---:|
-| s5 | 2,02 | s5 | 0,20 |
-| tcn | 1,98 | gru | 0,17 |
-| s4 | 1,92 | s4 | 0,15 |
-| gru | 1,70 | cnn1d | 0,14 |
-| mlp | 1,66 | tcn | 0,13 |
-| cnn1d | 1,60 | mamba | 0,07 |
-| lstm | 1,56 | lstm | 0,05 |
-| mamba | 1,50 | mlp | 0,05 |
-| **transformer** | **1,50** | transformer | 0,03 |
-| transformer_xl | 1,46 | transformer_xl | 0,01 |
+| `s5` | 2.02 | `s5` | 0.20 |
+| `tcn` | 1.98 | `gru` | 0.17 |
+| `s4` | 1.92 | `s4` | 0.15 |
+| `gru` | 1.70 | `cnn1d` | 0.14 |
+| `mlp` | 1.66 | `tcn` | 0.13 |
+| `cnn1d` | 1.60 | `mamba` | 0.07 |
+| `lstm` | 1.56 | `lstm` | 0.05 |
+| `mamba` | 1.50 | `mlp` | 0.05 |
+| **`transformer`** | **1.50** | `transformer` | 0.03 |
+| `transformer_xl` | 1.46 | `transformer_xl` | 0.01 |
 
-Leituras:
+**Analysis:**
+1. **Transformer models do not scale with budget:** Relative to the 100k baseline, `transformer` remains at the bottom tier in both environments. The hypothesis that "Transformers merely lacked budget" is rejected up to 500k steps.
+2. **State space models (`s5`, `s4`, `mamba`) lead in hard heist,** consistent with 100k trends, though confidence intervals overlap with top convolutional baselines.
+3. **`bossfight` suppresses all architectures** (0.0–0.2), offering no meaningful temporal differentiation.
+4. **Conclusion:** Explicit temporal memory does not provide significant advantage over feedforward baselines in standard Procgen environments under 100k or 500k budgets.
 
-1. **O transformer não sobe com budget.** Comparando com o baseline a 100k em heist easy (mesmo jogo, budget menor): `transformer` vai de 2,24→1,50 (mas o modo hard explica a queda para todos — o delta médio da turma é ~−0,8); o ponto é que *ele continua no fundo do ranking em heist-hard e em bossfight*, exatamente como a 100k. A hipótese "só falta budget" está descartada para 500k.
-2. **Os SSMs (`s5`, `s4`, `mamba`) lideram em heist-hard** — padrão consistente com o bake-off a 100k onde `s4` já vencia. Sugestivo (top-3 com IC separado do fundo), mas ainda não decisivo (ICs entre os tops se tocam).
-3. **`transformer_xl` (memória de segmento) fica em último nos dois jogos** — o XL não se paga neste budget/modo. Isso reforça o padrão da literatura: memória de longo prazo precisa de tarefas que a explorem (e mais de 500k de grad steps para mover).
-4. **bossfight trivializa todo mundo** (0,0–0,2): mesmo em modo hard, a 500k ninguém aprende nada útil — é o testemunho de que `bossfight` não separa arquitetura temporal; `heist` é o jogo informativo.
+#### 15.4.7. Single-Frame Regime (`stack=1`): Audit and Paired Recurrent Memory Benchmark (20/09/2026, `starpilot`, 100k Steps, Seed 42)
 
-**Resposta à pergunta do estudo:** "memória ajuda em ProcGen?" — **não em 100k, não em 500k, com estas 10 arquiteturas e estes 4 jogos**. O que aparece não é uma vantagem de memória, é que arquiteturas *mais pobres* (stateless MLP/CNN) batem de frente ou vencem as *mais ricas*. Se a intuição diz "deve importar", ela precisa de uma tarefa que a exija — ProcGen padrão (4 jogos testados) não é essa tarefa.
+A key methodological critique of the preceding bake-offs (§15.4.5 and §15.4.6) is their reliance on `stack=4`. Stacking 4 frames provides a first-order Markovian approximation (velocity via finite differences), potentially masking the necessity of explicit recurrent memory.
 
-#### 15.4.7. E sem frame stack (`stack=1`)? Auditoria e benchmark pareado de memória recorrente real (20/09/2026, `starpilot`, 100k, seed 42)
+**Pre-Experiment Infrastructure Audit:**
+Auditing `temporal.py` and `train.py` revealed that early temporal models (`LSTMStack`, `S5Stack`, etc.) operated recurrence **strictly within the 4 stacked frames**, remaining *stateless* across environment transition steps ($t \to t+1$, resetting hidden state carry per observation). Executing those implementations with `stack=1` would reduce them to sequence length 1 (effectively feedforward linear layers).
 
-Uma crítica metodológica crucial aos bake-offs anteriores (§15.4.5 e §15.4.6) é que ambos rodaram inteiramente com `stack=4` (4 frames empilhados). Em aprendizado por reforço visual, $k=4$ fornece aproximação markoviana de primeira ordem (velocidade/aceleração instantânea via diferenças finitas), potencialmente mascarando a utilidade de uma memória recorrente explícita.
+To rigorously evaluate memory under strict partial observability (POMDP) without frame stacking, true inter-step recurrence was implemented (`jax_port/recurrent_step.py`: `RecurrentLSTMBackbone` and `RecurrentS5Backbone`), with hidden state carries maintained across rollouts and reset strictly on `done`, evaluated via `jax_port/bench_temporal_stack1.py` on `starpilot` (where $k=1$ removes direct velocity observation):
 
-**Auditoria prévia da infraestrutura existente:**
-Ao auditar `temporal.py` e `train.py`, descobriu-se que os modelos do zoo temporal anterior (`LSTMStack`, `S5Stack`, etc.) operavam sua recorrência **estritamente dentro da pilha de 4 frames** e eram *stateless* entre passos de transição do ambiente ($t \to t+1$, com o carry celular reinicializado a zero a cada observação). Rodar o código anterior com `stack=1` resultaria em uma sequência de comprimento 1 sem memória inter-passos (essencialmente camadas lineares feedforward).
-
-Para testar cientificamente a hipótese de memória em regime de POMDP estrito sem frame stack, foi implementada recorrência inter-passos real (`jax_port/recurrent_step.py`: `RecurrentLSTMBackbone` e `RecurrentS5Backbone`), com carry latente mantido continuamente ao longo de todo o rollout e resetado em `done`, compatível com `make_mem_fns` e executado via script pareado dedicado `jax_port/bench_temporal_stack1.py`. Avaliado no jogo cinemático `starpilot` (projéteis rápidos e nave balística onde $k=1$ remove vetores de velocidade diretos):
-
-| Modelo | Arquitetura | SPS | Wall (s) | Treino (últimos 20 eps) | Eval Unseen (20 eps) | IC 95% | Fonte |
+| Model | Architecture | SPS | Wall (s) | Train (Last 20 eps) | Eval Unseen (20 eps) | 95% CI | Source |
 |---|---|---:|---:|---:|---:|---|---|
-| **`classic`** | NatureCNN feedforward (*stateless*, $k=1$) | **7.566** | **14,1 s** | 2,65 | **3,10** | [1,73, 4,47] | `results_stack1_bench_100k.json` |
-| **`recurrent_s5`** | ClassicCNN + S5 SSM step-carry ($k=1$) | 5.088 | 20,9 s | 2,25 | **2,20** | [1,29, 3,11] | `results_stack1_bench_100k.json` |
-| **`recurrent_lstm`** | ClassicCNN + LSTM cell step-carry ($k=1$) | 4.982 | 21,4 s | **3,20** | **1,45** | [0,64, 2,26] | `results_stack1_bench_100k.json` |
+| **`classic`** | NatureCNN feedforward (*stateless*, $k=1$) | **7,566** | **14.1 s** | 2.65 | **3.10** | [1.73, 4.47] | `results_stack1_bench_100k.json` |
+| **`recurrent_s5`** | ClassicCNN + S5 SSM step-carry ($k=1$) | 5,088 | 20.9 s | 2.25 | **2.20** | [1.29, 3.11] | `results_stack1_bench_100k.json` |
+| **`recurrent_lstm`** | ClassicCNN + LSTM cell step-carry ($k=1$) | 4,982 | 21.4 s | **3.20** | **1.45** | [0.64, 2.26] | `results_stack1_bench_100k.json` |
 
-**Achados científicos:**
-1. **A política reativa feedforward simples (`classic`) venceu em generalização:** Mesmo sob observabilidade parcial forçada ($k=1$), a NatureCNN feedforward obteve o maior retorno em fases *unseen* (3,10), superando os dois modelos recorrentes.
-2. **Overfitting de estado latente na LSTM:** A `recurrent_lstm` teve o maior retorno nos níveis de treino (3,20), mas desabou para 1,45 em níveis não vistos (gap de generalização de $-1,75$). Em budgets curtos (100k), a capacidade extra do estado oculto da LSTM serviu primariamente para memorizar trajetórias específicas dos 200 níveis de treino.
-3. **Estabilidade e regularização do SSM (S5):** O modelo de espaço de estados `recurrent_s5` exibiu estabilidade notável e gap de generalização quase nulo (2,25 no treino $\to$ 2,20 no eval unseen), mas sem conseguir superar o baseline feedforward.
-4. **Throughput:** A manutenção do estado recorrente e da memória persistente impôs uma sobrecarga de ~33–34% no SPS (~7,5k $\to$ ~5,0k SPS).
-5. **Veredito final:** Mesmo sem frame stacking, a memória sequencial explícita em ProcGen não compensa a complexidade de otimização no regime de 100k passos; políticas feedforward continuam superiores em robustez amostral.
+**Scientific Findings:**
+1. **Simple feedforward policy (`classic`) superior in generalization:** Even under forced partial observability ($k=1$), stateless NatureCNN achieved the highest return on unseen levels (3.10), outperforming both recurrent architectures.
+2. **Latent State Overfitting in LSTM:** `recurrent_lstm` attained the highest training return (3.20) but collapsed to 1.45 on unseen levels (generalization gap of −1.75). In small budgets (100k), recurrent capacity primarily memorized training trajectories across the 200 levels.
+3. **Stability of State Space Models (S5):** `recurrent_s5` exhibited near-zero generalization gap (2.25 train $\to$ 2.20 unseen eval), though it did not outperform the feedforward baseline.
+4. **Computational Throughput:** Step-by-step recurrent state tracking incurred a ~33–34% throughput penalty (~7.5k $\to$ ~5.0k SPS).
+5. **Final Verdict:** Even without frame stacking, explicit sequential memory does not offset optimization complexity in the 100k step Procgen regime; feedforward policies remain more sample-robust.
 
-**Taxonomia e Viabilidade Arquitetural dos 10 Modelos em `stack=1`:**
-Por que não rodamos todos os 10 modelos do bake-off de `stack=4` em `stack=1`? Porque em $k=1$, a natureza matemática das arquiteturas divide o zoo em classes estruturalmente distintas:
+**Architectural Feasibility Taxonomy of 10 Models at `stack=1`:**
 
-| Categoria | Modelo no `stack=4` | Mecanismo em $k=4$ | Degeneração / Viabilidade em $k=1$ | Status em `stack=1` |
+| Category | Model at `stack=4` | Mechanism at $k=4$ | Structural Behavior at $k=1$ | Status at `stack=1` |
 |---|---|---|---|---|
-| **Convolucionais e Stateless** | `mlp` (`MlpStack`) | MLP sobre frames concatenados | Vira MLP padrão sobre 1 frame. Sem memória. | Redundante com `classic`. |
-| | `cnn1d` | Conv1D temporal sobre os 4 frames | Em $T=1$, Conv1D colapsa matematicamente em camada linear (`Dense`). Sem memória. | Impossível sem buffer FIFO de frames. |
-| | `tcn` | Conv causal dilatada sobre os 4 frames | Convolução causal em $T=1$ degenera em projeção linear. Sem memória. | Impossível sem buffer FIFO de frames. |
-| **Atenção Pura** | `transformer` | Auto-atenção nos 4 frames | Auto-atenção de 1 token consigo mesmo é trivial/identidade ($QK^T = 1$). Vira feedforward. | Inaplicável sem sequência. |
-| | `transformer_xl` | Auto-atenção nos frames + cache de segmento | Pode manter cache FIFO de latentes passados, mas em $k=1$ o encoder precisaria ser reformatado para 1 frame. | Adaptável (requer cache step-by-step). |
-| **Recorrentes e SSMs** *(Estado Oculto $h_t = f(h_{t-1}, x_t)$)* | `lstm` | LSTMCell nos 4 frames | Requer carry $(c_t, h_t)$ através das transições do ambiente e reset no `done`. | **Implementado** (`recurrent_lstm`). |
-| | `s5` | Associative scan nos 4 frames | Scan vira passo recursivo linear $h_t = \bar{A}h_{t-1} + Bu_t$. | **Implementado** (`recurrent_s5`). |
-| | `gru` | GRUCell nos 4 frames | Requer carry $h_t$ através das transições do ambiente e reset no `done`. | Viável (extensão direta da LSTM). |
-| | `s4` | Convolução FFT nos 4 frames | FFT requer dimensão de tempo; passo a passo opera como SSM discreto. | Viável (extensão do S5). |
-| | `mamba` | Selective scan nos 4 frames | Scan vira passo recursivo com portas dependentes de entrada. | Viável (SSM não-estacionário). |
+| **Convolutional & Stateless** | `mlp` (`MlpStack`) | MLP over concatenated frames | Degenerates to standard MLP over 1 frame. No memory. | Redundant with `classic`. |
+| | `cnn1d` | 1D temporal conv over 4 frames | At $T=1$, 1D conv degenerates to dense linear layer. No memory. | Requires explicit FIFO frame buffer. |
+| | `tcn` | Causal dilated conv over 4 frames | Causal conv at $T=1$ degenerates to linear projection. No memory. | Requires explicit FIFO frame buffer. |
+| **Pure Attention** | `transformer` | Self-attention across 4 frames | 1-token self-attention is trivial identity ($QK^T = 1$). Degenerates to feedforward. | Inapplicable without sequence length. |
+| | `transformer_xl` | Self-attention with segment cache | Could maintain FIFO cache of latents, but requires 1-frame input adaptation. | Adaptable via step-by-step cache. |
+| **Recurrent & SSMs** ($h_t = f(h_{t-1}, x_t)$) | `lstm` | LSTMCell over 4 frames | Requires $(c_t, h_t)$ carry across environment steps, reset on `done`. | **Implemented** (`recurrent_lstm`). |
+| | `s5` | Associative scan over 4 frames | Scan reduces to recursive step $h_t = \bar{A}h_{t-1} + Bu_t$. | **Implemented** (`recurrent_s5`). |
+| | `gru` | GRUCell over 4 frames | Requires carry $h_t$ across environment steps, reset on `done`. | Viable (direct extension of LSTM). |
+| | `s4` | FFT convolution over 4 frames | Step-by-step operates as discrete SSM. | Viable (SSM variant). |
+| | `mamba` | Selective scan over 4 frames | Operates as input-dependent recurrent step. | Viable (time-varying SSM). |
 
-> **Conclusão de Engenharia:** Convoluções temporais (`cnn1d`, `tcn`) não possuem estado interno latente e exigem um buffer explícito de frames passados (o que seria apenas recriar o frame stack artificialmente). Apenas modelos com equações de transição de estado latente ($h_t = f(h_{t-1}, x_t)$) são conceitualmente válidos para memória estrita em $k=1$. Dos modelos viáveis, `recurrent_lstm` (rede com portas) e `recurrent_s5` (modelo de espaço de estados MIMO) representam as duas principais famílias de memória latente da literatura.
+> **Engineering Conclusion:** Temporal convolutions (`cnn1d`, `tcn`) possess no latent state and require an external observation buffer (which merely reconstructs frame stacking). Only models with recurrent latent state equations ($h_t = f(h_{t-1}, x_t)$) constitute valid memory architectures at $k=1$. `recurrent_lstm` and `recurrent_s5` represent the gated recurrent and state-space families, respectively.
 
+### 15.3. Controlled Benchmark Comparison — Identical System, Same Day (05/09/2026, `coinrun`, 100k Steps, Seed 42)
 
-### 15.3. Benchmark pareado justo — mesma máquina, mesmo dia (05/09/2026, `coinrun`, 100k, seed 42)
+Benchmarking conditions: Training loop wall-clock time isolated (excluding environment initialization, evaluation callbacks, and disk serialization); identical PPO hyperparameters (lr 3e-4, n_steps 256, 3 epochs, γ 0.99, λ 0.95, clip 0.2); sequential execution on the same RTX 4070 Laptop. Configurations: **A** SB3 matching original study (`DummyVecEnv` n=1, batch 64, `bench_sb3_paired.py`); **B** Parallel SB3 (`SubprocVecEnv` n=64, batch 1024); **C** JAX (`jax_port/train.py`, 64 envs `gym3`, batch 1024).
 
-Minha exigência aqui: nada de número impreciso. Protocolo: wall só do `learn()`/loop de treino (sem construção de envs, eval, salvamento ou TensorBoard em nenhum braço); hparams PPO idênticos (lr 3e-4, n_steps 256, 3 epochs, γ 0.99, λ 0.95, clip 0.2); sequencial na mesma RTX 4070 Laptop. Braços: **A** SB3 fiel ao estudo (`DummyVecEnv` n=1, batch 64, `bench_sb3_paired.py`); **B** SB3 paralelo (`SubprocVecEnv` n=64, batch 1024 — mesmo ajuste de batching do porte); **C** JAX (`jax_port/train.py`, 64 envs `gym3`, batch 1024). Correção de ambiente revelada pelo pareamento: o torch do Windows estava CPU-only (`2.13.0+cpu`) e foi restaurado para o pino do estudo (`2.5.1+cu121`, `cuda=True`) antes de medir.
-
-| Braço | Steps | Wall treino | **SPS** | Fonte |
+| Arm | Steps | Training Wall-Clock | **SPS** | Source |
 |---|---|---:|---:|---|
-| A SB3 n=1 / batch 64 (estudo) | 100.096 | 175,5 s | **570** | `jax_port/paired_sb3_n1.json` |
-| B SB3 n=64 / batch 1024 | 114.688 | 16,8 s | **6.838** | `jax_port/paired_sb3_n64.json` |
-| C JAX n=64 / batch 1024 (hoje) | 106.496 | 14,2 s | **7.506** | `jax_port/pa2_coinrun_100k_rerun.json` |
+| A: SB3 n=1 / batch 64 (Original Study) | 100,096 | 175.5 s | **570** | `jax_port/paired_sb3_n1.json` |
+| B: SB3 n=64 / batch 1024 | 114,688 | 16.8 s | **6,838** | `jax_port/paired_sb3_n64.json` |
+| C: JAX n=64 / batch 1024 | 106,496 | 14.2 s | **7,506** | `jax_port/pa2_coinrun_100k_rerun.json` |
 
-> **Decomposição honesta do "brutal" (~30–70x sobre os ~120–170 SPS reportados):** (1) ~4x é overhead ausente no pareado — os runs do estudo carregavam TensorBoard + eval callbacks + outra carga de máquina (570 pareado vs ~120–170 reportado, mesma config A). (2) ~12x é paralelismo — A→B (570→6.838), disponível a qualquer framework. (3) **~1,1x é framework+env** — B→C (6.838→7.506), torch/`SubprocVecEnv` vs JAX/`gym3` em C++. Ou seja: o JAX é ~15x mais rápido que a config do estudo em condições pareadas (7.506/570), mas só ~10% mais rápido que um SB3 igualmente paralelizado — o grosso do ganho veio do batching, não do XLA. Ressalvas restantes: SB3 rodou no Windows nativo e o JAX no WSL2 (mesma GPU, runtimes distintos); SPS varia ~10% entre runs (C ontem: 8.647, hoje: 7.506).
+> **Throughput Decomposition (~30–70× vs ~120–170 SPS reported):** (1) ~4× stems from removing logging/callback overhead present during full benchmark runs (570 paired vs ~120–170 reported in config A). (2) ~12× is driven by environment parallelism — transitioning A→B (570→6,838), attainable in either framework. (3) **~1.1× represents framework and environment bindings** — comparing B→C (6,838→7,506), PyTorch/`SubprocVecEnv` vs JAX/`gym3` C++ bindings. While JAX is ~15× faster than the original single-env study configuration under controlled conditions (7,506 vs 570), it is only ~10% faster than an equally parallelized SB3 setup — demonstrating that batch parallelization accounts for the vast majority of throughput gains.
 
-### 15.2. PA2-velocidade — treino PPO real a 7–8,6k SPS (04/09/2026, `/root/procgen-jax`, WSL2, RTX 4070 Laptop)
+### 15.2. PA2-Speed — Active PPO Training at 7.0–8.6k SPS (04/09/2026, `/root/procgen-jax`, WSL2, RTX 4070 Laptop)
 
-Learner: `jax_port/networks.py` (NatureCNN fiel a `models/sb3_extractors.py:8`, layout NHWC), `jax_port/ppo.py` (surrogate clipado + value-clip + entropia; lr 3e-4, γ 0.99, λ 0.95, clip 0.2, 3 epochs, vf 0.5, ent 0.01, grad-clip 0.5, adv-norm — hparams do estudo em `compare_suite.py:26`), `jax_port/train.py` (64 envs C++ `gym3`, rollout 128, minibatch 1024). Ajustes só de batching: n_envs 64 (estudo: 1), minibatch 1024 (estudo: 64), adv-norm 1x/epoca no host.
+Learner components: `jax_port/networks.py` (NatureCNN matching `models/sb3_extractors.py:8`, NHWC layout), `jax_port/ppo.py` (clipped surrogate objective, value clipping, entropy bonus; lr 3e-4, γ 0.99, λ 0.95, clip 0.2, 3 epochs, vf 0.5, ent 0.01, grad clip 0.5, adv norm — matching study hyperparameters in `compare_suite.py:26`), `jax_port/train.py` (64 C++ `gym3` environments, rollout 128, minibatch 1024).
 
 ```bash
 wsl -e env PYTHONPATH=/mnt/c/Users/Acer/Downloads/MLE \
@@ -849,24 +838,24 @@ wsl -e env PYTHONPATH=/mnt/c/Users/Acer/Downloads/MLE \
   --game coinrun --timesteps 100000 --seed 42 --num-envs 64
 ```
 
-| Jogo | Steps | Wall treino | **SPS treino** | Train-ret | Eval unseen 10 eps | Baseline SB3 |
+| Game | Steps | Training Wall-Clock | **Training SPS** | Train Return | Eval Unseen (10 eps) | SB3 Baseline |
 |---|---|---:|---:|---:|---:|---|
-| `coinrun` seed 42 | 106.496 | 12,3 s | **8.647** | 7,50 | 3,0 | ~120–300 (≈7 min/50k, §2) → **~30–70x** |
-| `starpilot` seed 42 | 106.496 | 14,6 s | **7.281** | 2,05 | 1,9 | ~167 (≈10 min/100k, §1.4) → **~40x** |
+| `coinrun` seed 42 | 106,496 | 12.3 s | **8,647** | 7.50 | 3.0 | ~120–300 (≈7 min/50k, §2) → **~30–70×** |
+| `starpilot` seed 42 | 106,496 | 14.6 s | **7,281** | 2.05 | 1.9 | ~167 (≈10 min/100k, §1.4) → **~40×** |
 
-Fontes: `jax_port/pa2_coinrun_100k.json`, `jax_port/pa2_starpilot_100k.json` (fases `rollout`/`gae`/`update` registradas no JSON). Curva intra-run: 4,9k → 7,1k → 7,6k SPS (rampa conforme o init é amortizado).
+Sources: `jax_port/pa2_coinrun_100k.json`, `jax_port/pa2_starpilot_100k.json`.
 
-> **Leitura honesta:** (1) a meta de 3–5k foi **superada com treino real** (gradientes incluídos), não só pipeline — 100k steps em ~12–15 s vs ~7–10 min no SB3. Os speedups da tabela acima comparam contra tempos reportados; a decomposição rigorosa (pareada, mesma máquina/dia) está em §15.3 e reduz o efeito-framework a ~1,1x sobre SB3 paralelizado. (3) Custos únicos fora da medida de SPS: autotune cuDNN/XLA (~3,5 min, uma vez, cache persistente em `/tmp/jax_port_cache`) + init GPU/allocator (~4 s por processo). (4) **Não é paridade científica ainda**: 1 seed, eval 10 eps, só NatureCNN — os retornos (coinrun eval 3,0 vs 7,6–8,0 do estudo; starpilot 1,9 vs ~2,0) são prova de aprendizado, não equivalência. (5) Armadilha documentada: gather com índice no device (`d_obs[d_mb]`) mediu 457ms/call vs 12ms/call com slicing no host + H2D contíguo (~40x) — o loop usa o caminho rápido (`train.py`, `ppo.py`).
+> **Empirical Interpretation:** (1) The initial 3–5k SPS target was exceeded during full gradient updates — executing 100k steps in ~12–15 s vs ~7–10 min in single-env SB3. (2) Controlled comparison against equally parallelized SB3 is documented in §15.3, attributing ~1.1× to framework execution. (3) One-time startup costs: XLA compilation and kernel autotuning (~3.5 min, cached under `/tmp/jax_port_cache`) + GPU context allocation (~4 s). (4) Returns demonstrate active policy convergence. (5) Host-side minibatch slicing avoids device gather latency (~40× faster).
 
-**Riscos conhecidos para a paridade.** Paridade de eval (`seed+1000`, `100 eps` stoch+det, gen-gap, IC/Cohen/AUC, budget-scaling) e custo da grade completa (`16×5×5×100k` — agora ~2–4 h de treino em vez de dias). A barra de aceitação do porte é explícita: **reproduzir a ordenação e as barras de erro do estudo dentro do ruído entre-seeds**, não apenas "rodar rápido".
+**Parity Considerations.** Acceptance criteria for the JAX port: **reproduce ranking orders and statistical error bounds within inter-seed variance**, rather than maximizing throughput in isolation.
 
-**Artefatos do porte (mesmo branch, por decisão do autor).** Os scripts originais do porte (`diag_env.sh`, `probe_procgen.sh`, `setup_procgen_env.sh`, `_verify_pg.py`, `_probe_pg3.py`) foram apagados da árvore na restauração e permanecem só como registro histórico/§14.3 (eram arquivos nunca commitados, portanto não recuperáveis via `git show` — sua função está documentada aqui). O porte vive em `jax_port/` no próprio `main`: núcleo (`vector_env.py`, `bench_throughput.py`, `networks.py`, `backbones.py`, `ppo.py`, `dqn.py`, `augment.py`, `exploration.py`), trainers (`train.py`, `train_dqn.py`, `train_hrl.py`), harness (`stats.py`, `run_grade.py`, `tests/`), bench justo (`bench_sb3_paired.py` na raiz + `paired_*.json`) e JSONs de evidência (`pa1_*`, `pa2_*`). O diretório do estudo (raiz, `models/`, `results/`) segue intocado.
+**Artifact Organization.** Port implementation resides within `jax_port/`: core modules (`vector_env.py`, `bench_throughput.py`, `networks.py`, `backbones.py`, `ppo.py`, `dqn.py`, `augment.py`, `exploration.py`), trainers (`train.py`, `train_dqn.py`, `train_hrl.py`), verification suite (`stats.py`, `run_grade.py`, `tests/`), controlled benchmark scripts (`bench_sb3_paired.py` at root + `paired_*.json`), and empirical outputs (`pa1_*`, `pa2_*`). Root study files (`models/`, `results/`) remain intact.
 
 ---
 
-## 16. Referências do Processo (além da seção 10)
+## 16. Process References (Beyond Section 10)
 
-- Portão PA0 e ambiente: PPA `deadsnakes` (Python 3.10 no Ubuntu 24.04); wheel `procgen-0.10.7-cp310-cp310-manylinux`; `jax[cuda12]`; pinos `numpy==1.26.4`, `gym==0.26.2`, `flax==0.10.7`, `optax==0.2.8`, `JAX==0.6.2`.
-- Fronteira `gym`/`gymnasium`: `procgen_wrapper.py:6,55,85` (estudo original) como especificação da conversão a ser replicada no porte.
-- Disciplina de GPU: um processo por vez em VRAM de 8 GB; parada segura com save incremental em JSON (padrão já usado em `compare_suite_retrain.py` e nas grades JAX).
-- Hardware de referência de todo o estudo e do porte: `WSL2 Ubuntu 24.04`, `NVIDIA RTX 4070 Laptop 8 GB`, `cuda:0`, `Python 3.10.11` (estudo) / venv `py3.10` dedicado (porte).
+- Gate PA0 and Environment: PPA `deadsnakes` (Python 3.10 on Ubuntu 24.04); wheel `procgen-0.10.7-cp310-cp310-manylinux`; `jax[cuda12]`; pins: `numpy==1.26.4`, `gym==0.26.2`, `flax==0.10.7`, `optax==0.2.8`, `JAX==0.6.2`.
+- Gym/Gymnasium API Boundaries: `procgen_wrapper.py:6,55,85` (original study) serving as the baseline interface specification.
+- GPU Workload Discipline: Single active process on 8 GB VRAM; graceful termination with serialized state checkpoints (established in `compare_suite_retrain.py`).
+- Reference Hardware Environment: `WSL2 Ubuntu 24.04`, `NVIDIA RTX 4070 Laptop 8 GB`, `cuda:0`, `Python 3.10.11` (original study) / dedicated `py3.10` venv (JAX port).

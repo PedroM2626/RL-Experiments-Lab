@@ -1,8 +1,8 @@
-# Vigia da grade: quando o run_grade.py atual terminar, lanca o catch-up
-# (suites spr+aux+gnn: retry dos SPR falhos + CURL/CPC/ACL novos + resto
-# do GNN), com resume — nada e sobrescrito. Uso:
+# Grid watcher: when the current run_grade.py finishes, launches catch-up
+# (suites spr+aux+gnn: retry of failed SPR + new CURL/CPC/ACL + rest
+# of GNN), with resume — nothing is overwritten. Usage:
 #   powershell -ExecutionPolicy Bypass -File jax_port/continue_grade.ps1
-# Ele proprio roda detached; acompanhe por jax_port/results_grade/watcher.log
+# Runs detached; track via jax_port/results_grade/watcher.log
 $repo = "C:\Users\Acer\Downloads\MLE"
 $master = "$repo\jax_port\results_grade\master_full.json"
 $log = "$repo\jax_port\results_grade\watcher.log"

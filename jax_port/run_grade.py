@@ -1,18 +1,18 @@
-"""Grade runner do porte — Suites do estudo, sequencial, resume-safe.
+"""Port grid runner — Study suites, sequential, resume-safe.
 
-Suites (--suite, repetiveis e combinaveis):
-  main        : 16 configs x jogos (bossfight/starpilot/dodgeball)
+Suites (--suite, repeatable and combinable):
+  main        : 16 configs x games (bossfight/starpilot/dodgeball)
   exploration : ppo/icm/rnd/ngu x maze/heist
   algo        : ppo/a2c/dqn/qrdqn x starpilot/dodgeball/bossfight (+--lr-sens)
-  hrl         : flat/skip4/hrl/hrl_learned x jumper/plunder (budget frames)
-  budget      : resnet18+mlp x starpilot/dodgeball (honra --timesteps dado)
-Uso:
-    .../train.py ...  # nao; este script orquestra tudo em UM processo
+  hrl         : flat/skip4/hrl/hrl_learned x jumper/plunder (frame budget)
+  budget      : resnet18+mlp x starpilot/dodgeball (honors given --timesteps)
+Usage:
+    .../train.py ...  # no; this script orchestrates everything in ONE process
     wsl -e env PYTHONPATH=... /root/procgen-jax/bin/python \
       jax_port/run_grade.py --suite main --games bossfight --seeds 42 \
       --timesteps 100000 --eval-full --out-dir jax_port/results_grade
-Celula: {cfg}__{game}__seed{s}__{t}k.json; pula celula pronta (resume).
---eval-full => 100 stoch + 100 det + 15 train (protocolo definitivo).
+Cell: {cfg}__{game}__seed{s}__{t}k.json; skips completed cells (resume).
+--eval-full => 100 stoch + 100 det + 15 train (definitive protocol).
 """
 
 import argparse
@@ -113,7 +113,7 @@ def cells(args):
                                         "timesteps": t, "extractor": cfg,
                                         "augment": "none", "explore": "none"})
         elif suite == "hard":
-            # Stress test §3.4: mesmas 11 configs da suite, modo hard.
+            # Stress test §3.4: same 11 configs from suite, hard mode.
             for cfg in HARD_CONFIGS:
                 ext = {"aug_crop": "classic", "aug_color": "classic",
                        "aug_noise": "classic",
@@ -128,7 +128,7 @@ def cells(args):
                                     "augment": aug, "explore": "none",
                                     "distribution": "hard"})
         elif suite == "pilot":
-            # Piloto coinrun 50k §3.1 (sempre 50k, como no estudo).
+            # Pilot coinrun 50k §3.1 (always 50k, as in study).
             for cfg in PILOT_CONFIGS:
                 for s in args.seeds:
                     out.append({"suite": suite, "cfg": cfg, "kind": "ppo",
@@ -136,7 +136,7 @@ def cells(args):
                                 "extractor": cfg, "augment": "none",
                                 "explore": "none"})
         elif suite == "spr":
-            # EXTENSAO alem do estudo (sem paridade §1-12): SPR aux.
+            # EXTENSION beyond study (no parity §1-12): SPR aux.
             for cfg in ("spr", "spr_aug"):
                 for game in (args.games or MAIN_GAMES):
                     for s in args.seeds:
@@ -148,7 +148,7 @@ def cells(args):
                                         else "none",
                                         "explore": "none", "aux": "spr"})
         elif suite == "gnn":
-            # EXTENSAO alem do estudo (sem paridade §1-12): GAT patches.
+            # EXTENSION beyond study (no parity §1-12): GAT patches.
             for game in (args.games or MAIN_GAMES):
                 for s in args.seeds:
                     for t in args.timesteps:
@@ -157,8 +157,8 @@ def cells(args):
                                     "timesteps": t, "extractor": "gat",
                                     "augment": "none", "explore": "none"})
         elif suite == "aux":
-            # EXTENSAO alem do estudo: CURL/CPC/ACL (contempla o pedido;
-            # SPR tem suite propria). Classic + aux, sem aug extra.
+            # EXTENSION beyond study: CURL/CPC/ACL (satisfies user request;
+            # SPR has its own suite). Classic + aux, no extra aug.
             for cfg in ("curl", "cpc", "acl"):
                 for game in (args.games or MAIN_GAMES):
                     for s in args.seeds:
@@ -169,7 +169,7 @@ def cells(args):
                                         "augment": "none", "explore": "none",
                                         "aux": cfg})
         elif suite == "marl":
-            # EXTENSAO: MARL sobre SMAX (fora do estudo ProcGen).
+            # EXTENSION: MARL on SMAX (outside Procgen study).
             for cfg in MARL_CONFIGS:
                 for game in (args.maps or MARL_MAPS):
                     for s in args.seeds:
@@ -178,8 +178,8 @@ def cells(args):
                                         "kind": cfg, "game": game, "seed": s,
                                         "timesteps": t})
         elif suite == "temporal":
-            # EXTENSAO: bake-off de memoria (frame_stack=4) em jogos que
-            # pedem temporalidade (heist/maze/jumper).
+            # EXTENSION: memory bake-off (frame_stack=4) on games that
+            # demand temporality (heist/maze/jumper).
             for cfg in TEMPORAL_CONFIGS:
                 for game in (args.games or TEMPORAL_GAMES):
                     for s in args.seeds:
@@ -190,8 +190,8 @@ def cells(args):
                                         "augment": "none", "explore": "none",
                                         "stack": 4})
         elif suite == "temporal_hard":
-            # Segue a pergunta do bake-off: a 500k em jogos onde memoria
-            # importa de verdade (heist-hard, bossfight), transformer muda?
+            # Follows bake-off question: at 500k in games where memory
+            # matters crucially (heist-hard, bossfight), does transformer make a difference?
             for cfg in TEMPORAL_CONFIGS:
                 for game in (args.games or ["heist", "bossfight"]):
                     for s in args.seeds:
@@ -278,19 +278,19 @@ def main():
                              "temporal", "temporal_hard"])
     ap.add_argument("--games", nargs="*", default=None)
     ap.add_argument("--maps", nargs="*", default=None,
-                    help="mapas SMAX p/ suite marl (default: 3m)")
+                    help="SMAX maps for marl suite (default: 3m)")
     ap.add_argument("--seeds", type=int, nargs="+", default=[42])
     ap.add_argument("--timesteps", type=int, nargs="+", default=[100000])
     ap.add_argument("--budget-steps", type=int, nargs="+", default=None,
-                    help="timesteps so p/ suite budget (default: --timesteps)")
+                    help="timesteps only for budget suite (default: --timesteps)")
     ap.add_argument("--num-envs", type=int, default=64)
     ap.add_argument("--rollout", type=int, default=128)
     ap.add_argument("--minibatch", type=int, default=1024)
     ap.add_argument("--recurrent", action="store_true",
-                    help="IPPO recorrente GRU-128 (padrao JaxMARL p/ SMAX)")
+                    help="Recurrent IPPO GRU-128 (JaxMARL default for SMAX)")
     ap.add_argument("--lr", type=float, default=3e-4)
     ap.add_argument("--ql-lr", type=float, default=1e-4,
-                    help="lr p/ vdn/qmix (estudo; paper usa 5e-5)")
+                    help="lr for vdn/qmix (study; paper uses 5e-5)")
     ap.add_argument("--ent", type=float, default=0.01)
     ap.add_argument("--no-walls", action="store_true")
     ap.add_argument("--eval-eps", type=int, default=10)
@@ -298,7 +298,7 @@ def main():
     ap.add_argument("--eval-train-eps", type=int, default=0)
     ap.add_argument("--eval-full", action="store_true")
     ap.add_argument("--configs", nargs="*", default=None,
-                    help="filtra cfgs (ex. classic mlp mlp_vector ppo icm flat)")
+                    help="filters cfgs (e.g. classic mlp mlp_vector ppo icm flat)")
     ap.add_argument("--lr-sens", action="store_true")
     ap.add_argument("--overwrite", action="store_true")
     ap.add_argument("--out-dir", default="jax_port/results_grade")
@@ -327,7 +327,7 @@ def main():
                            "sps": r.get("sps"),
                            "eval_unseen": r.get("eval_unseen"),
                            "out": r.get("skipped", "")}
-        except Exception as e:  # noqa: BLE001 (grade nao pode morrer)
+        except Exception as e:  # noqa: BLE001 (grid cannot crash)
             import traceback
             traceback.print_exc()
             master[key] = {"ok": False, "error": f"{type(e).__name__}: {e}"}
@@ -335,7 +335,7 @@ def main():
             json.dump(master, fh, indent=2)
     dt = time.perf_counter() - t0
     ok = sum(1 for v in master.values() if v.get("ok"))
-    print(f"grade: {ok}/{len(master)} ok em {dt:.0f}s -> {args.master}")
+    print(f"grade: {ok}/{len(master)} ok in {dt:.0f}s -> {args.master}")
 
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
 """
-Teste de sensibilidade de lr (seção 12.2): DQN/QR-DQN a 3e-4 (lr do PPO/A2C) em starpilot,
-o jogo com o maior gap value-vs-policy. Responde: a conclusão 'policy > value' depende do lr 1e-4?
-10 runs (2 algos × 5 seeds), mesmo protocolo (100 eps stoch+det+15 train), resume-safe.
-Baseline lr=1e-4 já está em results/algo_families_results.json (starpilot_dqn/qrdqn).
+Learning rate sensitivity test (Section 12.2): DQN/QR-DQN at 3e-4 (PPO/A2C learning rate) in starpilot,
+the game with the largest value-vs-policy gap. Answers: does the conclusion 'policy > value' depend on lr 1e-4?
+10 runs (2 algos × 5 seeds), same protocol (100 unseen stoch+det eps + 15 train), resume-safe.
+Baseline lr=1e-4 is already in results/algo_families_results.json (starpilot_dqn/qrdqn).
 """
 import os, json, argparse
 import numpy as np, torch
@@ -47,7 +47,7 @@ def main():
             vec.close()
             m_st, m_dt, m_tr = eval_model(model, args.game, seed)
             try: model.save(os.path.join(zip_dir, f"{name}.zip"))
-            except Exception as e: print(f"  zip falhou: {e}")
+            except Exception as e: print(f"  zip failed: {e}")
             results[name] = {'stoch_unseen': round(m_st, 3), 'det_unseen': round(m_dt, 3),
                              'stoch_train': round(m_tr, 3), 'gen_gap': round(m_tr - m_st, 3),
                              'n_unseen': 100, 'n_train': 15, 'lr': args.lr}
@@ -57,15 +57,15 @@ def main():
             results[name] = {'error': str(e)}
         with open(out_path, 'w') as f: json.dump(results, f, indent=2)
 
-    # comparativo direto com o baseline 1e-4
+    # direct comparison with 1e-4 baseline
     fam = json.load(open(os.path.join(base, 'results/algo_families_results.json'), encoding='utf-8'))
-    print('\nCOMPARATIVO starpilot (stoch unseen):')
+    print('\nCOMPARISON starpilot (stoch unseen):')
     for algo in args.algos:
         b = [v['stoch_unseen'] for k, v in fam.items() if k.startswith(f'{args.game}_{algo}_seed') and 'error' not in v]
         n = [v['stoch_unseen'] for k, v in results.items() if k.startswith(f'{args.game}_{algo}_{lr_tag}_seed') and 'error' not in v]
         if b and n:
             print(f"  {algo:6s} lr1e-4: {np.mean(b):.2f}±{np.std(b):.2f}  vs  {lr_tag}: {np.mean(n):.2f}±{np.std(n):.2f}")
-    print(f"Concluído: {out_path}")
+    print(f"Completed: {out_path}")
 
 if __name__ == '__main__':
     main()

@@ -1,13 +1,13 @@
 """
-Scorecard análise offline (Roadmap 6.1 itens #3 e #4):
-- IC 95% (t de Student, df=4) e Cohen's d sobre per-seed já salvos
-- AUC(reward, steps) dos logs tensorboard de new_archs e maze_heist
-Sem retreino. Saída: results/scorecard.json
+Offline scorecard analysis (Roadmap 6.1 items #3 and #4):
+- 95% CI (Student's t, df=4) and Cohen's d over existing per-seed records
+- AUC(reward, steps) from tensorboard logs of new_archs and maze_heist
+No retraining. Output: results/scorecard.json
 """
 import os, json, glob
 import numpy as np
 
-T_CRIT_95_DF4 = 2.776  # t 95% bilateral, n=5
+T_CRIT_95_DF4 = 2.776  # two-tailed Student's t 95% critical value, n=5, df=4
 
 def ci95(vals):
     vals = np.array(vals, dtype=float)
@@ -24,7 +24,7 @@ def cohens_d(a, b):
 def load_per_seed():
     data = {}
     base = os.path.dirname(os.path.abspath(__file__))
-    # novos benchmarks: JSON no disco
+    # new benchmarks: JSON on disk
     for tag, p in [
         ('new_archs', 'logs_new_archs/new_archs_bossfight_starpilot_dodgeball_20260828_134545/comparison_results.json'),
         ('maze_heist', 'logs_maze_heist/maze_heist_maze_heist_20260829_014802/comparison_results.json'),
@@ -33,7 +33,7 @@ def load_per_seed():
             j = json.load(f)
         for k, v in j.items():
             data[k] = [x['mean_reward'] for x in v if x['mean_reward'] is not None]
-    # benchmarks antigos: per-seed preservado no README seção 7 (logs deletados)
+    # legacy benchmarks: per-seed preserved in README Section 7 (raw logs deleted)
     data.update({
         'coinrun_classic':        [7.0, 6.0, 7.0, 9.0, 9.0],
         'coinrun_cbam':           [8.0, 8.0, 8.0, 8.0, 8.0],
@@ -47,7 +47,7 @@ def load_per_seed():
     return data
 
 def auc_from_tb(log_dir, order, total=100000):
-    """order: lista de chaves na ordem de criação dos PPO_n; retorna pares (chave, auc_norm)"""
+    """order: list of keys in order of PPO_n creation; returns pairs (key, auc_norm)"""
     from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
     out = []
     for i, key in enumerate(order, start=1):
@@ -71,12 +71,12 @@ def main():
     per_seed = load_per_seed()
     results = {'ci_effect_size': {}, 'auc': {}}
 
-    # IC 95% por config
+    # 95% CI per config
     for k, vals in per_seed.items():
         m, s, lo, hi = ci95(vals)
         results['ci_effect_size'][k] = {'mean': round(m, 3), 'std': round(s, 3), 'ci95': [round(lo, 3), round(hi, 3)]}
 
-    # Cohen's d top-1 vs top-2 por jogo
+    # Cohen's d top-1 vs top-2 per game
     games = {}
     for k in per_seed:
         game, cfg = k.split('_', 1)
@@ -91,14 +91,14 @@ def main():
                 'ci_overlap': not (min(ci95(v1)[2:]) > max(ci95(v2)[2:]) or min(ci95(v2)[2:]) > max(ci95(v1)[2:]))
             }
 
-    # AUC dos logs tensorboard (new_archs e maze_heist)
+    # AUC from tensorboard logs (new_archs and maze_heist)
     na_order = [f"{g}_{a}" for g in ['bossfight', 'starpilot', 'dodgeball']
                 for a in ['impala', 'impoola', 'lstm_attention', 'vit', 'resnet18']
                 for _ in range(5)]
     mh_order = [f"{g}_{w}" for g in ['maze', 'heist'] for w in ['ppo', 'icm', 'rnd', 'ngu'] for _ in range(5)]
     na = auc_from_tb(os.path.join(base, 'logs_new_archs'), na_order)
     mh = auc_from_tb(os.path.join(base, 'logs_maze_heist'), mh_order)
-    # agregar por config (média dos 5 seeds)
+    # aggregate per config (5 seeds mean)
     for src in (na, mh):
         agg = {}
         for k, auc_norm in src:

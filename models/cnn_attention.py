@@ -5,10 +5,10 @@ import torch.nn.functional as F
 
 class SpatialAttentionModule(nn.Module):
     """
-    Módulo de Spatial Attention
+    Spatial Attention Module
     
-    Usa max pooling e average pooling no eixo espacial para criar
-    um mapa de atenção que foca em regiões importantes.
+    Uses max pooling and average pooling along the channel axis to create
+    an attention map that focuses on informative spatial regions.
     """
     
     def __init__(self, kernel_size=7):
@@ -22,26 +22,26 @@ class SpatialAttentionModule(nn.Module):
         """
         x: (batch_size, channels, height, width)
         """
-        # Max pooling e average pooling no eixo espacial
+        # Max pooling and average pooling along channel axis
         max_pool = torch.max(x, dim=1, keepdim=True)[0]  # (B, 1, H, W)
         avg_pool = torch.mean(x, dim=1, keepdim=True)   # (B, 1, H, W)
         
-        # Concatenar
+        # Concatenate
         combined = torch.cat([max_pool, avg_pool], dim=1)  # (B, 2, H, W)
         
-        # Convolução para gerar mapa de atenção
+        # Convolution to generate spatial attention map
         attention_map = self.conv(combined)  # (B, 1, H, W)
         attention_map = self.sigmoid(attention_map)
         
-        # Aplicar atenção com residual para estabilizar (spatial puro tende a atenuar features -> deterministic 0)
+        # Apply attention with residual connection for stabilization (pure spatial attenuates features -> deterministic 0)
         return x * attention_map + x
 
 
 class ChannelAttentionModule(nn.Module):
     """
-    Módulo de Channel Attention (CBAM-style)
+    Channel Attention Module (CBAM-style)
     
-    Foca em quais canais são mais importantes
+    Focuses on which feature channels are most informative.
     """
     
     def __init__(self, channels, reduction=16):
@@ -72,7 +72,7 @@ class ChannelAttentionModule(nn.Module):
         max_pool = self.max_pool(x).view(b, c)
         max_out = self.fc(max_pool)
         
-        # Combinar
+        # Combine
         attention = self.sigmoid(avg_out + max_out)
         attention = attention.view(b, c, 1, 1)
         
@@ -82,7 +82,7 @@ class ChannelAttentionModule(nn.Module):
 class CBAMModule(nn.Module):
     """
     CBAM (Convolutional Block Attention Module)
-    Combina channel e spatial attention
+    Combines channel and spatial attention sequentially.
     """
     
     def __init__(self, channels, reduction=16, kernel_size=7):
@@ -99,13 +99,13 @@ class CBAMModule(nn.Module):
 
 class AttentionCNN(nn.Module):
     """
-    CNN com Spatial Attention para SAC - Processa 4 frames grayscale 64x64
+    CNN with Attention for SAC - Processes 4 grayscale frames 64x64
     
-    Arquitetura:
+    Architecture:
     Input: (4, 64, 64)
-    Conv2d(32, 8x8, stride 4) → ReLU → CBAM
-    Conv2d(64, 4x4, stride 2) → ReLU → CBAM
-    Conv2d(64, 3x3, stride 1) → ReLU → CBAM
+    Conv2d(32, 8x8, stride 4) → ReLU → CBAM/Spatial
+    Conv2d(64, 4x4, stride 2) → ReLU → CBAM/Spatial
+    Conv2d(64, 3x3, stride 1) → ReLU → CBAM/Spatial
     Flatten → FC(512) → ReLU → FC(3)
     """
     
@@ -114,10 +114,10 @@ class AttentionCNN(nn.Module):
         
         self.use_cbam = use_cbam
         
-        # Camadas convolucionais com attention
-        # use_cbam=True -> CBAM completo (channel + spatial)
-        # use_cbam=False -> apenas Spatial Attention (conforme README)
-        # Para manter compatibilidade, se use_cbam for None ou Identity, sem atenção
+        # Convolutional layers with attention
+        # use_cbam=True -> Full CBAM (channel + spatial)
+        # use_cbam=False -> Spatial Attention only (per README)
+        # If use_cbam is None or Identity, no attention applied
         self.conv1 = nn.Conv2d(4, 32, kernel_size=8, stride=4)
         if use_cbam is True:
             self.attention1 = CBAMModule(32)
@@ -142,19 +142,19 @@ class AttentionCNN(nn.Module):
         else:
             self.attention3 = nn.Identity()
         
-        # Calcular tamanho da saída após as convoluções
+        # Calculate output size after convolutions
         self.flatten_size = 64 * 4 * 4
         
-        # Camadas fully connected
+        # Fully connected layers
         self.fc1 = nn.Linear(self.flatten_size, feature_dim)
         self.fc2 = nn.Linear(feature_dim, action_dim)
         
     def forward(self, x):
         """
         Forward pass
-        x: (batch_size, 4, 64, 64) - já normalizado para [0, 1]
+        x: (batch_size, 4, 64, 64) - normalized to [0, 1]
         """
-        # Convoluções com attention
+        # Convolutions with attention
         x = F.relu(self.conv1(x))
         x = self.attention1(x)
         
@@ -175,16 +175,16 @@ class AttentionCNN(nn.Module):
     
     def get_attention_maps(self, x):
         """
-        Retorna os mapas de atenção intermediários (útil para visualização)
-        Corrigido: propaga atenção corretamente entre camadas
+        Returns intermediate attention maps (useful for visualization)
+        Propagates attention correctly between layers.
         """
         x = F.relu(self.conv1(x))
         att1 = self.attention1(x)
-        x = att1  # propaga
+        x = att1
 
         x = F.relu(self.conv2(x))
         att2 = self.attention2(x)
-        x = att2  # propaga
+        x = att2
 
         x = F.relu(self.conv3(x))
         att3 = self.attention3(x)
@@ -194,7 +194,7 @@ class AttentionCNN(nn.Module):
 
 class AttentionCNNWithFeatureDim(nn.Module):
     """
-    Versão flexível com feature_dim para Actor/Critic
+    Flexible version with custom feature_dim for Actor/Critic.
     """
     
     def __init__(self, action_dim=3, feature_dim=512, use_cbam=True):
@@ -247,7 +247,7 @@ class AttentionCNNWithFeatureDim(nn.Module):
 
 class AttentionCNNActor(nn.Module):
     """
-    Actor network para SAC usando CNN com Attention (tanh + log_prob)
+    Actor network for SAC using Attention CNN (tanh + log_prob)
     """
     
     def __init__(self, action_dim=3, feature_dim=512, use_cbam=True, action_scale=1.0):
@@ -264,7 +264,7 @@ class AttentionCNNActor(nn.Module):
         
     def forward(self, x):
         """
-        Retorna action (B, action_dim), log_prob (B,1) com tanh correction
+        Returns action (B, action_dim), log_prob (B,1) with tanh squashing correction
         """
         features = self.feature_extractor(x)
         mean = self.fc_mean(features)
@@ -299,7 +299,7 @@ class AttentionCNNActor(nn.Module):
 
 class AttentionCritic(nn.Module):
     """
-    Critic network (Q-function) para SAC usando CNN com Attention
+    Critic network (Q-function) for SAC using Attention CNN.
     """
     
     def __init__(self, action_dim=3, feature_dim=512, use_cbam=True):
@@ -341,44 +341,44 @@ class AttentionCritic(nn.Module):
 
 
 if __name__ == "__main__":
-    # Teste da rede
+    # Test network
     model = AttentionCNN(action_dim=3, use_cbam=True)
     
     x = torch.randn(2, 4, 64, 64)
     
     output = model(x)
     print("Output shape:", output.shape)
-    print("Teste concluído!")
+    print("Test completed successfully!")
     
-    # Teste com attention maps
+    # Test with attention maps
     att1, att2, att3 = model.get_attention_maps(x)
     print("Attention 1 shape:", att1.shape)
     print("Attention 2 shape:", att2.shape)
     print("Attention 3 shape:", att3.shape)
     
-    # Teste do Actor (nova API: action, log_prob)
+    # Test Actor (API: action, log_prob)
     actor = AttentionCNNActor(action_dim=3, use_cbam=True)
     action, log_prob = actor(x)
     print("Actor action shape:", action.shape)
     print("Actor log_prob shape:", log_prob.shape)
-    # Teste deterministic
+    # Test deterministic
     det_action = actor.get_action(x, deterministic=True)
     print("Actor deterministic action shape:", det_action.shape)
     
-    # Teste do Critic
+    # Test Critic
     critic = AttentionCritic(action_dim=3, use_cbam=True)
     action = torch.randn(2, 3)
     q1, q2 = critic(x, action)
     print("Critic Q1 shape:", q1.shape)
     print("Critic Q2 shape:", q2.shape)
     
-    # Comparar número de parâmetros
+    # Compare parameter count
     from models.cnn_classic import ClassicCNN
     classic_model = ClassicCNN(action_dim=3)
     
     classic_params = sum(p.numel() for p in classic_model.parameters())
     attention_params = sum(p.numel() for p in model.parameters())
     
-    print(f"\nParâmetros CNN Clássica: {classic_params:,}")
-    print(f"Parâmetros CNN Attention: {attention_params:,}")
-    print(f"Diferença: {attention_params - classic_params:,} ({(attention_params/classic_params - 1)*100:.1f}% increase)")
+    print(f"\nClassic CNN parameters: {classic_params:,}")
+    print(f"Attention CNN parameters: {attention_params:,}")
+    print(f"Difference: {attention_params - classic_params:,} ({(attention_params/classic_params - 1)*100:.1f}% increase)")

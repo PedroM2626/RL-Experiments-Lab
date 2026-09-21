@@ -1,9 +1,9 @@
-"""Analise final da grade: rankings + stats vs conclusoes do estudo (§§3-12).
+"""Final grid analysis: rankings + stats vs conclusions of the study (§§3-12).
 
-Le jax_port/results_grade/*/*.json (eval_unseen 100 eps), agrupa por
-(cfg, jogo) nas seeds, aplica stats.rank_cells e compara com as
-ordenacoes publicadas. Saida: jax_port/analysis_full.json + tabelas.
-Uso: python jax_port/analyze_grade.py
+Reads jax_port/results_grade/*/*.json (eval_unseen 100 eps), groups by
+(cfg, game) across seeds, applies stats.rank_cells and compares with
+published orderings. Output: jax_port/analysis_full.json + tables.
+Usage: python jax_port/analyze_grade.py
 """
 
 import glob
@@ -18,9 +18,9 @@ OUT = "jax_port/analysis_full.json"
 
 def load_cells(suite):
     cells = []
-    # nota: a suite temporal rodou com CWD=jax_port -> sai tambem em
-    # jax_port/jax_port/results_grade/temporal/ (movida p/ o lugar certo
-    # ao final; o glob duplo blinda a analise em ambos os casos).
+    # note: the temporal suite ran with CWD=jax_port -> also outputs to
+    # jax_port/jax_port/results_grade/temporal/ (moved to correct place
+    # at the end; double glob covers both cases).
     paths = [os.path.join(GRADE, suite, "*.json"),
              os.path.join("jax_port", GRADE, suite, "*.json")]
     files = sorted({f for p in paths for f in glob.glob(p)})
@@ -32,8 +32,8 @@ def load_cells(suite):
         ev = (d.get("eval_unseen") or {}).get("mean")
         if ev is None:
             continue
-        # cfg vem do nome do arquivo (gêmeos ae/recon/classic partilham
-        # extrator mas têm seeds/draws independentes por célula).
+        # cfg comes from filename (twin ae/recon/classic share
+        # extractor but have independent seeds/draws per cell).
         d["_cfg"] = os.path.basename(f).split("__")[0]
         cells.append(d)
     return cells
@@ -57,7 +57,7 @@ def group_seeds(cells):
 
 def main():
     rep = {}
-    # main: por jogo + global (media das medias, como §3.7/3.12)
+    # main: per game + global (mean of means, as in §3.7/3.12)
     g = group(load_cells("main"))
     games = sorted(set(game for _, game in g))
     rep["main"] = {game: rank_cells(
@@ -77,8 +77,8 @@ def main():
         rep[suite] = {game: rank_cells(
             {cfg: vals for (cfg, gm), vals in gg.items() if gm == game})
             for game in games}
-    # temporal_hard: 100k-easy vs 500k-hard por (cfg, jogo) — delta p/ ver
-    # se o transformer sai do fundo com mais budget/dificuldade.
+    # temporal_hard: 100k-easy vs 500k-hard per (cfg, game) — delta to see
+    # if transformer recovers with more budget/difficulty.
     t_easy = group(load_cells("temporal"))
     t_hard = group(load_cells("temporal_hard"))
     rep["temporal_delta"] = {}
@@ -88,14 +88,14 @@ def main():
         rep["temporal_delta"][f"{cfg}__{game}"] = {
             "easy_100k": sorted(e) if e else None,
             "hard_500k": sorted(h) if h else None}
-    # budget: curvas por (cfg, jogo)
+    # budget: curves per (cfg, game)
     curves = {}
     for d in load_cells("budget"):
         key = (d["_cfg"], d["game"])
         curves.setdefault(key, []).append((d["timesteps"], d["eval_unseen"]["mean"]))
     rep["budget"] = {f"{c}/{g}": sorted(v) for (c, g), v in curves.items()}
-    # marl: win-rate por (algo, mapa, budget) nas seeds
-    # (chave "map" nao "game"; 1M feedforward vs 10M recorrente separados)
+    # marl: win-rate per (algo, map, budget) across seeds
+    # (key "map" not "game"; 1M feedforward vs 10M recurrent kept separate)
     mg = {}
     for f in sorted(glob.glob(os.path.join(GRADE, "marl", "*.json"))):
         try:
@@ -115,8 +115,8 @@ def main():
             "winrate_by_seed": vals, "n_seeds": len(vals),
             "solved": round(sum(vals) / len(vals), 3) >= 0.5}
     from jax_port.stats import mean_ci
-    # gen_gap: quem generaliza (menor gap = melhor). rank_cells ordena
-    # decrescente, entao entramos com -gap para o menor gap liderar.
+    # gen_gap: generalization (lower gap = better). rank_cells sorts
+    # descending, so we pass -gap to let the lowest gap lead.
     gg = {}
     for d in load_cells("main"):
         if d.get("gen_gap") is None:
@@ -126,7 +126,7 @@ def main():
         {cfg: [-v for v in vals] for (cfg, gm), vals in gg.items()
          if gm == game})
         for game in sorted(set(gm for _, gm in gg))}
-    # inverte o sinal de volta p/ presentaao nos rankings (mean = gap real)
+    # invert sign back for presentation in rankings (mean = real gap)
     for game in rep["gen_gap"]:
         for row in rep["gen_gap"][game]["ranking"]:
             row["mean"] = -row["mean"]
@@ -147,7 +147,7 @@ def main():
     for row in rep["gen_gap"]["global"]["ranking"]:
         row["mean"] = -row["mean"]
         row["ci95"] = [-row["ci95"][1], -row["ci95"][0]]
-    # AUC por celula com curva
+    # AUC per cell with curve
     n_auc = 0
     for suite in ("main", "exploration", "algo", "hrl", "budget", "hard",
                   "pilot", "spr", "gnn", "aux", "temporal", "temporal_hard"):
@@ -160,7 +160,7 @@ def main():
     rep["meta"] = {"cells_with_curve": n_auc}
     with open(OUT, "w") as fh:
         json.dump(rep, fh, indent=1)
-    # tabelas resumidas
+    # summary tables
     for suite in ("main", "exploration", "algo", "hrl"):
         print(f"== {suite} ==")
         for game, r in rep[suite].items():
@@ -174,7 +174,7 @@ def main():
     for k, v in rep["marl"].items():
         print(f"  {k}: winrate={v['winrate_mean']} n={v['n_seeds']} solved={v['solved']}")
     if "gen_gap" in rep:
-        print("== gen_gap (menor = generaliza melhor) ==")
+        print("== gen_gap (lower = generalizes better) ==")
         for game, r in rep["gen_gap"].items():
             if game == "global":
                 continue

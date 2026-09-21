@@ -1,6 +1,6 @@
 """
-Bossfight HARD extra: 4 WM +4 CNN +3 Augment 5 seeds 100k
-- Para medir se precisa hard nos outros jogos
+Bossfight HARD Stress Test: 4 World Models + 4 CNNs + 3 Augmentations, 5 seeds, 100k
+- Evaluates whether hard distribution mode is needed across other environments
 """
 import os, json, argparse
 from datetime import datetime
@@ -78,8 +78,8 @@ def main():
         plt.figure(figsize=(14,6)); plt.bar(keys, means, yerr=stds, capsize=4, alpha=0.8)
         plt.xticks(rotation=25, ha='right', fontsize=7); plt.ylabel('Mean Reward (10 eps)'); plt.title(f'Bossfight HARD - {args.timesteps} steps 5 seeds')
         plt.tight_layout(); plt.savefig(os.path.join(comp_dir,'comparison_plot.png'), dpi=150, bbox_inches='tight')
-        print(f"Plot salvo em {comp_dir}")
-    except Exception as e: print(f"Plot erro: {e}")
-    print(f"\nResultados em {comp_dir}\n"+json.dumps(stats,indent=2))
+        print(f"Plot saved to {comp_dir}")
+    except Exception as e: print(f"Plot error: {e}")
+    print(f"\nResults in {comp_dir}\n"+json.dumps(stats,indent=2))
 
 if __name__=='__main__': main()

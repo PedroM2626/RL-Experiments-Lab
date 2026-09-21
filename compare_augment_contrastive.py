@@ -1,6 +1,6 @@
 """
-Augment Contrastivo: crop vs color-jitter vs noise em bossfight
-- 3 configs ContrastiveExtractor com augment_type diferente, 5 seeds, 100k
+Contrastive Augmentations: crop vs color-jitter vs noise in bossfight
+- 3 ContrastiveExtractor configs with different augment_type, 5 seeds, 100k
 """
 import os, json, argparse
 from datetime import datetime
@@ -12,7 +12,7 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from procgen_wrapper import make_procgen_env
 from models.world_model_extractors import ContrastiveExtractor
 
-# Patch ContrastiveExtractor para suportar augment_type via monkey-patch simples: recriar classe com param
+# Subclass ContrastiveExtractor to support augment_type
 class ContrastiveCrop(ContrastiveExtractor):
     def __init__(self, obs_space, features_dim=512): super().__init__(obs_space, features_dim); self.augment_type='crop'
     def forward(self, obs):
@@ -34,14 +34,14 @@ class ContrastiveColor(ContrastiveExtractor):
         elif obs.max()>1.5: obs=obs/255.0
         if self.is_hwc and obs.dim()==4 and obs.shape[-1] in [1,3,4]: obs=obs.permute(0,3,1,2)
         if self.training and torch.rand(1).item()<0.5:
-            # color jitter simples: brightness/contrast
+            # simple color jitter: brightness/contrast
             obs = obs * (0.8 + torch.rand(1,device=obs.device)*0.4)
             obs = torch.clamp(obs,0,1)
         return self.fc(self.cnn(obs))
 
 class ContrastiveNoise(ContrastiveExtractor):
     def __init__(self, obs_space, features_dim=512): super().__init__(obs_space, features_dim); self.augment_type='noise'
-    # usa forward original (noise 0.01)
+    # uses original forward (noise 0.01)
 
 def train_one(game, num_levels, cls, timesteps, seed, log_dir, device):
     def make_env(): return Monitor(make_procgen_env(game, num_levels=num_levels, distribution_mode='easy', seed=seed, vector=False))
@@ -100,8 +100,8 @@ def main():
             plt.xticks(rotation=20, ha='right'); plt.tight_layout()
             for bar,m,s in zip(plt.gca().patches, means, stds): plt.text(bar.get_x()+bar.get_width()/2, bar.get_height(), f'{m:.1f}±{s:.1f}', ha='center', va='bottom', fontsize=8)
             plt.savefig(os.path.join(comp_dir,'comparison_plot.png'), dpi=150, bbox_inches='tight')
-            print(f"Plot salvo em {comp_dir}")
-    except Exception as e: print(f"Plot erro: {e}")
-    print(f"\nResultados em {comp_dir}\n"+json.dumps(stats,indent=2))
+            print(f"Plot saved to {comp_dir}")
+    except Exception as e: print(f"Plot error: {e}")
+    print(f"\nResults in {comp_dir}\n"+json.dumps(stats,indent=2))
 
 if __name__=='__main__': main()

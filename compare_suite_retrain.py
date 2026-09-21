@@ -1,12 +1,12 @@
 """
-Retreino da suite original (compare_suite.py) com o protocolo novo:
-- Mesmas configs/hiperparâmetros: 4 WM + 4 CNN + 3 Augment × 3 jogos × 5 seeds (165 modelos)
-- PPO idêntico: lr=3e-4, n_steps=256, batch_size=64, n_epochs=3, gamma=0.99, gae_lambda=0.95, clip=0.2
-- Treino: num_levels=200, distribution_mode='easy', seed fixo (42-46)
-- Eval novo (compatível 1:1 com re_eval_scorecard.py):
-  30 eps unseen stoch + 30 eps unseen det (num_levels=0, seed+1000) + 15 eps train (num_levels=200)
-- Salva zip por modelo + results/retrain_results.json incremental (resume-safe)
-- Zips nomeados {game}_{config}_seed{seed}.zip (compatível com a convenção da re-avaliação)
+Retraining of the original suite (compare_suite.py) under the new evaluation protocol:
+- Same configs/hyperparameters: 4 WM + 4 CNN + 3 Augment × 3 games × 5 seeds (165 models)
+- Identical PPO: lr=3e-4, n_steps=256, batch_size=64, n_epochs=3, gamma=0.99, gae_lambda=0.95, clip=0.2
+- Training: num_levels=200, distribution_mode='easy', fixed seed (42-46)
+- New evaluation (1:1 compatible with re_eval_scorecard.py):
+  30 unseen stochastic eps + 30 unseen deterministic eps (num_levels=0, seed+1000) + 15 training eps (num_levels=200)
+- Saves zip per model + incremental results/retrain_results.json (resume-safe)
+- Zips named {game}_{config}_seed{seed}.zip (compatible with re-evaluation naming conventions)
 """
 import os, json, argparse
 import numpy as np, torch
@@ -63,7 +63,7 @@ def main():
     if os.path.exists(out_path):
         with open(out_path) as f: results = json.load(f)  # resume
 
-    # mesmas configs do compare_suite.py (world 4 + cnn 4 + augment 3)
+    # same configs as compare_suite.py (world 4 + cnn 4 + augment 3)
     configs = []
     configs += [('wm_' + k, cls, kw, False) for k, cls, kw in [
         ('vae', VAEExtractor, dict(features_dim=512, latent_dim=128)),
@@ -80,7 +80,7 @@ def main():
 
     jobs = [(g, key, cls, kw, vec, s) for g in args.games for key, cls, kw, vec in configs for s in args.seeds]
     done0 = sum(1 for v in results.values() if 'error' not in v)
-    print(f"{len(jobs)} jobs ({len(jobs)-done0} restantes; entries com erro serão re-tentadas), device={device}, {args.timesteps} steps, eval {args.n_unseen}+{args.n_unseen}+{args.n_train}")
+    print(f"{len(jobs)} jobs ({len(jobs)-done0} remaining; entries with errors will be retried), device={device}, {args.timesteps} steps, eval {args.n_unseen}+{args.n_unseen}+{args.n_train}")
 
     for i, (game, key, cls, kw, vec, seed) in enumerate(jobs):
         name = f"{game}_{key}_seed{seed}"
@@ -90,7 +90,7 @@ def main():
             model = train_one(game, key, cls, kw, vec, args.timesteps, seed, args.log_dir, device)
             m_st, m_dt, m_tr = eval_model(model, game, seed, args.n_unseen, args.n_train, vec)
             try: model.save(os.path.join(zip_dir, f"{name}.zip"))
-            except Exception as e: print(f"  zip falhou: {e}")
+            except Exception as e: print(f"  zip failed: {e}")
             results[name] = {
                 'stoch_unseen': round(m_st, 3), 'det_unseen': round(m_dt, 3),
                 'stoch_train': round(m_tr, 3), 'gen_gap': round(m_tr - m_st, 3),
@@ -102,14 +102,14 @@ def main():
             results[name] = {'error': str(e)}
         with open(out_path, 'w') as f: json.dump(results, f, indent=2)
 
-    # estatísticas finais por config
+    # final statistics by config
     stats = {}
     for name, v in results.items():
         if 'error' in v: continue
         gk = name.rsplit('_seed', 1)[0]
         stats.setdefault(gk, []).append(v['stoch_unseen'])
     summary = {k: {'mean': round(float(np.mean(x)), 3), 'std': round(float(np.std(x)), 3), 'n': len(x)} for k, x in stats.items()}
-    print(f"\nConcluído: {out_path}\n" + json.dumps(summary, indent=2))
+    print(f"\nCompleted: {out_path}\n" + json.dumps(summary, indent=2))
 
 if __name__ == '__main__':
     main()

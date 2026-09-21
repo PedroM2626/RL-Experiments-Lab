@@ -7,13 +7,13 @@ from models.cnn_attention import CBAMModule, SpatialAttentionModule
 
 class ClassicCNNExtractor(BaseFeaturesExtractor):
     """
-    Extractor SB3 compatível com CarRacing 4x64x64 e Atari/CartPole 4x64x64 e Procgen 64x64x3
-    Usa arquitetura clássica: Conv 32 8x8 s4 -> 64 4x4 s2 -> 64 3x3 s1 -> FC 512
-    Calcula flatten dinamicamente para suportar 64 ou 84, HWC ou CHW
+    SB3 Extractor compatible with CarRacing (4x64x64), Atari/CartPole (4x64x64), and Procgen (64x64x3).
+    Uses classic architecture: Conv 32 8x8 s4 -> 64 4x4 s2 -> 64 3x3 s1 -> FC 512.
+    Dynamically computes flatten size to support 64x64 or 84x84, HWC or CHW.
     """
     def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 512):
         super().__init__(observation_space, features_dim)
-        # Detecta HWC (64,64,3) vs CHW (4,64,64)
+        # Detect HWC (64,64,3) vs CHW (4,64,64)
         if len(observation_space.shape) == 3 and observation_space.shape[2] in [1, 3, 4]:
             # HWC
             n_input_channels = int(observation_space.shape[2])
@@ -24,7 +24,7 @@ class ClassicCNNExtractor(BaseFeaturesExtractor):
             n_input_channels = int(observation_space.shape[0])
             self.is_hwc = False
             dummy_shape = (1, *observation_space.shape)
-        # Para lidar com 64x64 ou 84x84 ou qualquer tamanho, usamos dummy para calcular flatten
+        # To handle 64x64, 84x84 or any spatial dimension, use dummy tensor to calculate flatten size
         self.cnn = nn.Sequential(
             nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4),
             nn.ReLU(),
@@ -34,10 +34,10 @@ class ClassicCNNExtractor(BaseFeaturesExtractor):
             nn.ReLU(),
             nn.Flatten(),
         )
-        # Computar flatten size
+        # Compute flatten size
         with torch.no_grad():
             if self.is_hwc:
-                # dummy HWC -> precisa transpor para CHW para CNN
+                # dummy HWC -> needs transpose to CHW for CNN
                 h, w, c = observation_space.shape
                 dummy_hwc = torch.zeros(1, h, w, c)
                 dummy = dummy_hwc.permute(0, 3, 1, 2)  # CHW
@@ -62,8 +62,8 @@ class ClassicCNNExtractor(BaseFeaturesExtractor):
 
 class AttentionCNNExtractor(BaseFeaturesExtractor):
     """
-    Extractor com CBAM ou Spatial Attention
-    use_cbam=True -> CBAM completo, False -> apenas Spatial
+    Feature Extractor with CBAM or Spatial Attention.
+    use_cbam=True -> Full CBAM, False -> Spatial Attention only.
     """
     def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 512, use_cbam: bool = True):
         super().__init__(observation_space, features_dim)
@@ -99,7 +99,7 @@ class AttentionCNNExtractor(BaseFeaturesExtractor):
         else:
             self.att3 = nn.Identity()
 
-        # Calcular flatten dinamicamente
+        # Compute flatten size dynamically
         with torch.no_grad():
             if self.is_hwc:
                 h, w, c = observation_space.shape

@@ -1,14 +1,13 @@
-"""Dreams VAE/AE em JAX — paridade com visualize_side_by_side.py (modo dream).
+"""VAE/AE dreams in JAX — parity with visualize_side_by_side.py (dream mode).
 
-Estudo: dream() = fc_dec(z) -> reshape(4,4,64) -> deconv k3s1 ->
-deconv k4s2 -> deconv k8s4 -> sigmoid (deconvs espelham o encoder).
-Micro-diferenca documentada: aqui padding SAME (saida exata 64x64);
-no estudo VALID (saida 60x60, redimensionada no video).
-Protocolo: coleta 20k frames (policy aleatoria, bossfight 200 easy)
--> treina VAE (BCE+KL) e AE (BCE) ~2k steps batch 256 -> PNG
-lado-a-lado (real/vae/ae) + MP4 rollout com sonhos.
-Uso (GPU LIVRE! nao rodar junto da grade):
-    .../train.py ... # nao; este script e standalone:
+Study: dream() = fc_dec(z) -> reshape(4,4,64) -> deconv k3s1 ->
+deconv k4s2 -> deconv k8s4 -> sigmoid (deconvs mirror the encoder).
+Documented micro-difference: here SAME padding (exact 64x64 output);
+in the study VALID (60x60 output, resized in video).
+Protocol: collect 20k frames (random policy, bossfight 200 easy)
+-> train VAE (BCE+KL) and AE (BCE) ~2k steps batch 256 -> PNG
+side-by-side (real/vae/ae) + MP4 rollout with dreams.
+Usage (GPU FREE! do not run concurrently with the grid):
     wsl -e env PYTHONPATH=... /root/procgen-jax/bin/python \
       jax_port/dream.py --game bossfight --seed 42 --out-dir jax_port/dreams
 """
@@ -63,7 +62,7 @@ class VAE(nn.Module):
         if self.stochastic:
             z = mu + jnp.exp(0.5 * logvar) * jax.random.normal(key, mu.shape)
         else:
-            z = mu  # AE deterministico (estudo)
+            z = mu  # deterministic AE (study)
         return self.dec(z), mu, logvar
 
     def dream(self, x, key=None):

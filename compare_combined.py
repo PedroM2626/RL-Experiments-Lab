@@ -1,7 +1,7 @@
 """
-Benchmark combinado #1 + #4: 9 arquiteturas visuais em Procgen 3 jogos
-- #1: classic/cbam/spatial/mlp (coinrun) + #4: Impala/Impoola/LSTM+Attention/ViT/ResNet18 (Imitation-player)
-- 3 jogos ×9 configs ×5 seeds ×100k = 13.5M steps ~12h
+Combined Benchmark #1 + #4: 9 visual architectures across 3 Procgen games
+- Classic/CBAM/Spatial/MLP (coinrun) + Impala/Impoola/LSTM+Attention/ViT/ResNet18
+- 3 games × 9 configs × 5 seeds × 100k = 13.5M steps ~12h
 """
 import os, json, argparse
 from datetime import datetime
@@ -34,7 +34,7 @@ def main():
     parser.add_argument('--device', type=str, default='auto')
     args=parser.parse_args()
     device='cuda' if (args.device=='auto' and torch.cuda.is_available()) else args.device if args.device!='auto' else 'cpu'
-    print(f"Device: {device} torch {torch.__version__} COMBINED 9 arquiteturas")
+    print(f"Device: {device} torch {torch.__version__} COMBINED 9 architectures")
     os.makedirs(args.log_dir, exist_ok=True)
     ts=datetime.now().strftime("%Y%m%d_%H%M%S")
     comp_dir=os.path.join(args.log_dir, f"combined_{'_'.join(args.games)}_{ts}")
@@ -79,10 +79,10 @@ def main():
             means=[stats[k]['mean'] if stats[k] else 0 for k in keys]
             stds=[stats[k]['std'] if stats[k] else 0 for k in keys]
             plt.figure(figsize=(16,6)); plt.bar(keys, means, yerr=stds, capsize=3, alpha=0.8)
-            plt.xticks(rotation=30, ha='right', fontsize=7); plt.ylabel('Mean Reward (10 eps)'); plt.title(f"Combined {game} - {args.timesteps} steps 5 seeds (9 arquiteturas)")
+            plt.xticks(rotation=30, ha='right', fontsize=7); plt.ylabel('Mean Reward (10 eps)'); plt.title(f"Combined {game} - {args.timesteps} steps 5 seeds (9 architectures)")
             plt.tight_layout(); plt.savefig(os.path.join(comp_dir, f"combined_{game}_plot.png"), dpi=150, bbox_inches='tight'); plt.close()
-        print(f"Plots salvos em {comp_dir}")
-    except Exception as e: print(f"Plot erro: {e}")
-    print(f"\nResultados em {comp_dir}\n"+json.dumps(stats,indent=2))
+        print(f"Plots saved to {comp_dir}")
+    except Exception as e: print(f"Plot error: {e}")
+    print(f"\nResults in {comp_dir}\n"+json.dumps(stats,indent=2))
 
 if __name__=='__main__': main()

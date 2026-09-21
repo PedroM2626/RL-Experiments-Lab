@@ -1,7 +1,7 @@
 """
-Suite Procgen: bossfight + starpilot + dodgeball para todo benchmark
-- Roda World Models (4) + Procgen CNN (4) + Augment (3) em cada jogo, 5 seeds, 50k (suite rápida) ou 100k
-- Para noite inteira: ~8h (50k) ou ~12h (100k)
+Procgen Suite: bossfight + starpilot + dodgeball for entire benchmark
+- Runs World Models (4) + Procgen CNN (4) + Augment (3) on each game, 5 seeds, 50k (fast suite) or 100k
+- For overnight run: ~8h (50k) or ~12h (100k)
 """
 import os, json, argparse, itertools
 from datetime import datetime
@@ -67,12 +67,12 @@ def run_suite(games, timesteps, seeds, log_dir, device):
                     except: pass
                 except Exception as e:
                     import traceback; traceback.print_exc(); all_results[gk].append({'seed':seed,'mean_reward':None,'error':str(e)})
-        # Augment (só bossfight/starpilot/dodgeball, mas roda em todos para comparar)
+        # Augment (only bossfight/starpilot/dodgeball, but runs on all for comparison)
         for key, cls, kw in [(k, c, dict(features_dim=512)) for k,c in [('aug_crop',ContrastiveCrop),('aug_color',ContrastiveColor),('aug_noise',ContrastiveNoise)]]:
-            # já coberto em world, mas mantemos separado
+            # already covered in world, but kept separate
             pass
 
-    # augment separado por jogo (3 configs x3 games)
+    # separate augment per game (3 configs x 3 games)
     for game in games:
         for key, cls in [('aug_crop',ContrastiveCrop),('aug_color',ContrastiveColor),('aug_noise',ContrastiveNoise)]:
             gk=f"{game}_aug_{key}"
@@ -93,8 +93,8 @@ def run_suite(games, timesteps, seeds, log_dir, device):
         rewards=[x['mean_reward'] for x in v if x['mean_reward'] is not None]
         stats[k]={'mean':float(np.mean(rewards)),'std':float(np.std(rewards)),'n':len(rewards)} if rewards else None
     with open(os.path.join(comp_dir,'suite_statistics.json'),'w') as f: json.dump(stats,f,indent=2)
-    print(f"\nSuite completa em {comp_dir}\n"+json.dumps(stats,indent=2))
-    # plots por jogo + geral + jornada via tensorboard
+    print(f"\nSuite complete in {comp_dir}\n"+json.dumps(stats,indent=2))
+    # plots per game + overall + run via tensorboard
     try:
         import matplotlib.pyplot as plt
         for game in games:
@@ -105,15 +105,15 @@ def run_suite(games, timesteps, seeds, log_dir, device):
             plt.bar(keys, means, yerr=stds, capsize=3, alpha=0.8); plt.xticks(rotation=30, ha='right', fontsize=7)
             plt.title(f"Suite {game} - {timesteps} steps 5 seeds"); plt.tight_layout()
             plt.savefig(os.path.join(comp_dir, f"suite_{game}_plot.png"), dpi=150, bbox_inches='tight'); plt.close()
-        # geral: média por arquitetura agregada nos 3 jogos
+        # overall: mean per architecture aggregated across 3 games
         for prefix in ['vae','ae','recon','contrastive','classic','cbam','spatial','mlp_vector','aug_crop','aug_color','aug_noise']:
             vals=[stats[k]['mean'] for k in stats if prefix in k and stats[k]]
             if vals:
                 plt.figure(figsize=(8,4)); plt.bar([k for k in stats if prefix in k], vals, alpha=0.8); plt.xticks(rotation=25, ha='right', fontsize=7)
-                plt.title(f"Geral {prefix} - média 3 jogos"); plt.tight_layout()
+                plt.title(f"Overall {prefix} - 3 games average"); plt.tight_layout()
                 plt.savefig(os.path.join(comp_dir, f"suite_geral_{prefix}.png"), dpi=150, bbox_inches='tight'); plt.close()
-        print(f"Plots suite salvos em {comp_dir} (por jogo + geral). Jornada completa em tensorboard: tensorboard --logdir {log_dir}")
-    except Exception as e: print(f"Plot erro: {e}")
+        print(f"Suite plots saved in {comp_dir} (per game + overall). Full run in tensorboard: tensorboard --logdir {log_dir}")
+    except Exception as e: print(f"Plot error: {e}")
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser()

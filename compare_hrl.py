@@ -1,18 +1,18 @@
 """
-Benchmark INDEPENDENTE: HRL vs Flat RL em jumper/plunder (não entra no scorecard do estudo principal).
+INDEPENDENT Benchmark: HRL vs Flat RL on jumper/plunder (not included in the main study scorecard).
 
-3 braços (mesmo budget de 100k FRAMES primitivos, PPO idêntico, NatureCNN CnnPolicy):
-- flat  : PPO sobre ações primitivas, 100k steps
-- skip4 : PPO com action-repeat 4 (abstração temporal SEM hierarquia) — controle
-- hrl   : PPO meta-controlador sobre biblioteca de skills fixas (framework de opções):
-          cada decisão de skill = 4 frames primitivos -> 25k meta-steps = 100k frames
+3 arms (identical budget of 100k primitive FRAMES, identical PPO, NatureCNN CnnPolicy):
+- flat  : PPO on primitive actions, 100k steps
+- skip4 : PPO with action-repeat 4 (temporal abstraction WITHOUT hierarchy) — control
+- hrl   : PPO meta-controller on a fixed skill library (options framework):
+          each skill decision = 4 primitive frames -> 25k meta-steps = 100k frames
 
-Skills por jogo (sondagem empírica probe_actions.py + mapeamento oficial procgen env.py):
+Skills per game (empirical probing via probe_actions.py + official procgen env.py mapping):
 - jumper : WAIT, LEFT, RIGHT, JUMP(UP), JUMP_LEFT, JUMP_RIGHT
 - plunder: WAIT, LEFT, RIGHT, SHOOT(D), SHOOT_LEFT, SHOOT_RIGHT
 
-Protocolo de treino/eval idêntico ao estudo (num_levels=200 easy, eval unseen seed+1000,
-100 eps stoch + 100 det + 15 train). Saída separada: logs_hrl/ + results/hrl_results.json.
+Training/eval protocol identical to the main study (num_levels=200 easy, eval unseen seed+1000,
+100 eps stoch + 100 det + 15 train). Separate output: logs_hrl/ + results/hrl_results.json.
 """
 import os, json, argparse
 import numpy as np, gymnasium as gymn, torch
@@ -22,10 +22,10 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.evaluation import evaluate_policy
 from procgen_wrapper import make_procgen_env
 
-DUR = 4  # frames primitivos por skill / action-repeat
+DUR = 4  # primitive frames per skill / action-repeat
 FRAMES = 100_000
 
-# mapeamento oficial (procgen/env.py): 0=LEFT+DOWN 1=LEFT 2=LEFT+UP 3=DOWN 4=() 5=UP
+# official mapping (procgen/env.py): 0=LEFT+DOWN 1=LEFT 2=LEFT+UP 3=DOWN 4=() 5=UP
 # 6=RIGHT+DOWN 7=RIGHT 8=RIGHT+UP 9=D 10=A 11=W 12=S 13=Q 14=E
 SKILLS = {
     'jumper': [4, 1, 7, 5, 2, 8],    # WAIT, LEFT, RIGHT, JUMP, JUMP_LEFT, JUMP_RIGHT
@@ -37,14 +37,14 @@ SKILL_NAMES = {
 }
 
 class MacroEnv(gymn.ActionWrapper):
-    """Executa uma skill (ação primitiva mantida por DUR frames) por step do meta-controlador.
-    Termina o macro na borda do episódio para não misturar episódios (auto-reset fica no DummyVecEnv)."""
+    """Executes a skill (primitive action repeated for DUR frames) per meta-controller step.
+    Terminates the macro at episode boundary to avoid mixing episodes."""
     def __init__(self, env, primitives):
         super().__init__(env)
         self.primitives = primitives
         self.action_space = gymn.spaces.Discrete(len(primitives))
 
-    def action(self, a):  # não usado; step sobrescrito
+    def action(self, a):  # unused; step overridden
         return self.primitives[int(a)]
 
     def step(self, a):
@@ -66,7 +66,7 @@ def make_game(game, num_levels, seed, arm):
     return MacroEnv(env, SKILLS[game])  # hrl
 
 class RepeatEnv(MacroEnv):
-    """action-repeat 4 sobre as 15 ações primitivas (braço skip4)."""
+    """Action-repeat 4 over the 15 primitive actions (skip4 arm)."""
     def __init__(self, env):
         super().__init__(env, list(range(15)))
 
@@ -75,7 +75,7 @@ def train_one(game, arm, seed, log_dir, device):
     model = PPO("CnnPolicy", vec, verbose=0, learning_rate=3e-4, n_steps=256, batch_size=64, n_epochs=3,
                 gamma=0.99, gae_lambda=0.95, clip_range=0.2, seed=seed, device=device,
                 tensorboard_log=log_dir)
-    ts = FRAMES // DUR if arm != 'flat' else FRAMES  # mesmo budget em frames primitivos
+    ts = FRAMES // DUR if arm != 'flat' else FRAMES  # equal budget in primitive frames
     model.learn(total_timesteps=ts)
     vec.close()
     return model
@@ -110,7 +110,7 @@ def main():
         with open(out_path) as f: results = json.load(f)
 
     jobs = [(g, arm, s) for g in args.games for arm in args.arms for s in args.seeds]
-    print(f"{len(jobs)} jobs ({args.games} × {args.arms} × {args.seeds}), device={device}, {FRAMES//1000}k frames/braço")
+    print(f"{len(jobs)} jobs ({args.games} × {args.arms} × {args.seeds}), device={device}, {FRAMES//1000}k frames/arm")
     for i, (game, arm, seed) in enumerate(jobs):
         name = f"{game}_{arm}_seed{seed}"
         if name in results and 'error' not in results[name]: continue
@@ -119,7 +119,7 @@ def main():
             model = train_one(game, arm, seed, args.log_dir, device)
             m_st, m_dt, m_tr = eval_model(model, game, arm, seed)
             try: model.save(os.path.join(zip_dir, f"{name}.zip"))
-            except Exception as e: print(f"  zip falhou: {e}")
+            except Exception as e: print(f"  zip save failed: {e}")
             results[name] = {'stoch_unseen': round(m_st, 3), 'det_unseen': round(m_dt, 3),
                              'stoch_train': round(m_tr, 3), 'gen_gap': round(m_tr - m_st, 3),
                              'n_unseen': 100, 'n_train': 15, 'frames': FRAMES}
@@ -134,8 +134,8 @@ def main():
         if 'error' in v: continue
         gk = name.rsplit('_seed', 1)[0]
         stats.setdefault(gk, []).append(v['stoch_unseen'])
-    print('\nResumo:'); [print(f"  {k:24s} {np.mean(x):.2f} ± {np.std(x):.2f} (n={len(x)})") for k, x in sorted(stats.items())]
-    print(f"Concluído: {out_path}")
+    print('\nSummary:'); [print(f"  {k:24s} {np.mean(x):.2f} ± {np.std(x):.2f} (n={len(x)})") for k, x in sorted(stats.items())]
+    print(f"Completed: {out_path}")
 
 if __name__ == '__main__':
     main()

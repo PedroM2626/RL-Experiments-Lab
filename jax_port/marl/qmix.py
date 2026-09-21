@@ -1,9 +1,9 @@
-"""VDN + QMIX em Flax (extensao MARL; paridade com a fase antiga §3.3).
+"""VDN + QMIX in Flax (MARL extension; parity with earlier phase §3.3).
 
-VDN: Q_tot = soma_a Q_a (fatoracao aditiva).
-QMIX: Q_tot = mixer hiper-rede monotonica (pesos >= 0 via abs) sobre
-  Q_a, condicionada no state global (72D). Embed 32.
-Q-networks compartilhadas: ActorOnly (MLP 128/128, saida n_actions).
+VDN: Q_tot = sum_a Q_a (additive factorization).
+QMIX: Q_tot = monotonic hypernetwork mixer (weights >= 0 via abs) over
+  Q_a, conditioned on global state (72D). Embed 32.
+Shared Q-networks: ActorOnly (MLP 128/128, n_actions output).
 """
 
 import flax.linen as nn

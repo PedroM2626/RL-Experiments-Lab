@@ -22,7 +22,7 @@ class ImpalaBlock(nn.Module):
         return self.pool(x)
 
 class ImpalaCNNExtractor(BaseFeaturesExtractor):
-    """Impala-CNN 3 blocos (32,64,64) — mario-ds/src/impala_cnn.py"""
+    """Impala-CNN 3 blocks (32, 64, 64)"""
     def __init__(self, obs_space, features_dim=512):
         super().__init__(obs_space, features_dim)
         hwc=_is_hwc(obs_space); self.is_hwc=hwc
@@ -43,7 +43,7 @@ class ImpalaCNNExtractor(BaseFeaturesExtractor):
         return self.fc(x.view(x.size(0),-1))
 
 class ImpoolaCNNExtractor(BaseFeaturesExtractor):
-    """Impoola-CNN GAP — Impala + Global Average Pooling (1.01M)"""
+    """Impoola-CNN GAP — Impala + Global Average Pooling"""
     def __init__(self, obs_space, features_dim=512):
         super().__init__(obs_space, features_dim)
         hwc=_is_hwc(obs_space); self.is_hwc=hwc
@@ -62,7 +62,7 @@ class ImpoolaCNNExtractor(BaseFeaturesExtractor):
         return self.fc(x)
 
 class LSTMAttentionExtractor(BaseFeaturesExtractor):
-    """CNN 5 layers → BiLSTM 10 frames → Temporal Attention — Imitation-player:128 (simplificado para 1 frame com LSTM stateless)"""
+    """CNN 5 layers → BiLSTM 10 frames → Temporal Attention (stateless repeat-4 representation)"""
     def __init__(self, obs_space, features_dim=512, hidden=256):
         super().__init__(obs_space, features_dim)
         hwc=_is_hwc(obs_space); self.is_hwc=hwc
@@ -83,7 +83,7 @@ class LSTMAttentionExtractor(BaseFeaturesExtractor):
         elif o.max()>1.5: o=o/255.0
         if self.is_hwc and o.dim()==4 and o.shape[-1] in [1,3,4]: o=o.permute(0,3,1,2)
         f=self.cnn(o)  # B x N
-        # simular sequência de 4 com mesma feature (para manter LSTM)
+        # simulate sequence of 4 with identical feature (to maintain LSTM structure)
         seq=f.unsqueeze(1).repeat(1,4,1)  # B x 4 x N
         lstm_out,_=self.lstm(seq)  # B x 4 x H*2
         attn_out,_=self.attn(lstm_out,lstm_out,lstm_out)
@@ -91,7 +91,7 @@ class LSTMAttentionExtractor(BaseFeaturesExtractor):
         return self.fc(pooled)
 
 class ViTExtractor(BaseFeaturesExtractor):
-    """ViT 64 patches 16x16 → Transformer 4 layers — Imitation-player:136"""
+    """ViT: 64 patches 16x16 → Transformer 4 layers"""
     def __init__(self, obs_space, features_dim=512, patch=16, dim=128, depth=4, heads=4):
         super().__init__(obs_space, features_dim)
         hwc=_is_hwc(obs_space); self.is_hwc=hwc
@@ -116,14 +116,14 @@ class ViTExtractor(BaseFeaturesExtractor):
         return self.fc(x)
 
 class ResNet18Extractor(BaseFeaturesExtractor):
-    """ResNet-18 adaptado 3×64×64 — Imitation-player:155 (11.5M)"""
+    """Adapted ResNet-18 for 3×64×64"""
     def __init__(self, obs_space, features_dim=512):
         super().__init__(obs_space, features_dim)
         hwc=_is_hwc(obs_space); self.is_hwc=hwc
         n_in = int(obs_space.shape[2]) if hwc else int(obs_space.shape[0])
         # stem
         self.stem=nn.Sequential(nn.Conv2d(n_in,64,7,stride=2,padding=3), nn.BatchNorm2d(64), nn.ReLU(), nn.MaxPool2d(3,stride=2,padding=1))
-        # 4 stages (2 blocks cada)
+        # 4 stages (2 blocks each)
         def _block(in_c,out_c,stride):
             return nn.Sequential(
                 nn.Conv2d(in_c,out_c,3,stride=stride,padding=1), nn.BatchNorm2d(out_c), nn.ReLU(),

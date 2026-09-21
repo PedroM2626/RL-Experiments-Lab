@@ -1,8 +1,8 @@
 """
-Comparação rápida usando SB3 PPO + ambientes rápidos
-- cartpole_pixels (CV) vs cartpole_state (vetor sem CV) — mesmo ambiente
+Fast comparison using SB3 PPO + fast environments
+- cartpole_pixels (CV) vs cartpole_state (vector without CV) — identical environment
 - classic CNN vs attention CNN (CBAM True/False)
-Roda 50k steps em ~2-5 min vs 50 min CarRacing
+Runs 50k steps in ~2-5 min vs 50 min CarRacing
 """
 import os
 import json
@@ -22,8 +22,6 @@ from models.sb3_extractors import ClassicCNNExtractor, AttentionCNNExtractor
 def make_vec_env(env_type, seed, frame_stack=4, frame_size=(64,64)):
     def _init():
         env = create_fast_env(env_type, frame_stack=frame_stack, frame_size=frame_size)
-        # SB3 espera HWC? Nosso env já é CHW uint8, mas VecTransposeImage espera HWC, então não usamos
-        # DummyVecEnv já lida
         return env
     return _init
 
@@ -31,8 +29,6 @@ def train_ppo(env_type, extractor_class, extractor_kwargs, timesteps=50000, seed
     os.makedirs(log_dir, exist_ok=True)
     # VecEnv
     vec_env = DummyVecEnv([make_vec_env(env_type, seed)])
-    # Para CNN CHW, SB3 não precisa VecTransposeImage se já é CHW? Mas SB3 espera HWC para CnnPolicy, nosso extractor espera CHW, então não transpõe
-    # Avaliacao env separado
     eval_env = DummyVecEnv([make_vec_env(env_type, seed+1000)])
     
     # Policy kwargs
@@ -56,12 +52,12 @@ def train_ppo(env_type, extractor_class, extractor_kwargs, timesteps=50000, seed
                 policy_kwargs=policy_kwargs if "pixels" in env_type or env_type in ["pong","breakout","carracing"] else {},
                 tensorboard_log=log_dir
                 )
-    # Callback eval a cada 5k
+    # Callback eval every 5k
     eval_callback = EvalCallback(eval_env, eval_freq=5000, n_eval_episodes=5, deterministic=True, render=False, verbose=1)
     
     model.learn(total_timesteps=timesteps, callback=eval_callback, tb_log_name=f"{env_type}_{extractor_class.__name__}_{seed}")
     
-    # Avaliação final 10 episódios
+    # Final evaluation: 10 episodes
     mean_reward, std_reward = evaluate_policy(model, eval_env, n_eval_episodes=10, deterministic=True)
     print(f"Final eval {env_type} {extractor_class.__name__}: {mean_reward:.2f} +/- {std_reward:.2f}")
     
@@ -71,11 +67,11 @@ def train_ppo(env_type, extractor_class, extractor_kwargs, timesteps=50000, seed
     return mean_reward, std_reward, model
 
 def main():
-    parser = argparse.ArgumentParser(description='Comparação rápida CV vs não-CV + Classic vs Attention')
-    parser.add_argument('--timesteps', type=int, default=50000, help='Timesteps por experimento (default 50000)')
+    parser = argparse.ArgumentParser(description='Fast comparison: CV vs non-CV + Classic vs Attention')
+    parser.add_argument('--timesteps', type=int, default=50000, help='Timesteps per experiment (default 50000)')
     parser.add_argument('--seeds', type=int, nargs='+', default=[42], help='Seeds')
-    parser.add_argument('--env', type=str, default='cartpole_pixels', choices=['cartpole_pixels','cartpole_state','pong','breakout','carracing'], help='Env rápido')
-    parser.add_argument('--compare_cv', action='store_true', help='Compara CV (pixels) vs sem CV (state) no mesmo CartPole')
+    parser.add_argument('--env', type=str, default='cartpole_pixels', choices=['cartpole_pixels','cartpole_state','pong','breakout','carracing'], help='Fast environment')
+    parser.add_argument('--compare_cv', action='store_true', help='Compare CV (pixels) vs non-CV (state) in CartPole')
     parser.add_argument('--log_dir', type=str, default='./logs_fast')
     parser.add_argument('--device', type=str, default='auto', help='auto, cpu, cuda')
     args = parser.parse_args()
@@ -95,15 +91,15 @@ def main():
     results = {}
 
     if args.compare_cv:
-        # Mesmo CartPole, duas observações
+        # Same CartPole, two observation spaces
         configs = [
             ('cartpole_pixels', ClassicCNNExtractor, dict(features_dim=512), 'classic_pixels'),
             ('cartpole_pixels', AttentionCNNExtractor, dict(features_dim=512, use_cbam=True), 'attention_cbam_pixels'),
             ('cartpole_pixels', AttentionCNNExtractor, dict(features_dim=512, use_cbam=False), 'spatial_pixels'),
-            ('cartpole_state', None, {}, 'mlp_state'),  # sem CNN, MLP puro
+            ('cartpole_state', None, {}, 'mlp_state'),  # non-CNN, pure MLP
         ]
     else:
-        # Apenas CV, compara arquiteturas
+        # Vision only, compare architectures
         if args.env in ['cartpole_state']:
             configs = [('cartpole_state', None, {}, 'mlp_state')]
         elif args.env in ['cartpole_pixels','pong','breakout','carracing']:
@@ -118,11 +114,11 @@ def main():
     for env_type, extractor_class, extractor_kwargs, key in configs:
         results[key] = []
         for seed in args.seeds:
-            print(f"\n{'='*60}\nTreinando {key} seed {seed} env {env_type}\n{'='*60}")
+            print(f"\n{'='*60}\nTraining {key} seed {seed} env {env_type}\n{'='*60}")
             try:
-                # Para cartpole_state, usamos MlpPolicy direto sem extractor custom
+                # For cartpole_state, use MlpPolicy directly without custom extractor
                 if extractor_class is None:
-                    # MLP direto
+                    # Direct MLP
                     vec_env = DummyVecEnv([make_vec_env(env_type, seed)])
                     eval_env = DummyVecEnv([make_vec_env(env_type, seed+1000)])
                     model = PPO("MlpPolicy", vec_env, verbose=1, learning_rate=3e-4, n_steps=1024, batch_size=64, seed=seed, device=device, tensorboard_log=args.log_dir)
@@ -139,11 +135,11 @@ def main():
                 traceback.print_exc()
                 results[key].append({'seed': seed, 'mean_reward': None, 'error': str(e)})
 
-    # Salvar
+    # Save
     with open(os.path.join(comparison_dir, 'comparison_results.json'), 'w') as f:
         json.dump(results, f, indent=2)
     
-    # Estatísticas
+    # Statistics
     stats = {}
     for k, v in results.items():
         rewards = [x['mean_reward'] for x in v if x['mean_reward'] is not None]
@@ -169,18 +165,18 @@ def main():
             plt.figure(figsize=(10,6))
             bars = plt.bar(arch_names, means, yerr=stds, capsize=5, alpha=0.7)
             plt.ylabel('Mean Reward (10 eps)')
-            plt.title(f'Comparação Rápida - {args.env} - {args.timesteps} steps')
+            plt.title(f'Fast Comparison - {args.env} - {args.timesteps} steps')
             plt.xticks(rotation=30, ha='right')
             plt.tight_layout()
             for bar, m, s in zip(bars, means, stds):
                 plt.text(bar.get_x()+bar.get_width()/2, bar.get_height(), f'{m:.1f}±{s:.1f}', ha='center', va='bottom')
             plt.savefig(os.path.join(comparison_dir, 'comparison_plot.png'), dpi=150, bbox_inches='tight')
-            print(f"Plot salvo em {comparison_dir}")
+            print(f"Plot saved to {comparison_dir}")
             plt.close()
     except Exception as e:
-        print(f"Erro plot: {e}")
+        print(f"Plot error: {e}")
 
-    print(f"\nResultados salvos em {comparison_dir}")
+    print(f"\nResults saved to {comparison_dir}")
     print(json.dumps(stats, indent=2))
 
 if __name__ == '__main__':

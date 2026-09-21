@@ -1,23 +1,23 @@
-"""Pipeline CPU-env do porte JAX (PA1).
+"""CPU-env pipeline of the JAX port (PA1).
 
-Fronteira fiel ao estudo SB3: mesmos niveis/sementes/pre-processamento de
+Boundary faithful to SB3 study: same levels/seeds/preprocessing of
 ``procgen_wrapper.py`` (frame_stack=1, HWC 64x64x3 uint8 -> CHW 3x64x64),
-porem sem dependencias de torch/sb3/cv2/gymnasium — apenas gym+procgen+numpy
-no lado CPU. O lado JAX (GPU) recebe o batch via ``jnp.asarray`` + JIT.
+without torch/sb3/cv2/gymnasium dependencies — only gym+procgen+numpy
+on the CPU side. The JAX (GPU) side receives the batch via ``jnp.asarray`` + JIT.
 
-Referencia de fidelidade:
-  estudo: ``procgen_wrapper.py:29`` (reset HWC->CHW), ``:41`` (step),
+Fidelity reference:
+  study: ``procgen_wrapper.py:29`` (reset HWC->CHW), ``:41`` (step),
   ``:91`` (factory num_levels/distribution_mode/rand_seed).
 """
 
 import gym
 import numpy as np
 
-import procgen  # noqa: F401  (registra procgen:procgen-*-v0)
+import procgen  # noqa: F401  (registers procgen:procgen-*-v0)
 
 
 def make_single_env(game="coinrun", num_levels=200, distribution_mode="easy", rand_seed=0):
-    """Um env ProcGen cru (gym API antiga, obs HWC uint8)."""
+    """Raw ProcGen env (legacy gym API, HWC uint8 obs)."""
     return gym.make(
         f"procgen:procgen-{game}-v0",
         num_levels=num_levels,
@@ -28,12 +28,12 @@ def make_single_env(game="coinrun", num_levels=200, distribution_mode="easy", ra
 
 
 class ProcgenVectorEnv:
-    """N envs ProcGen sincronos em CPU, obs empilhada CHW uint8.
+    """N synchronous ProcGen envs on CPU, stacked CHW uint8 obs.
 
-    Semantica identica a N x ``ProcgenGymWrapper(frame_stack=1)`` do estudo:
-    reset devolve ``(N,3,64,64)`` uint8; step recebe ``(N,)`` int e devolve
+    Semantics identical to N x ``ProcgenGymWrapper(frame_stack=1)`` from study:
+    reset returns ``(N,3,64,64)`` uint8; step receives ``(N,)`` int and returns
     ``obs (N,3,64,64) uint8, rew (N,) float32, done (N,) bool``.
-    Autoreset SB3-style no done (o bench mede throughput, nao episodios).
+    SB3-style autoreset on done (bench measures throughput, not episodes).
     """
 
     def __init__(self, game="coinrun", num_envs=4, num_levels=200,

@@ -1,7 +1,7 @@
 """
-Comparação Procgen: mesmo jogo com CV vs sem CV + classic vs attention
-- Usa Python 3.10 + procgen 0.10.7 + stable-baselines3 PPO
-- Rápido: 50k steps ~ 2 min (vs 50 min CarRacing)
+Procgen comparison: same game with CV vs without CV + classic vs attention
+- Uses Python 3.10 + procgen 0.10.7 + stable-baselines3 PPO
+- Fast: 50k steps ~ 2 min (vs 50 min CarRacing)
 """
 import os
 import json
@@ -19,10 +19,10 @@ from stable_baselines3.common.callbacks import EvalCallback
 from procgen_wrapper import make_procgen_env
 from models.sb3_extractors import ClassicCNNExtractor, AttentionCNNExtractor
 
-# Para procgen vetor, usamos MlpPolicy
+# For procgen vector, we use MlpPolicy
 
 def train_one(game, num_levels, distribution, use_vector, extractor_class, extractor_kwargs, timesteps, seed, log_dir, device):
-    # Env com Monitor para SB3
+    # Env with Monitor for SB3
     def make_env():
         env = make_procgen_env(game, num_levels=num_levels, distribution_mode=distribution, seed=seed, frame_stack=1, vector=use_vector)
         env = Monitor(env)
@@ -62,7 +62,7 @@ def train_one(game, num_levels, distribution, use_vector, extractor_class, extra
     return float(mean_reward), float(std_reward), model
 
 def main():
-    parser = argparse.ArgumentParser(description='Procgen comparação CV vs não-CV')
+    parser = argparse.ArgumentParser(description='Procgen comparison CV vs non-CV')
     parser.add_argument('--game', type=str, default='coinrun', help='coinrun, starpilot, bossfight')
     parser.add_argument('--timesteps', type=int, default=50000)
     parser.add_argument('--seeds', type=int, nargs='+', default=[42])
@@ -87,7 +87,7 @@ def main():
         ('pixels', False, ClassicCNNExtractor, dict(features_dim=512), 'classic_pixels'),
         ('pixels', False, AttentionCNNExtractor, dict(features_dim=512, use_cbam=True), 'attention_cbam_pixels'),
         ('pixels', False, AttentionCNNExtractor, dict(features_dim=512, use_cbam=False), 'attention_spatial_pixels'),
-        ('vector', True, None, {}, 'mlp_vector'),  # sem CV
+        ('vector', True, None, {}, 'mlp_vector'),  # without CV
     ]
 
     results = {}
@@ -141,9 +141,9 @@ def main():
             for bar, m, s in zip(bars, means, stds):
                 plt.text(bar.get_x()+bar.get_width()/2, bar.get_height(), f'{m:.1f}±{s:.1f}', ha='center', va='bottom', fontsize=9)
             plt.savefig(os.path.join(comp_dir, 'comparison_plot.png'), dpi=150, bbox_inches='tight')
-            print(f"Plot salvo em {comp_dir}")
+            print(f"Plot saved in {comp_dir}")
     except Exception as e:
-        print(f"Plot erro: {e}")
+        print(f"Plot error: {e}")
 
     # Txt report
     with open(os.path.join(comp_dir, 'comparison_report.txt'), 'w') as f:
@@ -153,9 +153,9 @@ def main():
             if s is not None:
                 f.write(f"{k}: mean {s['mean']:.2f} std {s['std']:.2f} n {s['n']}\n")
             else:
-                f.write(f"{k}: sem dados\n")
+                f.write(f"{k}: no data\n")
 
-    print(f"\nResultados em {comp_dir}")
+    print(f"\nResults in {comp_dir}")
     print(json.dumps(stats, indent=2))
 
 if __name__ == '__main__':

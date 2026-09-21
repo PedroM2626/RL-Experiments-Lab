@@ -1,5 +1,5 @@
 """
-Maze+Heist PPO vs ICM vs RND vs NGU — 2 jogos ×4 configs ×5 seeds ×100k
+Maze+Heist PPO vs ICM vs RND vs NGU — 2 games × 4 configs × 5 seeds × 100k
 ICM: forward+inverse, RND: random target, NGU: RND+episodic
 """
 import os, json, argparse, collections
@@ -184,8 +184,8 @@ def main():
             plt.figure(figsize=(10,6)); plt.bar(keys, means, yerr=stds, capsize=4, alpha=0.8)
             plt.xticks(rotation=20, ha='right'); plt.ylabel('Mean Reward'); plt.title(f"{game} - PPO vs ICM/RND/NGU - {args.timesteps} steps 5 seeds")
             plt.tight_layout(); plt.savefig(os.path.join(comp_dir, f"maze_heist_{game}_plot.png"), dpi=150, bbox_inches='tight'); plt.close()
-        print(f"Plots salvos em {comp_dir}")
-    except Exception as e: print(f"Plot erro: {e}")
-    print(f"\nResultados em {comp_dir}\n"+json.dumps(stats,indent=2))
+        print(f"Plots saved in {comp_dir}")
+    except Exception as e: print(f"Plot error: {e}")
+    print(f"\nResults in {comp_dir}\n"+json.dumps(stats,indent=2))
 
 if __name__=='__main__': main()

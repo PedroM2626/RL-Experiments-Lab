@@ -1,13 +1,13 @@
 """
-Benchmark INDEPENDENTE: Value-based vs Policy-based (seção 12 do README).
+INDEPENDENT Benchmark: Value-based vs Policy-based (Section 12 of README).
 - Value: DQN + QR-DQN (off-policy, replay buffer)
-- Policy: PPO + A2C (on-policy, gradient de política)
-- 3 jogos × 4 algos × 5 seeds × 100k steps = 60 runs
-- Arquitetura idêntica para todos: CnnPolicy (NatureCNN, features_dim 512)
-- Eval definitivo embutido: 100 eps unseen stoch + 100 det (seed+1000) + 15 train
-- Hiperparâmetros: PPO = os do estudo; A2C/DQN/QR-DQN = defaults SB3 com adaptações
-  documentadas para budget pequeno (buffer 100k por RAM, learning_starts/exploration escalados)
-- Saída: logs_algo/algo_zips + results/algo_families_results.json (incremental, retry de erros)
+- Policy: PPO + A2C (on-policy, policy gradient)
+- 3 games × 4 algorithms × 5 seeds × 100k steps = 60 runs
+- Identical architecture for all: CnnPolicy (NatureCNN, features_dim 512)
+- Built-in definitive eval: 100 eps unseen stoch + 100 det (seed+1000) + 15 train
+- Hyperparameters: PPO = study defaults; A2C/DQN/QR-DQN = SB3 defaults with documented
+  adaptations for small budgets (100k buffer due to RAM, scaled learning_starts/exploration)
+- Output: logs_algo/algo_zips + results/algo_families_results.json (incremental, error retry)
 """
 import os, json, argparse
 import numpy as np, torch
@@ -19,19 +19,19 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from procgen_wrapper import make_procgen_env
 
 def make_algo(name, env, seed, device, log_dir, value_lr=1e-4):
-    if name == 'ppo':   # mesmos hiperparâmetros do estudo principal
+    if name == 'ppo':   # identical hyperparameters to main study
         return PPO("CnnPolicy", env, verbose=0, learning_rate=3e-4, n_steps=256, batch_size=64,
                    n_epochs=3, gamma=0.99, gae_lambda=0.95, clip_range=0.2, seed=seed,
                    device=device, tensorboard_log=log_dir)
-    if name == 'a2c':   # default SB3 com lr alinhado ao estudo
+    if name == 'a2c':   # SB3 default with lr aligned to study
         return A2C("CnnPolicy", env, verbose=0, learning_rate=3e-4, n_steps=128, gamma=0.99,
                    seed=seed, device=device, tensorboard_log=log_dir)
-    common = dict(verbose=0, buffer_size=100_000,        # 100k frames uint8 ~= 1.2 GB (default 1M não cabe)
+    common = dict(verbose=0, buffer_size=100_000,        # 100k frames uint8 ~= 1.2 GB (default 1M exceeds RAM)
                   learning_starts=5000, exploration_fraction=0.25, batch_size=64,
                   gamma=0.99, train_freq=4, gradient_steps=1, target_update_interval=500,
                   seed=seed, device=device, tensorboard_log=log_dir)
     if name == 'dqn':
-        return DQN("CnnPolicy", env, learning_rate=value_lr, **common)   # lr default DQN 1e-4
+        return DQN("CnnPolicy", env, learning_rate=value_lr, **common)   # DQN default lr 1e-4
     if name == 'qrdqn':
         return QRDQN("CnnPolicy", env, learning_rate=value_lr, policy_kwargs=dict(n_quantiles=200), **common)
     raise ValueError(name)
@@ -79,7 +79,7 @@ def main():
             vec.close()
             m_st, m_dt, m_tr = eval_model(model, game, seed)
             try: model.save(os.path.join(zip_dir, f"{name}.zip"))
-            except Exception as e: print(f"  zip falhou: {e}")
+            except Exception as e: print(f"  zip save failed: {e}")
             results[name] = {'stoch_unseen': round(m_st, 3), 'det_unseen': round(m_dt, 3),
                              'stoch_train': round(m_tr, 3), 'gen_gap': round(m_tr - m_st, 3),
                              'n_unseen': 100, 'n_train': 15}
@@ -88,7 +88,7 @@ def main():
             import traceback; traceback.print_exc()
             results[name] = {'error': str(e)}
         with open(out_path, 'w') as f: json.dump(results, f, indent=2)
-    print(f"Concluído: {out_path}")
+    print(f"Completed: {out_path}")
 
 if __name__ == '__main__':
     main()

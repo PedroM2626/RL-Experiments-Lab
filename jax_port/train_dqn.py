@@ -1,8 +1,8 @@
-"""Loop treino DQN/QR-DQN (estudo §12) — uso analogo a train.py.
+"""DQN/QR-DQN training loop (§12 study) — analogous usage to train.py.
 
-Ex.: --algo qrdqn --game starpilot --timesteps 100000 --seed 42
-Protocolo: treino 200 easy seed S; eval (argmax/det + eps-greedy/stoch)
-em 0 unseen seed S+1000 — ver eval.py p/ o protocolo definitivo.
+E.g.: --algo qrdqn --game starpilot --timesteps 100000 --seed 42
+Protocol: train 200 easy seed S; eval (argmax/det + eps-greedy/stoch)
+on 0 unseen seed S+1000 — see eval.py for definitive protocol.
 """
 
 import argparse
@@ -23,7 +23,7 @@ import optax
 
 def evaluate_dqn(params, greedy, args, device, num_levels, seed,
                  deterministic, n_eps, eps=0.05):
-    """det=argmax; stoch=eps-greedy(eps) — mesmos niveis do estudo."""
+    """det=argmax; stoch=eps-greedy(eps) — same levels as study."""
     ev = ProcgenGym3Env(num=args.eval_envs, env_name=args.game,
                         num_levels=num_levels, distribution_mode="easy",
                         rand_seed=seed)
@@ -63,8 +63,8 @@ def main():
     ap.add_argument("--eval-envs", type=int, default=8)
     ap.add_argument("--out", default="jax_port/dqn_train.json")
     args = ap.parse_args()
-    assert args.extractor != "mlp", "DQN do estudo usa CnnPolicy (pixels)"
-    assert args.extractor != "vae", "DQN com extrator estocastico fora do estudo"
+    assert args.extractor != "mlp", "DQN in study uses CnnPolicy (pixels)"
+    assert args.extractor != "vae", "DQN with stochastic extractor outside study scope"
     train(args)
 
 def train(args):
@@ -85,7 +85,7 @@ def train(args):
                       optax.adam(args.lr, eps=1e-4))
     opt_state = opt.init(params)
     update, greedy = make_dqn_update(net, opt, quantiles=Q)
-    # warmup
+    # Warmup
     update(params, opt_state, tgt, jnp.zeros((64, 64, 64, 3), jnp.uint8),
            jnp.zeros((64,), jnp.int32), jnp.zeros((64,)),
            jnp.zeros((64, 64, 64, 3), jnp.uint8), jnp.zeros((64,)))
@@ -97,7 +97,7 @@ def train(args):
     obs = obs_d["rgb"] if isinstance(obs_d, dict) else obs_d
     steps, grads, ep_rets, cur = 0, 0, [], np.zeros(N)
     curve = []
-    # SB3: eps 1.0->0.05 linear nos primeiros 25% (exploration_fraction .25)
+    # SB3: eps 1.0->0.05 linear in first 25% (exploration_fraction .25)
     eps_end = max(1, args.timesteps // 4)
     t0 = time.perf_counter()
     log_every = max(N, N * 20)
@@ -119,7 +119,7 @@ def train(args):
             cur[i] = 0.0
         obs, steps = obs2, steps + N
         if len(buf) >= 5000:
-            # ~1 update por transicao/4 (train_freq 4, gradient_steps 1)
+            # ~1 update per transition/4 (train_freq 4, gradient_steps 1)
             for _ in range(max(1, N // 4)):
                 bo, ba, br, bo2, bd = buf.sample(rng, 64)
                 params, opt_state, _ = update(

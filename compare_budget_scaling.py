@@ -1,10 +1,10 @@
 """
-Budget Scaling (Roadmap 6.1 item #6): a vantagem dos vencedores persiste com mais budget?
-- Configs: resnet18 (top-2 global) + mlp_vector (top-1 global)
-- Jogos: starpilot (casa do mlp_vector) + dodgeball (casa do resnet18)
-- Budgets novos: 250k e 500k; o ponto 100k já existe (re-eval 100 eps, seeds 42-44 servem de baseline)
-- Hiperparâmetros idênticos a todos os benchmarks; eval definitivo 100 eps stoch+det + 15 train
-- Saída: logs_budget/budget_zips + results/budget_results.json (incremental, resume-safe, retry de erros)
+Budget Scaling (Roadmap 6.1 item #6): does the top architectures' advantage persist with more budget?
+- Configs: resnet18 (global top-2) + mlp_vector (global top-1)
+- Games: starpilot (home of mlp_vector) + dodgeball (home of resnet18)
+- Additional budgets: 250k and 500k; 100k point already exists (re-eval 100 eps, seeds 42-44 serve as baseline)
+- Hyperparameters identical to all benchmarks; definitive eval 100 eps stoch+det + 15 train
+- Output: logs_budget/budget_zips + results/budget_results.json (incremental, resume-safe, error retry)
 """
 import os, json, argparse
 import numpy as np, torch
@@ -17,7 +17,7 @@ from models.combined_extractors import ResNet18Extractor
 
 CONFIGS = [
     ('resnet18', ResNet18Extractor, dict(features_dim=512), False),
-    ('mlp_vector', None, {}, True),   # wrapper vetorial 256D, MlpPolicy
+    ('mlp_vector', None, {}, True),   # 256D vector wrapper, MlpPolicy
 ]
 
 def eval_model(model, game, seed, vector, n_unseen=100, n_train=15):
@@ -73,7 +73,7 @@ def main():
             model = train_one(game, cls, kw, vec, budget, seed, args.log_dir, device)
             m_st, m_dt, m_tr = eval_model(model, game, seed, vec)
             try: model.save(os.path.join(zip_dir, f"{name}.zip"))
-            except Exception as e: print(f"  zip falhou: {e}")
+            except Exception as e: print(f"  zip save failed: {e}")
             results[name] = {'stoch_unseen': round(m_st, 3), 'det_unseen': round(m_dt, 3),
                              'stoch_train': round(m_tr, 3), 'gen_gap': round(m_tr - m_st, 3),
                              'n_unseen': 100, 'n_train': 15, 'budget': budget}
@@ -82,7 +82,7 @@ def main():
             import traceback; traceback.print_exc()
             results[name] = {'error': str(e)}
         with open(out_path, 'w') as f: json.dump(results, f, indent=2)
-    print(f"Concluído: {out_path}")
+    print(f"Completed: {out_path}")
 
 if __name__ == '__main__':
     main()

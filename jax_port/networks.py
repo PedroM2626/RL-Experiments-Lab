@@ -1,10 +1,10 @@
-"""Actor-critic NatureCNN em Flax (via fiel a ``ClassicCNNExtractor`` do estudo).
+"""Actor-critic NatureCNN in Flax (faithful reproduction of ``ClassicCNNExtractor`` from the study).
 
-Estudo (``models/sb3_extractors.py:8``): Conv 32 8x8 s4 -> 64 4x4 s2 ->
-64 3x3 s1 -> Flatten -> FC 512 (~600k params), entrada CHW uint8.
-Aqui: mesma topologia, entrada NHWC float32 em [0,1] (convecao Flax/JAX;
-matematicamente identica, evita a transposicao no caminho quente) +
-head de politica (logits) + head de valor escalar.
+Study (``models/sb3_extractors.py:8``): Conv 32 8x8 s4 -> 64 4x4 s2 ->
+64 3x3 s1 -> Flatten -> FC 512 (~600k params), CHW uint8 input.
+Here: identical topology, NHWC float32 input in [0, 1] (Flax/JAX convention;
+mathematically identical, avoids transposition in the hot path) +
+policy head (logits) + scalar value head.
 """
 
 import flax.linen as nn
@@ -38,11 +38,11 @@ def preprocess(obs):
 
 
 class ActorCritic(nn.Module):
-    """Heads genericos sobre qualquer backbone do zoo (512D -> logits+valor).
+    """Generic heads over any backbone in the zoo (512D -> logits+value).
 
-    ``stochastic=True`` só para backbones que amostram por forward
-    (VAE): a ``key`` e obrigatoria e z e reamostrado a cada forward,
-    como no estudo.
+    ``stochastic=True`` only for backbones that sample per forward pass
+    (VAE): ``key`` is required and z is resampled on each forward pass,
+    matching the study.
     """
     backbone: nn.Module
     n_actions: int = 15
@@ -60,9 +60,9 @@ class ActorCritic(nn.Module):
 
 
 class ActorCriticXL(nn.Module):
-    """Heads sobre backbone com memoria (transformer_xl).
+    """Heads over memory-augmented backbone (transformer_xl).
 
-    backbone(x, mem) -> (feat, new_mem). Unico com estado entre steps.
+    backbone(x, mem) -> (feat, new_mem). The only architecture with state carry across steps.
     """
     backbone: nn.Module
     n_actions: int = 15

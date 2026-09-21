@@ -1,7 +1,7 @@
-"""Sanidade de stats.py com valores conhecidos (sem GPU).
+"""Sanity checks for stats.py with known values (no GPU).
 
-mean_ci([1..5]) = 3 ± t4*std/sqrt5; cohen_d = -3; auc triangulo = 1.0.
-Uso: python -m jax_port.tests.test_stats
+mean_ci([1..5]) = 3 ± t4*std/sqrt5; cohen_d = -3; triangle auc = 1.0.
+Usage: python -m jax_port.tests.test_stats
 """
 
 import math
@@ -19,7 +19,7 @@ def test_stats():
     r = rank_cells({"a": [1.0, 1.1, 0.9, 1.0, 1.0],
                     "b": [0.0, 0.1, -0.1, 0.0, 0.05]})
     assert r["ranking"][0]["cell"] == "a"
-    assert r["top1_vs_top2"]["cohen_d"] > 5  # separacao obvia
+    assert r["top1_vs_top2"]["cohen_d"] > 5  # obvious separation
     return True
 
 

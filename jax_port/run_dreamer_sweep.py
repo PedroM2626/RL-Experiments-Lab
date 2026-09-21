@@ -1,13 +1,13 @@
-"""Sweep de tuning do Dreamer (sequencial, um processo por celula).
+"""Dreamer tuning sweep (sequential, one process per cell).
 
-Celulas B/C/D sobre o baseline A (raw/ent 3e-4, ja medido ret 0.0):
-  B: symlog + ent 3e-4   (isola escala de reward)
-  C: symlog + ent 1e-3   (escala + exploracao)
-  D: raw    + ent 1e-3   (isola entropia)
-Uso (GPU livre!):
+Cells B/C/D over baseline A (raw/ent 3e-4, already measured ret 0.0):
+  B: symlog + ent 3e-4   (isolates reward scale)
+  C: symlog + ent 1e-3   (scale + exploration)
+  D: raw    + ent 1e-3   (isolates entropy)
+Usage (free GPU):
     wsl -e env PYTHONPATH=... /root/procgen-jax/bin/python \
       jax_port/run_dreamer_sweep.py --frames 1000000 --seed 42
-Resumo em jax_port/dreams/sweep.json.
+Summary in jax_port/dreams/sweep.json.
 """
 
 import argparse

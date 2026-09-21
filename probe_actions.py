@@ -1,14 +1,14 @@
 """
-Sondagem do espaço de ações (15 discretas) de jumper/plunder:
-para cada ação, aplica por alguns frames e mede variação de pixels e reward —
-identifica quais botões movem/pulam/atiram, base para a biblioteca de skills do HRL.
+Action space probing (15 discrete actions) for jumper/plunder:
+for each action, applies it over several frames and measures pixel variation and reward —
+identifies which buttons move/jump/shoot, serving as baseline for the HRL skill library.
 """
 import numpy as np
 from procgen_wrapper import make_procgen_env
 
 def probe(game, seeds=(42, 43, 44, 45, 46), frames=16):
-    print(f'\n=== {game} (média de {len(seeds)} níveis, {frames} frames/ação, env NOVO por ação) ===')
-    print(f"{'act':>4s} {'pixdiff':>10s} {'reward':>8s} {'done%':>7s} {'picoframe':>10s}")
+    print(f'\n=== {game} (mean of {len(seeds)} levels, {frames} frames/action, NEW env per action) ===')
+    print(f"{'act':>4s} {'pixdiff':>10s} {'reward':>8s} {'done%':>7s} {'peakframe':>10s}")
     agg = {}
     for a in range(15):
         for seed in seeds:
@@ -39,4 +39,4 @@ for g in ['jumper', 'plunder']:
     try:
         probe(g)
     except Exception as e:
-        print(f'{g}: ERRO {e}')
+        print(f'{g}: ERROR {e}')

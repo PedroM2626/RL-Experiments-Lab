@@ -1,5 +1,5 @@
 """
-Apenas 5 novas arquiteturas #4 em 3 jogos 100k 5 seeds — para juntar com benchmark 1 (classic/cbam/spatial/mlp já treinados 5 seeds)
+Only 5 new architectures #4 across 3 games, 100k steps, 5 seeds — to merge with benchmark 1 (classic/cbam/spatial/mlp already trained on 5 seeds).
 """
 import os, json, argparse
 from datetime import datetime
@@ -30,7 +30,7 @@ def main():
     parser.add_argument('--device', type=str, default='auto')
     args=parser.parse_args()
     device='cuda' if (args.device=='auto' and torch.cuda.is_available()) else args.device if args.device!='auto' else 'cpu'
-    print(f"Device: {device} torch {torch.__version__} NEW 5 arquiteturas")
+    print(f"Device: {device} torch {torch.__version__} NEW 5 architectures")
     os.makedirs(args.log_dir, exist_ok=True)
     ts=datetime.now().strftime("%Y%m%d_%H%M%S")
     comp_dir=os.path.join(args.log_dir, f"new_archs_{'_'.join(args.games)}_{ts}")
@@ -73,8 +73,8 @@ def main():
             plt.figure(figsize=(10,6)); plt.bar(keys, means, yerr=stds, capsize=3, alpha=0.8)
             plt.xticks(rotation=25, ha='right', fontsize=7); plt.ylabel('Mean Reward'); plt.title(f"New Archs {game} - {args.timesteps} steps 5 seeds")
             plt.tight_layout(); plt.savefig(os.path.join(comp_dir, f"new_archs_{game}_plot.png"), dpi=150, bbox_inches='tight'); plt.close()
-        print(f"Plots salvos em {comp_dir}")
-    except Exception as e: print(f"Plot erro: {e}")
-    print(f"\nResultados em {comp_dir}\n"+json.dumps(stats,indent=2))
+        print(f"Plots saved in {comp_dir}")
+    except Exception as e: print(f"Plot error: {e}")
+    print(f"\nResults in {comp_dir}\n"+json.dumps(stats,indent=2))
 
 if __name__=='__main__': main()

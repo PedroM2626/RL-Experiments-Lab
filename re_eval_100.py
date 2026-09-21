@@ -1,9 +1,9 @@
 """
-Re-avaliação com 100 episódios (upgrade do protocolo de 30 eps) — sem retreino:
-- Usa todos os zips disponíveis: new_archs (75) + maze_heist (40) + suite_retrain (160) = 275 modelos
-- 100 eps unseen stoch + 100 eps unseen det (num_levels=0, seed+1000) + 15 eps train (num_levels=200)
-- Mesma convenção do re_eval_scorecard.py (chaves, seeds de eval), resultado comparável com a versão 30 eps
-- Salva results/eval100_results.json incrementalmente (resume-safe)
+Re-evaluation with 100 episodes (upgrade of the 30 eps protocol) — without retraining:
+- Uses all available zips: new_archs (75) + maze_heist (40) + suite_retrain (160) = 275 models
+- 100 unseen stoch eps + 100 unseen det eps (num_levels=0, seed+1000) + 15 train eps (num_levels=200)
+- Same convention as re_eval_scorecard.py (keys, eval seeds), results directly comparable with the 30 eps version
+- Saves results/eval100_results.json incrementally (resume-safe)
 """
 import os, json, glob, argparse
 import numpy as np, torch
@@ -14,7 +14,7 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from procgen_wrapper import make_procgen_env
 
 def eval_model(model, game, seed, n_unseen, n_train):
-    # modelos mlp_vector foram treinados com o wrapper vetorial (obs 256D) — detectar pelo obs space
+    # mlp_vector models were trained with vector wrapper (256D obs) — detect via obs space
     vector = len(model.observation_space.shape) == 1
     unseen = DummyVecEnv([lambda: Monitor(make_procgen_env(game, num_levels=0, distribution_mode='easy', seed=seed+1000, vector=vector))])
     train = DummyVecEnv([lambda: Monitor(make_procgen_env(game, num_levels=200, distribution_mode='easy', seed=seed, vector=vector))])
@@ -41,7 +41,7 @@ def main():
     zips = sorted(glob.glob(os.path.join(base, 'logs_new_archs', 'new_archs_*', '*.zip'))) + \
            sorted(glob.glob(os.path.join(base, 'logs_maze_heist', 'maze_heist_*', '*.zip'))) + \
            sorted(glob.glob(os.path.join(base, 'logs_suite_retrain', 'suite_retrain_zips', '*.zip')))
-    print(f"{len(zips)} modelos, device={args.device}, n_unseen={args.n_unseen} (stoch+det), n_train={args.n_train}")
+    print(f"{len(zips)} models, device={args.device}, n_unseen={args.n_unseen} (stoch+det), n_train={args.n_train}")
 
     for i, z in enumerate(zips):
         name = os.path.splitext(os.path.basename(z))[0]
@@ -60,9 +60,9 @@ def main():
             print(f"[{i+1}/{len(zips)}] {name}: stoch={m_st:.2f} det={m_dt:.2f} train={m_tr:.2f} gap={m_tr-m_st:+.2f}")
         except Exception as e:
             results[name] = {'error': str(e)}
-            print(f"[{i+1}/{len(zips)}] {name}: ERRO {e}")
+            print(f"[{i+1}/{len(zips)}] {name}: ERROR {e}")
         with open(out_path, 'w') as f: json.dump(results, f, indent=2)
-    print(f"Concluído: {out_path}")
+    print(f"Completed: {out_path}")
 
 if __name__ == '__main__':
     main()

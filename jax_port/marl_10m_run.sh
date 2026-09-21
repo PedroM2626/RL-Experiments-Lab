@@ -1,5 +1,5 @@
 #!/bin/bash
-# MARL 10M recorrente: IPPO depois QMIX, sequencial (1 proc GPU por vez).
+# Recurrent MARL 10M: IPPO then QMIX, sequential (1 GPU process at a time).
 set -u
 export PYTHONPATH=/mnt/c/Users/Acer/Downloads/MLE
 PY=/root/procgen-jax/bin/python
@@ -17,4 +17,4 @@ for seed in 42 43 44; do
       --map 3m --timesteps 10000000 --seed "$seed" \
       --out "$OUT/qmix_rec__3m__seed${seed}__10M.json" >> "$LOG" 2>&1
 done
-echo "=== TODOS CONCLUIDOS $(date) ===" >> "$LOG"
+echo "=== ALL COMPLETED $(date) ===" >> "$LOG"

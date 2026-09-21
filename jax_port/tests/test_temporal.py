@@ -1,4 +1,4 @@
-"""CPU: zoo temporal shapes + StackVec (sem GPU)."""
+"""CPU: temporal zoo shapes + StackVec (no GPU)."""
 import jax
 import jax.numpy as jnp
 import numpy as np

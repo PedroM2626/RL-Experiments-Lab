@@ -1,10 +1,10 @@
-"""Adapter SMAX vetorizado (JaxMARL) — device-residente, sem round-trip.
+"""Vectorized SMAX adapter (JaxMARL) — device-resident, zero round-trip.
 
-N envs em vmap (reset+step jitados); autoreset mascarado por env em
-done['__all__']; obs (N,A,O) e world_state (N,S) montados no device;
-so dones/rewards transitam p/ host (pequenos). Win-rate derivado de
-unit_alive no done (inimigos indices [A,) todos mortos E aliado vivo;
-empate = derrota, padrao SMAC).
+N envs in vmap (JIT-compiled reset+step); masked autoreset per env on
+done['__all__']; obs (N,A,O) and world_state (N,S) assembled on device;
+only dones/rewards travel to host (small). Win-rate derived from
+unit_alive on done (enemy indices [A,) all dead AND ally alive;
+draw = defeat, SMAC standard).
 """
 
 import jax
@@ -13,7 +13,7 @@ import numpy as np
 
 
 def battle_won(unit_alive, n_allies):
-    """numpy puro (testavel sem env). Aliados = primeiros n_allies."""
+    """Pure numpy (testable without env). Allies = first n_allies."""
     alive = np.asarray(unit_alive, bool)
     return bool((not alive[n_allies:].any()) and alive[:n_allies].any())
 
@@ -62,8 +62,8 @@ class SmaxVec:
         self.state = self._masked_replace(self.state, s2, done)
 
     def step(self, acts):
-        """acts: (N,A) int device/host. Retorna (obs, rew, done, win);
-        obs fica no device; rew/done/win numpy (pequenos)."""
+        """acts: (N,A) int device/host. Returns (obs, rew, done, win);
+        obs stays on device; rew/done/win in numpy (small)."""
         self.key, ks = jax.random.split(self.key)
         dacts = {a: jnp.asarray(acts[:, i]) for i, a in enumerate(self.agents)}
         obs, state, rew, done, _ = self.vstep(

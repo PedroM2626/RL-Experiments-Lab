@@ -1,16 +1,16 @@
-"""Aux-losses contrastivas — EXTENSAO alem do estudo (como SPR/GAT).
+"""Contrastive aux-losses — EXTENSION beyond the original study (like SPR/GAT).
 
-Rotulo honesto: CURL/CPC/ACL existiram so na fase Craftax apagada; no
-ProcGen entram como suite extra `aux`, mesmo rigor, fora da paridade.
-Desenho padrao (Srinivas et al. CURL; Oord et al. CPC), adaptado ao loop:
-  encoder ONLINE = backbone da policy (compartilhado) + encoder TARGET
-    EMA (tau=0.99/iter); views aumentadas (crop proprio, p=1.0);
+Honest label: CURL/CPC/ACL existed only in the removed Craftax phase; in
+ProcGen they enter as an extra `aux` suite, with equal rigor, outside parity.
+Standard design (Srinivas et al. CURL; Oord et al. CPC), adapted to the loop:
+  ONLINE encoder = policy backbone (shared) + TARGET encoder
+    EMA (tau=0.99/iter); augmented views (own crop, p=1.0);
   CURL: query=z(aug o), key+=tgt(aug' o); bilinear W 512x512; InfoNCE/tau.
   CPC : query=z(aug o_t), pred linear; key+=tgt(o_{t+1}); InfoNCE/tau.
-  ACL : query=MLP(z(aug o_t), a_t) [TransitionMLP de spr.py];
+  ACL : query=MLP(z(aug o_t), a_t) [TransitionMLP from spr.py];
         key+=tgt(o_{t+1}); InfoNCE/tau.
-  tau InfoNCE=0.1; coef aux=1.0; Adam aux 1e-4 (precedente ICM/RND);
-  negativos = resto do minibatch (2048). Requer backbone CNN pixels.
+  tau InfoNCE=0.1; aux coef=1.0; aux Adam 1e-4 (precedent ICM/RND);
+  negatives = remainder of minibatch (2048). Requires pixel CNN backbone.
 """
 
 import flax.linen as nn
@@ -27,8 +27,8 @@ EMA_TAU = 0.99
 
 
 def _norm(x, eps=1e-6):
-    # sqrt(soma+eps): denominador nunca e zero exato (o JVP interno do
-    # linalg.norm faz 0/0 em vetor nulo, e maximum() nao blinda).
+    # sqrt(sum+eps): denominator is never exactly zero (internal JVP of
+    # linalg.norm produces 0/0 on null vector, and maximum() does not prevent it).
     n = jnp.sqrt((x ** 2).sum(axis=-1, keepdims=True) + eps)
     return x / n
 

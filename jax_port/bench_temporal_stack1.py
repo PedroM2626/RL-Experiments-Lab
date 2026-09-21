@@ -32,7 +32,7 @@ def get_obs(obs_d):
 
 
 def run_arm(model_name, args, seed=42):
-    print(f"\n{'='*70}\nIniciando braço: {model_name} (stack=1, game={args.game})\n{'='*70}", flush=True)
+    print(f"\n{'='*70}\nStarting branch: {model_name} (stack=1, game={args.game})\n{'='*70}", flush=True)
     device = jax.devices()[0]
     key = jax.random.PRNGKey(seed)
     rng = np.random.RandomState(seed)
@@ -303,9 +303,9 @@ def main():
         results.append(res)
 
     print("\n" + "=" * 80)
-    print(f"RESUMO COMPARATIVO — STACK=1 EM {args.game.upper()} (100k steps, seed {args.seed})")
+    print(f"COMPARATIVE SUMMARY — STACK=1 IN {args.game.upper()} (100k steps, seed {args.seed})")
     print("=" * 80)
-    print(f"{'Modelo':<16} {'SPS':>8} {'Wall(s)':>8} {'Train(last20)':>14} {'Eval Unseen':>12} {'IC 95%':>16}")
+    print(f"{'Model':<16} {'SPS':>8} {'Wall(s)':>8} {'Train(last20)':>14} {'Eval Unseen':>12} {'95% CI':>16}")
     print("-" * 80)
     for r in results:
         ci_str = f"[{r['eval_unseen_ci95'][0]:.2f}, {r['eval_unseen_ci95'][1]:.2f}]"
@@ -314,7 +314,7 @@ def main():
 
     with open(args.output, "w") as f:
         json.dump(results, f, indent=2)
-    print(f"\nSalvo em: {args.output}")
+    print(f"\nSaved in: {args.output}")
 
 
 if __name__ == "__main__":

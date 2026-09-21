@@ -1,4 +1,4 @@
-"""Smoke test do compare_hrl: 3 braços × 2 jogos, 1000 steps cada, sem eval longo."""
+"""Smoke test for compare_hrl: 3 branches × 2 games, 1000 steps each, without lengthy eval."""
 import numpy as np
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
@@ -11,7 +11,7 @@ for game in ['jumper', 'plunder']:
         obs = vec.reset()
         model = PPO("CnnPolicy", vec, verbose=0, n_steps=128, device='cuda', seed=42)
         model.learn(total_timesteps=1000)
-        # rollout rápido: verifica step/reset/reward sem exceção
+        # quick rollout: checks step/reset/reward without exceptions
         o = vec.reset()
         total = 0.0
         for _ in range(50):

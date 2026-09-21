@@ -22,34 +22,34 @@ def train_experiment(
     **sac_kwargs
 ):
     """
-    Executa um experimento de treinamento
+    Executes a training experiment.
     """
-    # Configurar seed
+    # Configure seed
     torch.manual_seed(seed)
     np.random.seed(seed)
     
-    # Criar ambiente
+    # Create environment
     env = create_env(frame_stack=4, frame_size=(64, 64))
     
-    # Criar redes baseado na arquitetura
+    # Create networks based on architecture
     if architecture == 'classic':
-        print("Usando CNN Clássica")
+        print("Using Classic CNN")
         actor = ClassicCNNActor(action_dim=3, feature_dim=512)
         critic = ClassicCritic(action_dim=3, feature_dim=512)
         exp_name = 'classic_cnn'
     elif architecture == 'attention':
-        print(f"Usando CNN com Spatial Attention (CBAM={use_cbam})")
+        print(f"Using CNN with Spatial Attention (CBAM={use_cbam})")
         actor = AttentionCNNActor(action_dim=3, feature_dim=512, use_cbam=use_cbam)
         critic = AttentionCritic(action_dim=3, feature_dim=512, use_cbam=use_cbam)
         exp_name = f'attention_cnn_cbam_{use_cbam}'
     else:
-        raise ValueError(f"Arquitetura desconhecida: {architecture}")
+        raise ValueError(f"Unknown architecture: {architecture}")
     
-    # Criar diretório de log
+    # Create log directory
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     experiment_log_dir = os.path.join(log_dir, f"{exp_name}_{timestamp}")
     
-    # Criar trainer
+    # Create trainer
     trainer = SACTrainer(
         actor=actor,
         critic=critic,
@@ -58,7 +58,7 @@ def train_experiment(
         **sac_kwargs
     )
     
-    # Salvar configuração
+    # Save configuration
     config = {
         'architecture': architecture,
         'use_cbam': use_cbam,
@@ -72,21 +72,21 @@ def train_experiment(
     with open(config_path, 'w') as f:
         json.dump(config, f, indent=2)
     
-    print(f"Configuração salva em {config_path}")
-    print(f"Logs serão salvos em {experiment_log_dir}")
+    print(f"Configuration saved to {config_path}")
+    print(f"Logs will be saved to {experiment_log_dir}")
     
-    # Treinar
+    # Train
     trainer.train(
         num_steps=num_steps,
         eval_frequency=5000,
         save_frequency=10000
     )
     
-    # Avaliação final
+    # Final evaluation
     final_reward = trainer.evaluate(num_episodes=10, deterministic=True)
-    print(f"\nRecompensa final (10 episódios): {final_reward:.2f}")
+    print(f"\nFinal reward (10 episodes): {final_reward:.2f}")
     
-    # Salvar resultado final (converter para float nativo)
+    # Save final results (convert to native float)
     results = {
         'final_reward': _to_float(final_reward),
         'total_episodes': int(trainer.episode_count),
@@ -109,7 +109,7 @@ def run_comparison(
     **sac_kwargs
 ):
     """
-    Roda comparação entre arquiteturas com múltiplas seeds
+    Runs comparison between architectures across multiple random seeds.
     """
     architectures = [
         {'name': 'classic', 'use_cbam': None},
@@ -131,7 +131,7 @@ def run_comparison(
         all_results[key] = []
         
         print(f"\n{'='*60}")
-        print(f"Treinando {key}")
+        print(f"Training {key}")
         print(f"{'='*60}")
         
         for seed in seeds:
@@ -154,7 +154,7 @@ def run_comparison(
                 })
                 
             except Exception as e:
-                print(f"Erro no experimento {key} seed {seed}: {e}")
+                print(f"Error in experiment {key} seed {seed}: {e}")
                 all_results[key].append({
                     'seed': seed,
                     'exp_dir': None,
@@ -162,12 +162,12 @@ def run_comparison(
                     'error': str(e)
                 })
     
-    # Salvar resultados agregados
+    # Save aggregated results
     comparison_dir = os.path.join(log_dir, f'comparison_{datetime.now().strftime("%Y%m%d_%H%M%S")}')
     os.makedirs(comparison_dir, exist_ok=True)
     
     comparison_path = os.path.join(comparison_dir, 'comparison_results.json')
-    # Converter numpy types para json serializável
+    # Convert numpy types to json serializable
     def convert(o):
         if isinstance(o, (np.floating, np.integer)):
             return float(o)
@@ -177,16 +177,16 @@ def run_comparison(
     with open(comparison_path, 'w') as f:
         json.dump(all_results, f, indent=2, default=convert)
     
-    print(f"\nResultados da comparação salvos em {comparison_path}")
+    print(f"\nComparison results saved to {comparison_path}")
     
-    # Gerar relatório
+    # Generate report
     generate_comparison_report(all_results, comparison_dir)
     
     return all_results, comparison_dir
 
 
 def _to_float(x):
-    """Converte numpy types para float nativo para json"""
+    """Converts numpy types to native float for json serialization"""
     if isinstance(x, (np.floating, np.integer)):
         return float(x)
     if isinstance(x, np.ndarray):
@@ -195,9 +195,9 @@ def _to_float(x):
 
 def generate_comparison_report(results, output_dir):
     """
-    Gera relatório visual da comparação
+    Generates visual report of the comparison.
     """
-    # Calcular estatísticas
+    # Compute statistics
     stats = {}
     
     for key, exp_list in results.items():
@@ -214,12 +214,12 @@ def generate_comparison_report(results, output_dir):
         else:
             stats[key] = None
     
-    # Salvar estatísticas
+    # Save statistics
     stats_path = os.path.join(output_dir, 'statistics.json')
     with open(stats_path, 'w') as f:
         json.dump(stats, f, indent=2)
     
-    # Criar gráfico de barras
+    # Create bar plot
     arch_names = []
     mean_rewards = []
     std_rewards = []
@@ -233,12 +233,12 @@ def generate_comparison_report(results, output_dir):
     if arch_names:
         plt.figure(figsize=(10, 6))
         bars = plt.bar(arch_names, mean_rewards, yerr=std_rewards, capsize=5, alpha=0.7)
-        plt.ylabel('Recompensa Final')
-        plt.title('Comparação de Arquiteturas - CarRacing')
+        plt.ylabel('Final Reward')
+        plt.title('Architecture Comparison - CarRacing')
         plt.xticks(rotation=45, ha='right')
         plt.tight_layout()
         
-        # Adicionar valores nas barras
+        # Add labels to bars
         for bar, mean, std in zip(bars, mean_rewards, std_rewards):
             height = bar.get_height()
             plt.text(bar.get_x() + bar.get_width()/2., height,
@@ -247,28 +247,28 @@ def generate_comparison_report(results, output_dir):
         
         plot_path = os.path.join(output_dir, 'comparison_plot.png')
         plt.savefig(plot_path, dpi=150, bbox_inches='tight')
-        print(f"Gráfico salvo em {plot_path}")
+        print(f"Plot saved to {plot_path}")
         plt.close()
     
-    # Criar relatório textual
+    # Create text report
     report_path = os.path.join(output_dir, 'comparison_report.txt')
     with open(report_path, 'w') as f:
-        f.write("Relatório de Comparação de Arquiteturas - CarRacing\n")
+        f.write("Architecture Comparison Report - CarRacing\n")
         f.write("="*60 + "\n\n")
         
         for key, stat in stats.items():
             if stat is not None:
                 f.write(f"{key.replace('_', ' ').title()}\n")
-                f.write(f"  Média: {stat['mean']:.2f}\n")
-                f.write(f"  Desvio Padrão: {stat['std']:.2f}\n")
-                f.write(f"  Mínimo: {stat['min']:.2f}\n")
-                f.write(f"  Máximo: {stat['max']:.2f}\n")
+                f.write(f"  Mean: {stat['mean']:.2f}\n")
+                f.write(f"  Std: {stat['std']:.2f}\n")
+                f.write(f"  Min: {stat['min']:.2f}\n")
+                f.write(f"  Max: {stat['max']:.2f}\n")
                 f.write(f"  N: {stat['n']}\n\n")
             else:
                 f.write(f"{key.replace('_', ' ').title()}\n")
-                f.write("  Sem dados válidos\n\n")
+                f.write("  No valid data\n\n")
     
-    print(f"Relatório salvo em {report_path}")
+    print(f"Report saved to {report_path}")
 
 
 def str2bool(v):
@@ -282,24 +282,24 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def main():
-    parser = argparse.ArgumentParser(description='Comparação de arquiteturas CNN para SAC no CarRacing')
+    parser = argparse.ArgumentParser(description='CNN architecture comparison for SAC on CarRacing')
     
     parser.add_argument('--num_steps', type=int, default=50000,
-                       help='Número de steps de treinamento (default: 50000)')
+                       help='Number of training steps (default: 50000)')
     parser.add_argument('--seeds', type=int, nargs='+', default=[42, 43, 44],
-                       help='Seeds para repetição (default: [42, 43, 44])')
+                       help='Random seeds (default: [42, 43, 44])')
     parser.add_argument('--log_dir', type=str, default='./logs',
-                       help='Diretório para logs (default: ./logs)')
+                       help='Log directory (default: ./logs)')
     parser.add_argument('--architecture', type=str, choices=['classic', 'attention', 'both'],
-                       default='both', help='Arquitetura para testar (default: both)')
+                       default='both', help='Architecture to evaluate (default: both)')
     parser.add_argument('--use_cbam', type=str2bool, nargs='?', const=True, default=True,
-                       help='Usar CBAM completo (default: True). Use True/False')
+                       help='Use full CBAM attention (default: True). Pass True/False')
     
-    # SAC hyperparameters (alinhado com sac_trainer.py e README: 3e-4)
+    # SAC hyperparameters (aligned with sac_trainer.py and README: 3e-4)
     parser.add_argument('--lr', type=float, default=3e-4,
                        help='Learning rate (default: 3e-4)')
     parser.add_argument('--alpha', type=float, default=0.2,
-                       help='Alpha inicial (default: 0.2)')
+                       help='Initial alpha (default: 0.2)')
     parser.add_argument('--gamma', type=float, default=0.99,
                        help='Discount factor (default: 0.99)')
     parser.add_argument('--tau', type=float, default=0.005,
@@ -321,7 +321,7 @@ def main():
     }
     
     if args.architecture == 'both':
-        print("Rodando comparação completa entre arquiteturas")
+        print("Running full architecture comparison")
         run_comparison(
             num_steps=args.num_steps,
             seeds=args.seeds,
@@ -329,7 +329,7 @@ def main():
             **sac_kwargs
         )
     else:
-        print(f"Rodando experimento único: {args.architecture}")
+        print(f"Running single experiment: {args.architecture}")
         train_experiment(
             architecture=args.architecture,
             num_steps=args.num_steps,

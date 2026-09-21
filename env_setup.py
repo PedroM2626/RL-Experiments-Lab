@@ -4,17 +4,17 @@ import numpy as np
 import cv2
 from collections import deque
 
-# Mantém CarRacing para compatibilidade
+# Keeps CarRacing for compatibility
 class CarRacingWrapper(gym.Env):
     """
-    Wrapper para CarRacing com:
+    Wrapper for CarRacing with:
     - Grayscale 64x64
-    - Stack de 4 frames
-    - Ação contínua normalizada
+    - 4-frame stack
+    - Normalized continuous action
     """
     
     def __init__(self, frame_stack=4, frame_size=(64, 64), env_name=None):
-        # Compatibilidade: tenta v3, fallback para v2 se não existir
+        # Compatibility: try v3, fallback to v2 if not found
         if env_name is None:
             try:
                 self.env = gym.make('CarRacing-v3', render_mode='rgb_array')
@@ -75,10 +75,10 @@ class CarRacingWrapper(gym.Env):
 
 class CartPolePixelWrapper(gym.Env):
     """
-    Mesmo ambiente CartPole-v1 mas com observação visual 64x64 grayscale stack4
-    Permite comparar CV vs vetor no MESMO ambiente (solicitação do usuário)
-    - Rápido: 200 steps/episódio vs 1000 CarRacing
-    - Suporta CNN classic vs attention
+    Identical CartPole-v1 environment rendered as 64x64 grayscale with 4-frame stack.
+    Allows comparing vision (CV) vs state vector in the exact same environment.
+    - Fast: 200 steps/episode vs 1000 CarRacing
+    - Supports CNN classic vs attention
     """
     def __init__(self, frame_stack=4, frame_size=(64, 64)):
         self.env = gym.make('CartPole-v1', render_mode='rgb_array')
@@ -94,7 +94,7 @@ class CartPolePixelWrapper(gym.Env):
 
     def reset(self, seed=None):
         obs, info = self.env.reset(seed=seed)
-        # obs é vetor, ignoramos; renderizamos
+        # obs is vector, ignored; render instead
         img = self.env.render()
         processed = self._process_observation(img)
         for _ in range(self.frame_stack):
@@ -102,7 +102,6 @@ class CartPolePixelWrapper(gym.Env):
         return np.array(self.frames), info
 
     def step(self, action):
-        # action é Discrete
         obs, reward, terminated, truncated, info = self.env.step(action)
         img = self.env.render()
         processed = self._process_observation(img)
@@ -125,8 +124,8 @@ class CartPolePixelWrapper(gym.Env):
 
 class CartPoleStateWrapper(gym.Env):
     """
-    Variação SEM CV do mesmo ambiente CartPole-v1
-    Obs vetor 4D, usa MLP — comparação direta CV vs não-CV
+    Non-vision variation of the CartPole-v1 environment.
+    4D state vector observation using MLP — direct comparison between vision and state.
     """
     def __init__(self):
         self.env = gym.make('CartPole-v1')
@@ -144,11 +143,10 @@ class CartPoleStateWrapper(gym.Env):
 
 class AtariWrapper(gym.Env):
     """
-    Atari rápido para CV: Pong, Breakout
-    10x mais rápido que CarRacing, ideal para testar attention
+    Fast Atari environment for CV: Pong, Breakout.
+    Ideal for rapid attention module benchmarks.
     """
     def __init__(self, game='ALE/Pong-v5', frame_stack=4, frame_size=(84, 84)):
-        # frameskip já é 4 no ALE
         self.env = gym.make(game, render_mode='rgb_array', frameskip=1)
         self.frame_stack = frame_stack
         self.frame_size = frame_size
@@ -188,17 +186,17 @@ class AtariWrapper(gym.Env):
 
 
 def create_env(frame_stack=4, frame_size=(64, 64), env_name=None):
-    """Factory compatível com código antigo — default CarRacing"""
+    """Factory compatible with legacy scripts — default CarRacing"""
     return CarRacingWrapper(frame_stack=frame_stack, frame_size=frame_size, env_name=env_name)
 
 def create_fast_env(env_type='cartpole_pixels', frame_stack=4, frame_size=(64, 64)):
     """
-    Factory para ambientes rápidos:
-    - 'cartpole_pixels': CartPole com imagem 64x64 stack4 (CV) — MESMO ambiente que cartpole_state
-    - 'cartpole_state': CartPole vetor 4D (sem CV) — comparação direta CV vs vetor
-    - 'pong': Atari Pong 84x84 stack4 (CV rápido)
+    Factory for fast benchmarking environments:
+    - 'cartpole_pixels': CartPole with 64x64 stack-4 pixels (Vision) — identical physics to cartpole_state
+    - 'cartpole_state': CartPole 4D vector (Non-vision) — direct CV vs vector comparison
+    - 'pong': Atari Pong 84x84 stack-4 (Fast CV)
     - 'breakout': Atari Breakout
-    - 'carracing': CarRacing original
+    - 'carracing': Original CarRacing
     """
     if env_type == 'cartpole_pixels':
         return CartPolePixelWrapper(frame_stack=frame_stack, frame_size=frame_size)
@@ -211,12 +209,12 @@ def create_fast_env(env_type='cartpole_pixels', frame_stack=4, frame_size=(64, 6
     elif env_type == 'carracing':
         return CarRacingWrapper(frame_stack=frame_stack, frame_size=frame_size)
     else:
-        raise ValueError(f"env_type desconhecido: {env_type}. Use: cartpole_pixels, cartpole_state, pong, breakout, carracing")
+        raise ValueError(f"Unknown env_type: {env_type}. Options: cartpole_pixels, cartpole_state, pong, breakout, carracing")
 
 
 if __name__ == "__main__":
     for env_type in ['cartpole_pixels', 'cartpole_state', 'pong']:
-        print(f"\n=== Testando {env_type} ===")
+        print(f"\n=== Testing {env_type} ===")
         env = create_fast_env(env_type)
         print("Obs:", env.observation_space, "Act:", env.action_space)
         obs, info = env.reset(seed=42)
