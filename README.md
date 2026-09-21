@@ -691,9 +691,9 @@ As a prerequisite for PA0, running background workloads were safely terminated (
 
 ---
 
-## 15. Current Status, Boundaries, and Next Steps (PA2-Speed Complete; Parity Open)
+## 15. Current Status, Boundaries, and Full Grid Completion (PA2-Speed Complete; Parity Complete)
 
-**Current Status.** The primary working tree remains the fully reproducible ProcGen/SB3 study (sections 1–12; reproduction commands in section 5). The JAX port, co-located on `main` under `jax_port/` (without modifying root study files), spans the full experimental design: 13 backbones, PPO/A2C, DQN/QR-DQN, ICM/RND/NGU, data augmentations, 4-arm HRL, stoch+det+gap evaluation, statistical metrics (CI/Cohen/AUC), and the grid runner — all tested (§15.4). Open objective: running the full multi-seed parity grid (code implemented and tested; estimated runtime ~2–4 h).
+**Current Status.** The primary working tree remains the fully reproducible ProcGen/SB3 study (sections 1–12; reproduction commands in section 5). The JAX port, co-located on `main` under `jax_port/` (without modifying root study files), spans the full experimental design: 13 backbones, PPO/A2C, DQN/QR-DQN, ICM/RND/NGU, data augmentations, 4-arm HRL, stoch+det+gap evaluation, statistical metrics (CI/Cohen/AUC), and the full 615-cell multi-seed parity grid — completely executed and serialized in `jax_port/analysis_full.json` (§15.4.3).
 
 ### 15.1. PA1 — Pipeline and Measured Throughput (04/09/2026, venv `/root/procgen-jax`, WSL2, `coinrun`, Random Actions, 3000 Steps)
 
@@ -717,7 +717,7 @@ Source: `jax_port/pa1_throughput.json`. Standard `gym`/`np.bool8` deprecation wa
 
 > **Empirical Interpretation:** (1) Raw CPU simulation exhibits sub-linear scaling from 1→16 envs (12.6k→18.7k) due to Python single-process synchronous step loops; multi-process C++ wrappers (`gym3`) offer headroom. (2) Step-by-step synchronization (`asarray` + JIT + `block_until_ready` per step) dominates overhead: with 1 env, the pipeline sustains ~`300 FPS`, matching the legacy SB3 training baseline (~`300 FPS`, section 1.4) — but here **without network updates**. (3) Vectorized batching amortizes host-to-device synchronization: 16 envs yield ~`3k FPS` pre-learner, representing a ~`10×` headroom margin before accounting for PPO backpropagation. Path A throughput was subsequently measured with active gradient updates (§15.2), surpassing this 3k benchmark.
 
-**Next Objective (Parity Execution).** Execute `run_grade.py` across 5 suites with 5 seeds and `--eval-full`, benchmarking ranking consistency against sections 3–12 (acceptance criterion: within inter-seed variance). Estimated runtime: ~2–4 h of training + evaluation (vs multiple days in SB3).
+**Grid Execution Status.** Full execution of `run_grade.py` across 10 suites with 5 seeds and `--eval-full` was completed on 06/09/2026 (615/615 cells completed), benchmarking ranking consistency against sections 3–12 and confirming statistical parity within inter-seed variance (§15.4.3).
 
 ### 15.4. Comprehensive Port — Coverage Map and Test Evidence (05/09/2026)
 
