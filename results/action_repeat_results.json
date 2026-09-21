@@ -1,0 +1,314 @@
+{
+  "jumper_k1": {
+    "game": "jumper",
+    "k": 1,
+    "stoch_mean": 3.7777777777777772,
+    "stoch_std": 0.4157397096415489,
+    "det_mean": 1.111111111111111,
+    "runs": [
+      {
+        "game": "jumper",
+        "k": 1,
+        "seed": 42,
+        "frames": 100032,
+        "wall_sec": 19.54,
+        "train_mean": 5.5,
+        "stoch_unseen": 3.3333333333333335,
+        "det_unseen": 1.3333333333333333
+      },
+      {
+        "game": "jumper",
+        "k": 1,
+        "seed": 43,
+        "frames": 100032,
+        "wall_sec": 14.63,
+        "train_mean": 4.0,
+        "stoch_unseen": 3.6666666666666665,
+        "det_unseen": 0.3333333333333333
+      },
+      {
+        "game": "jumper",
+        "k": 1,
+        "seed": 44,
+        "frames": 100032,
+        "wall_sec": 14.23,
+        "train_mean": 4.5,
+        "stoch_unseen": 4.333333333333333,
+        "det_unseen": 1.6666666666666667
+      }
+    ]
+  },
+  "jumper_k2": {
+    "game": "jumper",
+    "k": 2,
+    "stoch_mean": 3.555555555555556,
+    "stoch_std": 0.5665577237325314,
+    "det_mean": 1.111111111111111,
+    "runs": [
+      {
+        "game": "jumper",
+        "k": 2,
+        "seed": 42,
+        "frames": 100075,
+        "wall_sec": 10.37,
+        "train_mean": 7.0,
+        "stoch_unseen": 3.3333333333333335,
+        "det_unseen": 0.0
+      },
+      {
+        "game": "jumper",
+        "k": 2,
+        "seed": 43,
+        "frames": 100041,
+        "wall_sec": 10.3,
+        "train_mean": 4.5,
+        "stoch_unseen": 3.0,
+        "det_unseen": 1.3333333333333333
+      },
+      {
+        "game": "jumper",
+        "k": 2,
+        "seed": 44,
+        "frames": 100037,
+        "wall_sec": 25.53,
+        "train_mean": 5.0,
+        "stoch_unseen": 4.333333333333333,
+        "det_unseen": 2.0
+      }
+    ]
+  },
+  "jumper_k4": {
+    "game": "jumper",
+    "k": 4,
+    "stoch_mean": 3.1111111111111107,
+    "stoch_std": 0.628539361054709,
+    "det_mean": 0.8888888888888888,
+    "runs": [
+      {
+        "game": "jumper",
+        "k": 4,
+        "seed": 42,
+        "frames": 100071,
+        "wall_sec": 37.33,
+        "train_mean": 4.5,
+        "stoch_unseen": 2.6666666666666665,
+        "det_unseen": 1.0
+      },
+      {
+        "game": "jumper",
+        "k": 4,
+        "seed": 43,
+        "frames": 100056,
+        "wall_sec": 34.14,
+        "train_mean": 3.5,
+        "stoch_unseen": 2.6666666666666665,
+        "det_unseen": 0.3333333333333333
+      },
+      {
+        "game": "jumper",
+        "k": 4,
+        "seed": 44,
+        "frames": 100074,
+        "wall_sec": 10.99,
+        "train_mean": 6.0,
+        "stoch_unseen": 4.0,
+        "det_unseen": 1.3333333333333333
+      }
+    ]
+  },
+  "jumper_k8": {
+    "game": "jumper",
+    "k": 8,
+    "stoch_mean": 1.4444444444444444,
+    "stoch_std": 1.0999438818457405,
+    "det_mean": 0.7777777777777777,
+    "runs": [
+      {
+        "game": "jumper",
+        "k": 8,
+        "seed": 42,
+        "frames": 100046,
+        "wall_sec": 29.65,
+        "train_mean": 4.5,
+        "stoch_unseen": 3.0,
+        "det_unseen": 1.0
+      },
+      {
+        "game": "jumper",
+        "k": 8,
+        "seed": 43,
+        "frames": 100035,
+        "wall_sec": 29.1,
+        "train_mean": 3.5,
+        "stoch_unseen": 0.6666666666666666,
+        "det_unseen": 0.6666666666666666
+      },
+      {
+        "game": "jumper",
+        "k": 8,
+        "seed": 44,
+        "frames": 100156,
+        "wall_sec": 29.19,
+        "train_mean": 5.5,
+        "stoch_unseen": 0.6666666666666666,
+        "det_unseen": 0.6666666666666666
+      }
+    ]
+  },
+  "plunder_k1": {
+    "game": "plunder",
+    "k": 1,
+    "stoch_mean": 3.9111111111111114,
+    "stoch_std": 0.8029267451173188,
+    "det_mean": 1.6777777777777778,
+    "runs": [
+      {
+        "game": "plunder",
+        "k": 1,
+        "seed": 42,
+        "frames": 100032,
+        "wall_sec": 16.73,
+        "train_mean": 4.5,
+        "stoch_unseen": 3.9,
+        "det_unseen": 1.6666666666666667
+      },
+      {
+        "game": "plunder",
+        "k": 1,
+        "seed": 43,
+        "frames": 100032,
+        "wall_sec": 13.65,
+        "train_mean": 4.55,
+        "stoch_unseen": 2.933333333333333,
+        "det_unseen": 1.4333333333333333
+      },
+      {
+        "game": "plunder",
+        "k": 1,
+        "seed": 44,
+        "frames": 100032,
+        "wall_sec": 13.88,
+        "train_mean": 3.85,
+        "stoch_unseen": 4.9,
+        "det_unseen": 1.9333333333333333
+      }
+    ]
+  },
+  "plunder_k2": {
+    "game": "plunder",
+    "k": 2,
+    "stoch_mean": 3.733333333333333,
+    "stoch_std": 0.562402254881945,
+    "det_mean": 1.6333333333333335,
+    "runs": [
+      {
+        "game": "plunder",
+        "k": 2,
+        "seed": 42,
+        "frames": 100094,
+        "wall_sec": 9.66,
+        "train_mean": 4.95,
+        "stoch_unseen": 4.3,
+        "det_unseen": 1.6333333333333333
+      },
+      {
+        "game": "plunder",
+        "k": 2,
+        "seed": 43,
+        "frames": 100083,
+        "wall_sec": 9.49,
+        "train_mean": 3.6,
+        "stoch_unseen": 2.966666666666667,
+        "det_unseen": 1.4
+      },
+      {
+        "game": "plunder",
+        "k": 2,
+        "seed": 44,
+        "frames": 100074,
+        "wall_sec": 9.55,
+        "train_mean": 4.15,
+        "stoch_unseen": 3.933333333333333,
+        "det_unseen": 1.8666666666666667
+      }
+    ]
+  },
+  "plunder_k4": {
+    "game": "plunder",
+    "k": 4,
+    "stoch_mean": 3.1555555555555554,
+    "stoch_std": 0.4524282904778295,
+    "det_mean": 1.6444444444444446,
+    "runs": [
+      {
+        "game": "plunder",
+        "k": 4,
+        "seed": 42,
+        "frames": 100052,
+        "wall_sec": 11.28,
+        "train_mean": 3.3,
+        "stoch_unseen": 3.2333333333333334,
+        "det_unseen": 1.6333333333333333
+      },
+      {
+        "game": "plunder",
+        "k": 4,
+        "seed": 43,
+        "frames": 100078,
+        "wall_sec": 10.08,
+        "train_mean": 2.6,
+        "stoch_unseen": 2.566666666666667,
+        "det_unseen": 1.4333333333333333
+      },
+      {
+        "game": "plunder",
+        "k": 4,
+        "seed": 44,
+        "frames": 100051,
+        "wall_sec": 10.19,
+        "train_mean": 2.95,
+        "stoch_unseen": 3.6666666666666665,
+        "det_unseen": 1.8666666666666667
+      }
+    ]
+  },
+  "plunder_k8": {
+    "game": "plunder",
+    "k": 8,
+    "stoch_mean": 0.5666666666666667,
+    "stoch_std": 0.8013876853447538,
+    "det_mean": 0.18888888888888888,
+    "runs": [
+      {
+        "game": "plunder",
+        "k": 8,
+        "seed": 42,
+        "frames": 100249,
+        "wall_sec": 10.53,
+        "train_mean": 2.15,
+        "stoch_unseen": 0.0,
+        "det_unseen": 0.0
+      },
+      {
+        "game": "plunder",
+        "k": 8,
+        "seed": 43,
+        "frames": 100212,
+        "wall_sec": 8.78,
+        "train_mean": 2.55,
+        "stoch_unseen": 1.7,
+        "det_unseen": 0.5666666666666667
+      },
+      {
+        "game": "plunder",
+        "k": 8,
+        "seed": 44,
+        "frames": 100204,
+        "wall_sec": 9.01,
+        "train_mean": 3.05,
+        "stoch_unseen": 0.0,
+        "det_unseen": 0.0
+      }
+    ]
+  }
+}

@@ -4,6 +4,11 @@ Unlike temporal.py (which applied recurrence only inside the 4 frames of the sta
 these models receive a single frame (B, 64, 64, 3) and a memory state (B, L, D),
 updating the state at each environment step (t -> t+1) with persistent carry across the rollout
 and reset upon done.
+
+Includes:
+- RecurrentLSTMBackbone: standard step-carry LSTM
+- RegularizedRecurrentLSTMBackbone: LayerNorm-regularized recurrent carry to prevent level memorization
+- RecurrentS5Backbone: discrete State Space Model (SSM) step-carry
 """
 
 import flax.linen as nn
@@ -47,6 +52,29 @@ class RecurrentLSTMBackbone(nn.Module):
         return out, new_mem
 
 
+class RegularizedRecurrentLSTMBackbone(nn.Module):
+    """Regularized recurrent LSTM featuring LayerNorm on hidden carry.
+    
+    Prevents unbounded latent state magnitude and seed-specific trajectory memorization,
+    reducing the empirical generalization gap on unseen levels.
+    """
+    hidden: int = 128
+
+    @nn.compact
+    def __call__(self, x, mem):
+        # x: (B, 64, 64, 3), mem: (B, 2, hidden)
+        enc = ClassicCNN()
+        f = nn.relu(nn.Dense(self.hidden)(enc(x)))
+        c_prev = mem[:, 0]
+        h_prev = mem[:, 1]
+        (c_new, h_new), _ = nn.LSTMCell(self.hidden)((c_prev, h_prev), f)
+        # LayerNorm regularizes recurrent state scale
+        h_norm = nn.LayerNorm()(h_new)
+        new_mem = jax.lax.stop_gradient(jnp.stack([c_new, h_norm], axis=1))
+        out = nn.relu(nn.Dense(512)(h_norm))
+        return out, new_mem
+
+
 class RecurrentS5Backbone(nn.Module):
     dim: int = 128
     state: int = 64
@@ -67,5 +95,6 @@ class RecurrentS5Backbone(nn.Module):
 
 RECURRENT_STEP = {
     "recurrent_lstm": (RecurrentLSTMBackbone, (2, 128)),
+    "regularized_recurrent_lstm": (RegularizedRecurrentLSTMBackbone, (2, 128)),
     "recurrent_s5": (RecurrentS5Backbone, (2, 64)),
 }

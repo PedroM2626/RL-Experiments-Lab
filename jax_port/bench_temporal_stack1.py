@@ -64,7 +64,11 @@ def run_arm(model_name, args, seed=42):
     else:
         params = model.init(k0, dummy_obs, None)
 
-    opt = make_optimizer(lr=3e-4, kind="adam")
+    if "regularized" in model_name:
+        import optax
+        opt = optax.chain(optax.clip_by_global_norm(0.5), optax.adamw(3e-4, weight_decay=1e-4))
+    else:
+        opt = make_optimizer(lr=3e-4, kind="adam")
     opt_state = opt.init(params)
     state = (params, opt_state)
 
@@ -125,12 +129,12 @@ def run_arm(model_name, args, seed=42):
         for t in range(T):
             pin = jnp.asarray(obs, device=device)
             if mem_mode:
+                b_mem[t] = mems
                 act_d, logp_d, val_d, mem_d, key = rollout_fn(
                     state[0], pin, jnp.asarray(mems, device=device), key
                 )
                 jax.block_until_ready((act_d, logp_d, val_d, mem_d))
                 mems = np.array(mem_d)
-                b_mem[t] = mems
             else:
                 act_d, logp_d, val_d, key = rollout_fn(state[0], pin, key)
                 jax.block_until_ready((act_d, logp_d, val_d))
@@ -292,10 +296,11 @@ def main():
     parser.add_argument("--eval-envs", type=int, default=16)
     parser.add_argument("--eval-eps", type=int, default=20)
     parser.add_argument("--distribution", type=str, default="easy")
+    parser.add_argument("--models", nargs="+", default=["classic", "recurrent_lstm", "regularized_recurrent_lstm", "recurrent_s5"])
     parser.add_argument("--output", type=str, default="/mnt/c/Users/Acer/Downloads/MLE/jax_port/results_stack1_bench.json")
     args = parser.parse_args()
 
-    models = ["classic", "recurrent_lstm", "recurrent_s5"]
+    models = args.models
     results = []
 
     for m in models:

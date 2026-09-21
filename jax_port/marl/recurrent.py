@@ -151,14 +151,13 @@ def make_ql_seq_update(qnet, mixer, optimizer, gamma=0.99, kind="vdn"):
                     state.reshape(S * L, -1)).reshape(S, L)
             tq = agent_q(tgt_params["q"], obs2)
             ta_max = tq.max(-1)  # (S,L,A) max per agent
-            t = rew + gamma * (1.0 - done) * jax.lax.stop_gradient(
-                ta_max.sum(-1))
             if kind == "vdn":
-                ttot = t
+                next_qtot = ta_max.sum(-1)
             else:
-                ttot = mixer.apply(
+                next_qtot = mixer.apply(
                     tgt_params["mix"], ta_max.reshape(S * L, A),
                     state2.reshape(S * L, -1)).reshape(S, L)
+            ttot = rew + gamma * (1.0 - done) * jax.lax.stop_gradient(next_qtot)
             return ((qtot - jax.lax.stop_gradient(ttot)) ** 2).mean()
 
         loss, grads = jax.value_and_grad(loss_fn)(params)

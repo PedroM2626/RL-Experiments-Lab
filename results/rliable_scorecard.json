@@ -1,0 +1,376 @@
+{
+  "normalization_bounds": {
+    "bossfight": {
+      "min": 0.0,
+      "max": 1.51
+    },
+    "dodgeball": {
+      "min": 0.24,
+      "max": 1.78
+    },
+    "heist": {
+      "min": 0.1,
+      "max": 1.4
+    },
+    "maze": {
+      "min": 0.8,
+      "max": 3.8
+    },
+    "starpilot": {
+      "min": 0.28,
+      "max": 3.1
+    }
+  },
+  "architectures": {
+    "aug_color": {
+      "iqm": 0.3636,
+      "iqm_ci95": [
+        0.253,
+        0.4674
+      ],
+      "trimmed_mean": 0.3811,
+      "trimmed_ci95": [
+        0.2823,
+        0.4676
+      ],
+      "mean_normalized": 0.3811
+    },
+    "aug_crop": {
+      "iqm": 0.5058,
+      "iqm_ci95": [
+        0.395,
+        0.6289
+      ],
+      "trimmed_mean": 0.5135,
+      "trimmed_ci95": [
+        0.402,
+        0.635
+      ],
+      "mean_normalized": 0.5135
+    },
+    "aug_noise": {
+      "iqm": 0.4289,
+      "iqm_ci95": [
+        0.245,
+        0.5256
+      ],
+      "trimmed_mean": 0.3949,
+      "trimmed_ci95": [
+        0.2713,
+        0.505
+      ],
+      "mean_normalized": 0.3949
+    },
+    "cnn_cbam": {
+      "iqm": 0.5108,
+      "iqm_ci95": [
+        0.4028,
+        0.6065
+      ],
+      "trimmed_mean": 0.5021,
+      "trimmed_ci95": [
+        0.3956,
+        0.6074
+      ],
+      "mean_normalized": 0.5021
+    },
+    "cnn_classic": {
+      "iqm": 0.4408,
+      "iqm_ci95": [
+        0.3621,
+        0.5334
+      ],
+      "trimmed_mean": 0.4318,
+      "trimmed_ci95": [
+        0.3633,
+        0.5096
+      ],
+      "mean_normalized": 0.4318
+    },
+    "cnn_mlp_vector": {
+      "iqm": 0.6244,
+      "iqm_ci95": [
+        0.4653,
+        0.7767
+      ],
+      "trimmed_mean": 0.5809,
+      "trimmed_ci95": [
+        0.4625,
+        0.7106
+      ],
+      "mean_normalized": 0.5809
+    },
+    "cnn_spatial": {
+      "iqm": 0.5334,
+      "iqm_ci95": [
+        0.4098,
+        0.626
+      ],
+      "trimmed_mean": 0.5048,
+      "trimmed_ci95": [
+        0.4117,
+        0.6034
+      ],
+      "mean_normalized": 0.5048
+    },
+    "impala": {
+      "iqm": 0.4516,
+      "iqm_ci95": [
+        0.3414,
+        0.5354
+      ],
+      "trimmed_mean": 0.4256,
+      "trimmed_ci95": [
+        0.3345,
+        0.5169
+      ],
+      "mean_normalized": 0.4256
+    },
+    "impoola": {
+      "iqm": 0.456,
+      "iqm_ci95": [
+        0.3221,
+        0.6306
+      ],
+      "trimmed_mean": 0.4531,
+      "trimmed_ci95": [
+        0.346,
+        0.5838
+      ],
+      "mean_normalized": 0.4531
+    },
+    "lstm_attention": {
+      "iqm": 0.5441,
+      "iqm_ci95": [
+        0.4053,
+        0.6427
+      ],
+      "trimmed_mean": 0.4986,
+      "trimmed_ci95": [
+        0.4048,
+        0.6016
+      ],
+      "mean_normalized": 0.4986
+    },
+    "resnet18": {
+      "iqm": 0.5984,
+      "iqm_ci95": [
+        0.3922,
+        0.7649
+      ],
+      "trimmed_mean": 0.5463,
+      "trimmed_ci95": [
+        0.4111,
+        0.6858
+      ],
+      "mean_normalized": 0.5463
+    },
+    "vit": {
+      "iqm": 0.3363,
+      "iqm_ci95": [
+        0.2049,
+        0.5403
+      ],
+      "trimmed_mean": 0.3716,
+      "trimmed_ci95": [
+        0.2552,
+        0.5117
+      ],
+      "mean_normalized": 0.3716
+    },
+    "wm_ae": {
+      "iqm": 0.4031,
+      "iqm_ci95": [
+        0.3358,
+        0.459
+      ],
+      "trimmed_mean": 0.3808,
+      "trimmed_ci95": [
+        0.3319,
+        0.4326
+      ],
+      "mean_normalized": 0.3808
+    },
+    "wm_contrastive": {
+      "iqm": 0.4289,
+      "iqm_ci95": [
+        0.245,
+        0.5256
+      ],
+      "trimmed_mean": 0.3949,
+      "trimmed_ci95": [
+        0.2713,
+        0.505
+      ],
+      "mean_normalized": 0.3949
+    },
+    "wm_recon": {
+      "iqm": 0.442,
+      "iqm_ci95": [
+        0.2911,
+        0.6387
+      ],
+      "trimmed_mean": 0.4376,
+      "trimmed_ci95": [
+        0.3174,
+        0.573
+      ],
+      "mean_normalized": 0.4376
+    },
+    "wm_vae": {
+      "iqm": 0.4542,
+      "iqm_ci95": [
+        0.3557,
+        0.5787
+      ],
+      "trimmed_mean": 0.4334,
+      "trimmed_ci95": [
+        0.3299,
+        0.5511
+      ],
+      "mean_normalized": 0.4334
+    }
+  },
+  "probability_of_improvement": {
+    "cnn_mlp_vector_vs_resnet18": {
+      "p": 0.587,
+      "ci95": [
+        0.36,
+        0.8
+      ]
+    },
+    "cnn_mlp_vector_vs_lstm_attention": {
+      "p": 0.62,
+      "ci95": [
+        0.393,
+        0.827
+      ]
+    },
+    "cnn_mlp_vector_vs_cnn_spatial": {
+      "p": 0.64,
+      "ci95": [
+        0.427,
+        0.84
+      ]
+    },
+    "cnn_mlp_vector_vs_cnn_cbam": {
+      "p": 0.527,
+      "ci95": [
+        0.307,
+        0.747
+      ]
+    },
+    "resnet18_vs_cnn_mlp_vector": {
+      "p": 0.413,
+      "ci95": [
+        0.2,
+        0.64
+      ]
+    },
+    "resnet18_vs_lstm_attention": {
+      "p": 0.527,
+      "ci95": [
+        0.307,
+        0.74
+      ]
+    },
+    "resnet18_vs_cnn_spatial": {
+      "p": 0.54,
+      "ci95": [
+        0.32,
+        0.753
+      ]
+    },
+    "resnet18_vs_cnn_cbam": {
+      "p": 0.5,
+      "ci95": [
+        0.267,
+        0.733
+      ]
+    },
+    "lstm_attention_vs_cnn_mlp_vector": {
+      "p": 0.38,
+      "ci95": [
+        0.18,
+        0.607
+      ]
+    },
+    "lstm_attention_vs_resnet18": {
+      "p": 0.473,
+      "ci95": [
+        0.253,
+        0.693
+      ]
+    },
+    "lstm_attention_vs_cnn_spatial": {
+      "p": 0.52,
+      "ci95": [
+        0.3,
+        0.733
+      ]
+    },
+    "lstm_attention_vs_cnn_cbam": {
+      "p": 0.44,
+      "ci95": [
+        0.22,
+        0.667
+      ]
+    },
+    "cnn_spatial_vs_cnn_mlp_vector": {
+      "p": 0.36,
+      "ci95": [
+        0.16,
+        0.58
+      ]
+    },
+    "cnn_spatial_vs_resnet18": {
+      "p": 0.46,
+      "ci95": [
+        0.24,
+        0.68
+      ]
+    },
+    "cnn_spatial_vs_lstm_attention": {
+      "p": 0.48,
+      "ci95": [
+        0.267,
+        0.7
+      ]
+    },
+    "cnn_spatial_vs_cnn_cbam": {
+      "p": 0.473,
+      "ci95": [
+        0.253,
+        0.693
+      ]
+    },
+    "cnn_cbam_vs_cnn_mlp_vector": {
+      "p": 0.473,
+      "ci95": [
+        0.253,
+        0.707
+      ]
+    },
+    "cnn_cbam_vs_resnet18": {
+      "p": 0.5,
+      "ci95": [
+        0.267,
+        0.727
+      ]
+    },
+    "cnn_cbam_vs_lstm_attention": {
+      "p": 0.56,
+      "ci95": [
+        0.34,
+        0.773
+      ]
+    },
+    "cnn_cbam_vs_cnn_spatial": {
+      "p": 0.527,
+      "ci95": [
+        0.307,
+        0.747
+      ]
+    }
+  }
+}

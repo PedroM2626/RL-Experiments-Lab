@@ -162,9 +162,14 @@ def train_recurrent_ql(args):
                     jnp.asarray(bo[:, :-1]), jnp.asarray(ba), jnp.asarray(br),
                     jnp.asarray(bo[:, 1:]),
                     jnp.asarray(bst[:, :-1]), jnp.asarray(bst[:, 1:]),
-                    jnp.asarray(bd))
+                )
                 grads += 1
-                if grads % 500 == 0:
+                tau = getattr(args, "tau", 0.0)
+                if tau > 0.0:
+                    tgt = jax.tree_util.tree_map(
+                        lambda p, t: (1.0 - tau) * t + tau * p, params, tgt
+                    )
+                elif grads % getattr(args, "target_update_interval", 500) == 0:
                     tgt = copy.deepcopy(params)
         if steps % (N * 20) == 0:
             el = time.perf_counter() - t0
@@ -263,6 +268,10 @@ def main():
                     help="path for periodic checkpoint (params+opt+buffer)")
     ap.add_argument("--resume", default=None,
                     help="resume from saved checkpoint")
+    ap.add_argument("--tau", type=float, default=0.0,
+                    help="Polyak soft target update rate (e.g. 0.01)")
+    ap.add_argument("--target-update-interval", type=int, default=500,
+                    help="target network update interval in gradient steps")
     train(ap.parse_args())
 
 
@@ -334,7 +343,12 @@ def train(args):
                     jnp.asarray(bo2), jnp.asarray(bs), jnp.asarray(bs2),
                     jnp.asarray(bd))
                 grads += 1
-                if grads % 500 == 0:
+                tau = getattr(args, "tau", 0.0)
+                if tau > 0.0:
+                    tgt = jax.tree_util.tree_map(
+                        lambda p, t: (1.0 - tau) * t + tau * p, params, tgt
+                    )
+                elif grads % getattr(args, "target_update_interval", 500) == 0:
                     tgt = copy.deepcopy(params)
         if steps % (N * 20) == 0:
             el = time.perf_counter() - t0

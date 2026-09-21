@@ -97,6 +97,37 @@ def test_losses():
     return True
 
 
+def test_recurrent_ql_loss():
+    from jax_port.marl.qmix import QMixer
+    from jax_port.marl.recurrent import REC_H, RecurrentQ, make_ql_seq_update
+    from jax_port.ppo import make_optimizer
+    S, L, A, O, St = 2, 4, 3, 75, 72
+    key = jax.random.PRNGKey(123)
+    qnet = RecurrentQ(n_actions=8)
+    mixer = QMixer(n_agents=A)
+    opt = make_optimizer()
+    key, k0, k1 = jax.random.split(key, 3)
+    p = {
+        "q": qnet.init(k0, jnp.zeros((1, L, O)), jnp.zeros((1, REC_H)), jnp.zeros((1, L), bool)),
+        "mix": mixer.init(k1, jnp.zeros((1, A)), jnp.zeros((1, St))),
+    }
+    opt_state = opt.init(p)
+    for kind in ("vdn", "qmix"):
+        update = make_ql_seq_update(qnet, mixer, opt, kind=kind)
+        p_upd, opt_upd, loss = update(
+            p, opt_state, p,
+            jnp.zeros((S, L, A, O)),
+            jnp.zeros((S, L, A), jnp.int32),
+            jnp.ones((S, L)),  # positive reward
+            jnp.zeros((S, L, A, O)),
+            jnp.zeros((S, L, St)),
+            jnp.zeros((S, L, St)),
+            jnp.zeros((S, L)),
+        )
+        assert bool(jnp.isfinite(loss)), f"recurrent {kind} loss not finite"
+    return True
+
+
 if __name__ == "__main__":
     test_battle_won()
     print("battle_won OK", flush=True)
@@ -104,4 +135,7 @@ if __name__ == "__main__":
     print("adapter OK", flush=True)
     test_losses()
     print("losses OK", flush=True)
+    test_recurrent_ql_loss()
+    print("recurrent_ql_loss OK", flush=True)
     print("MARL_TESTS_OK")
+

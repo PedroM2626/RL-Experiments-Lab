@@ -1,0 +1,58 @@
+[
+  {
+    "model": "classic",
+    "timesteps": 57344,
+    "wall_s": 10.41,
+    "sps": 5511.1,
+    "train_ret_mean20": 4.5,
+    "eval_unseen_mean": 2.5,
+    "eval_unseen_std": 4.44,
+    "eval_unseen_ci95": [
+      0.55,
+      4.45
+    ],
+    "eval_eps": 20
+  },
+  {
+    "model": "recurrent_lstm",
+    "timesteps": 57344,
+    "wall_s": 17.82,
+    "sps": 3218.5,
+    "train_ret_mean20": 4.5,
+    "eval_unseen_mean": 4.0,
+    "eval_unseen_std": 5.03,
+    "eval_unseen_ci95": [
+      1.8,
+      6.2
+    ],
+    "eval_eps": 20
+  },
+  {
+    "model": "regularized_recurrent_lstm",
+    "timesteps": 57344,
+    "wall_s": 17.24,
+    "sps": 3326.6,
+    "train_ret_mean20": 2.5,
+    "eval_unseen_mean": 2.5,
+    "eval_unseen_std": 4.44,
+    "eval_unseen_ci95": [
+      0.55,
+      4.45
+    ],
+    "eval_eps": 20
+  },
+  {
+    "model": "recurrent_s5",
+    "timesteps": 57344,
+    "wall_s": 16.4,
+    "sps": 3495.7,
+    "train_ret_mean20": 3.65,
+    "eval_unseen_mean": 2.5,
+    "eval_unseen_std": 4.44,
+    "eval_unseen_ci95": [
+      0.55,
+      4.45
+    ],
+    "eval_eps": 20
+  }
+]
