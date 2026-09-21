@@ -92,6 +92,9 @@ Standard `Procgen` literature (original paper, `IDAAC`/`PPG`) reports `5M–25M`
 | `recon` | 0.02 | 0.04 |
 | `contrastive` | **0.36** | 0.62 |
 > `contrastive` performs best, but all remain `<0.5` — `bossfight 100k` is insufficient when trained standalone.
+>
+> ⚠️ **Methodological & Architectural Clarification (Gradient Flow & Auxiliary Pretext Objectives):**
+> In the root PyTorch / SB3 benchmark (`compare_world_models.py`), the modules in `models/world_model_extractors.py` served as custom `BaseFeaturesExtractor` architectures within standard Stable-Baselines3 PPO. During `model.learn()`, SB3 backpropagates gradients exclusively from the PPO policy and value heads through `forward()`. Because no custom policy was attached to compute auxiliary reconstruction loss (MSE) or KL divergence during the backward pass, **the decoders (`fc_dec`, `deconv1-3`, and `dream()`) never received gradients and remained at random initialization**. Consequently, the scores above reflect the inductive bias of an information/sampling bottleneck in the visual encoder rather than learned generative world modeling. Fully end-to-end recurrent dynamics modeling, latent imagination rollouts, and active reconstruction gradients are implemented in `jax_port/train_dreamer.py`.
 
 ### 3.3. Suite 100k — 3 Games (11 Configs/Game)
 `logs_suite/suite_bossfight_starpilot_dodgeball_20260827_204109/suite_statistics.json:1`
@@ -949,3 +952,73 @@ Sources: `jax_port/pa2_coinrun_100k.json`, `jax_port/pa2_starpilot_100k.json`.
 - Gym/Gymnasium API Boundaries: `procgen_wrapper.py:6,55,85` (original study) serving as the baseline interface specification.
 - GPU Workload Discipline: Single active process on 8 GB VRAM; graceful termination with serialized state checkpoints (established in `compare_suite_retrain.py`).
 - Reference Hardware Environment: `WSL2 Ubuntu 24.04`, `NVIDIA RTX 4070 Laptop 8 GB`, `cuda:0`, `Python 3.10.11` (original study) / dedicated `py3.10` venv (JAX port).
+
+---
+
+## 17. Multi-Agent RL Architecture & Sequential Buffer Alignment (`jax_port/marl/`)
+
+The multi-agent module (`jax_port/marl/`) provides cooperative and competitive multi-agent learning architectures implemented in JAX/Flax.
+
+### 17.1. Temporal Causality and Buffer Partitioning
+In recurrent multi-agent Q-learning, agents update their parameters through Truncated Backpropagation Through Time (TBPTT) over trajectories of length $L$.
+- **Legacy Artifact:** Circular buffers indexed linearly across parallel environments mix observations from disparate environments ($e_0, e_1, \dots, e_{N-1}$), violating temporal causality.
+- **`MARLSequentialBuffer`:** Contiguous histories are allocated and stored per parallel environment independently:
+  $$\text{Obs Buffer Shape}: (N_{\text{envs}}, C_{\text{env}}, \dots)$$
+  Sampling selects an environment index $e \sim \mathcal{U}(0, N_{\text{envs}}-1)$ and a valid temporal window $[t, t+L]$ within that specific environment's ring buffer, guaranteeing that sampled sequences represent genuine, contiguous Markovian trajectories ($s_t^e, a_t^e, r_t^e, s_{t+1}^e$).
+
+### 17.2. Bellman Target Terminal Masking
+The recurrent Q-learning Bellman target is given by:
+$$y_t = r_t + \gamma \max_{a'} Q(s_{t+1}, a'; \theta^-) \cdot (1 - d_t)$$
+In `jax_port/marl/train_ql.py`, the terminal array `done` is converted to a JAX array (`jnp.asarray(bd)`) and passed into `make_ql_seq_update`, strictly preventing bootstrapped value propagation across episode terminations.
+
+---
+
+## 18. RLiable Evaluation Protocol & Canonical Benchmark Normalization
+
+To eliminate evaluation pathologies (such as outliers skewing the arithmetic mean, or uninformative point estimates lacking confidence intervals), the benchmark suite incorporates the evaluation methodology developed by **Agarwal et al. (NeurIPS 2021)** via `rliable_metrics.py` and `run_rliable_eval.py`.
+
+### 18.1. Empirical Random Baselines across Procgen
+Rather than assuming artificial minimum bounds, uniform random policies were empirically evaluated across 50 episodes per game on unseen levels:
+- `bossfight`: $0.02 \pm 0.14$
+- `starpilot`: $1.70 \pm 1.92$
+- `dodgeball`: $0.68 \pm 1.17$
+- `maze`: $4.00 \pm 4.90$
+- `heist`: $3.20 \pm 4.66$
+Raw outputs are serialized in `results/random_baselines.json`.
+
+### 18.2. Canonical Normalization Formula
+Per Agarwal et al., game returns are normalized against empirical random baselines and maximum task performance:
+$$\bar{z}_{m, g} = \frac{R_{m, g} - R_{\text{random}, g}}{R_{\text{expert}, g} - R_{\text{random}, g}}$$
+Both Canonical Agarwal normalization and empirical min-max spans are computed and recorded in `results/rliable_scorecard.json`.
+
+### 18.3. Scorecard and Statistical Profiles
+The consolidated scorecard across top architectures (`results/rliable_profile.png`) presents three complementary panels:
+1. **Aggregated Interquartile Mean (IQM):** Computed across the middle 50% of normalized scores with 95% Stratified Bootstrap Confidence Intervals (2,000 bootstrap iterations).
+2. **Empirical Performance Profiles with Shaded Bootstrap Bands:** Cumulative distribution functions $\hat{F}(\tau)$ plotted with pointwise 95% bootstrap confidence bands (`fill_between`), showing the fraction of runs exceeding threshold $\tau$.
+3. **Multi-Metric Forest Plot:** Comparative visualization of IQM, 20% Trimmed Mean, Median, and Arithmetic Mean.
+
+---
+
+## 19. Architecture Verification & Test Suites
+
+The repository contains automated unit tests across both PyTorch and JAX backends:
+
+- **PyTorch Extractor Test Suite (`tests/test_pytorch_extractors.py`):**
+  - Validates forward pass output dimensions $(B, 512)$ for all 10 model architectures (`ClassicCNNExtractor`, `AttentionCNNExtractor` with CBAM / Spatial, `ImpalaCNNExtractor`, `ImpoolaCNNExtractor`, `ResNet18Extractor`, `LSTMAttentionExtractor`, `ViTExtractor`, `VAEExtractor`, `AEExtractor`, `ReconExtractor`, `ContrastiveExtractor`).
+  - Verifies autograd backward pass and ensures non-zero parameter gradients.
+  - Tests compatibility across Procgen HWC $(64, 64, 3)$ and standard CHW $(3, 64, 64)$ observation formats.
+  - Validates non-contiguous tensor layout handling (`contiguous()` and `reshape()`).
+- **JAX / MARL Test Suite (`jax_port/tests/test_marl.py`):**
+  - Validates `MARLSequentialBuffer` temporal sequence integrity and per-environment isolation.
+  - Verifies recurrent Q-learning Bellman target masking and gradient updates.
+  - Validates multi-agent environment battle metrics and win-rate accounting.
+
+---
+
+## 20. Legacy Continuous Control Prototypes (`legacy/carracing/`)
+
+The early Phase 1 exploratory codebase developed prior to the project's transition to discrete-action Procgen benchmarks is archived in `legacy/carracing/`:
+- `legacy/carracing/sac_trainer.py`: Custom continuous Soft Actor-Critic (SAC) implementation with Box action space.
+- `legacy/carracing/compare_architectures.py`: Training harness benchmarking Classic CNN vs CBAM CNN on `CarRacing-v2` / `CarRacing-v3`.
+- `legacy/carracing/README.md`: Architectural motivation and historical context for the transition to Procgen.
+

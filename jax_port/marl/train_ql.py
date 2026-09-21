@@ -53,14 +53,60 @@ class MARLBuffer:
         return (self.obs[idx], self.act[idx], self.rew[idx],
                 self.obs2[idx], self.st[idx], self.st2[idx], self.done[idx])
 
+
+class MARLSequentialBuffer:
+    """Multi-environment sequential replay buffer for recurrent MARL (VDN / QMIX).
+    
+    Stores contiguous trajectories separately per parallel environment to ensure
+    that sampled sequences of length L represent genuine chronological steps
+    from a single environment, rather than interleaved transitions from N parallel universes.
+    """
+    def __init__(self, capacity, n_envs, n_agents, obs_dim, state_dim):
+        self.n_envs = n_envs
+        self.cap_per_env = max(1, capacity // n_envs)
+        self.obs = np.empty((n_envs, self.cap_per_env, n_agents, obs_dim), np.float32)
+        self.obs2 = np.empty((n_envs, self.cap_per_env, n_agents, obs_dim), np.float32)
+        self.act = np.empty((n_envs, self.cap_per_env, n_agents), np.int32)
+        self.rew = np.empty((n_envs, self.cap_per_env), np.float32)
+        self.st = np.empty((n_envs, self.cap_per_env, state_dim), np.float32)
+        self.st2 = np.empty((n_envs, self.cap_per_env, state_dim), np.float32)
+        self.done = np.empty((n_envs, self.cap_per_env), bool)
+        self.ptr = 0
+        self.count = 0
+
+    def add(self, o, a, r, o2, s, s2, d):
+        p = self.ptr
+        self.obs[:, p] = o
+        self.obs2[:, p] = o2
+        self.act[:, p] = a
+        self.rew[:, p] = r
+        self.st[:, p] = s
+        self.st2[:, p] = s2
+        self.done[:, p] = d
+        self.ptr = (p + 1) % self.cap_per_env
+        self.count = min(self.count + 1, self.cap_per_env)
+
+    def __len__(self):
+        return self.count * self.n_envs
+
     def sample_seq(self, rng, batch, L):
-        # Consecutive blocks (wrap modulo = documented approximation).
-        # obs/st with L+1 (o_t..o_{t+L}); act/rew/done with L.
-        lim = max(L + 2, len(self))
-        s0 = rng.integers(0, lim - L - 1, size=batch)
-        ii = (s0[:, None] + np.arange(L + 1)[None, :]) % self.cap
-        return (self.obs[ii], self.act[ii[:, :L]], self.rew[ii[:, :L]],
-                self.st[ii], self.done[ii[:, :L]])
+        if self.count <= L + 1:
+            raise ValueError(f"Buffer has insufficient steps: count={self.count}, need {L+2}")
+        env_idx = rng.integers(0, self.n_envs, size=batch)
+        if self.count < self.cap_per_env:
+            t0 = rng.integers(0, self.count - L, size=batch)
+        else:
+            valid_starts = [int(rng.integers(0, self.cap_per_env - L)) for _ in range(batch)]
+            t0 = np.array(valid_starts)
+
+        t_idx = t0[:, None] + np.arange(L + 1)[None, :]
+        b_obs = self.obs[env_idx[:, None], t_idx]
+        b_act = self.act[env_idx[:, None], t_idx[:, :L]]
+        b_rew = self.rew[env_idx[:, None], t_idx[:, :L]]
+        b_st = self.st[env_idx[:, None], t_idx]
+        b_done = self.done[env_idx[:, None], t_idx[:, :L]]
+        return b_obs, b_act, b_rew, b_st, b_done
+
 
 
 def train_recurrent_ql(args):
@@ -104,7 +150,7 @@ def train_recurrent_ql(args):
         jnp.zeros((2, L, venv.state_dim)), jnp.zeros((2, L), bool))
     jax.block_until_ready(jax.tree_util.tree_leaves(params)[0])
 
-    buf = MARLBuffer(100000, A, venv.obs_dim, venv.state_dim)
+    buf = MARLSequentialBuffer(100000, N, A, venv.obs_dim, venv.state_dim)
     carry = np.zeros((N * A, REC_H), np.float32)
     steps, grads = 0, 0
     if getattr(args, "resume", None):
@@ -162,6 +208,7 @@ def train_recurrent_ql(args):
                     jnp.asarray(bo[:, :-1]), jnp.asarray(ba), jnp.asarray(br),
                     jnp.asarray(bo[:, 1:]),
                     jnp.asarray(bst[:, :-1]), jnp.asarray(bst[:, 1:]),
+                    jnp.asarray(bd),
                 )
                 grads += 1
                 tau = getattr(args, "tau", 0.0)

@@ -21,6 +21,35 @@
       "max": 3.1
     }
   },
+  "random_baselines": {
+    "bossfight": {
+      "mean": 0.02,
+      "std": 0.13999999999999999
+    },
+    "starpilot": {
+      "mean": 1.7,
+      "std": 1.9209372712298545
+    },
+    "dodgeball": {
+      "mean": 0.68,
+      "std": 1.1737120600896969
+    },
+    "maze": {
+      "mean": 4.0,
+      "std": 4.898979485566356
+    },
+    "heist": {
+      "mean": 3.2,
+      "std": 4.664761515876241
+    }
+  },
+  "classic_means": {
+    "bossfight": 0.194,
+    "dodgeball": 0.96,
+    "heist": 1.0,
+    "maze": 1.0,
+    "starpilot": 2.2520000000000002
+  },
   "architectures": {
     "aug_color": {
       "iqm": 0.3636,
@@ -229,6 +258,120 @@
         0.5511
       ],
       "mean_normalized": 0.4334
+    }
+  },
+  "canonical_architectures": {
+    "aug_color": {
+      "canonical_iqm": 0.7495,
+      "canonical_ci95": [
+        0.2749,
+        1.3117
+      ]
+    },
+    "aug_crop": {
+      "canonical_iqm": 1.1656,
+      "canonical_ci95": [
+        0.4975,
+        1.9766
+      ]
+    },
+    "aug_noise": {
+      "canonical_iqm": 0.4726,
+      "canonical_ci95": [
+        0.0652,
+        1.4799
+      ]
+    },
+    "cnn_cbam": {
+      "canonical_iqm": 1.4064,
+      "canonical_ci95": [
+        0.6144,
+        2.2982
+      ]
+    },
+    "cnn_classic": {
+      "canonical_iqm": 0.8738,
+      "canonical_ci95": [
+        0.4836,
+        1.2731
+      ]
+    },
+    "cnn_mlp_vector": {
+      "canonical_iqm": 1.5083,
+      "canonical_ci95": [
+        0.9188,
+        2.4584
+      ]
+    },
+    "cnn_spatial": {
+      "canonical_iqm": 1.1571,
+      "canonical_ci95": [
+        0.6478,
+        1.8976
+      ]
+    },
+    "impala": {
+      "canonical_iqm": 0.844,
+      "canonical_ci95": [
+        0.4147,
+        1.4025
+      ]
+    },
+    "impoola": {
+      "canonical_iqm": 0.8015,
+      "canonical_ci95": [
+        0.3875,
+        1.2964
+      ]
+    },
+    "lstm_attention": {
+      "canonical_iqm": 1.0937,
+      "canonical_ci95": [
+        0.6503,
+        1.7722
+      ]
+    },
+    "resnet18": {
+      "canonical_iqm": 1.2909,
+      "canonical_ci95": [
+        0.4299,
+        2.6671
+      ]
+    },
+    "vit": {
+      "canonical_iqm": 0.273,
+      "canonical_ci95": [
+        -0.1182,
+        0.8894
+      ]
+    },
+    "wm_ae": {
+      "canonical_iqm": 0.5983,
+      "canonical_ci95": [
+        0.2077,
+        1.1057
+      ]
+    },
+    "wm_contrastive": {
+      "canonical_iqm": 0.4726,
+      "canonical_ci95": [
+        0.0652,
+        1.4799
+      ]
+    },
+    "wm_recon": {
+      "canonical_iqm": 0.8313,
+      "canonical_ci95": [
+        0.4241,
+        1.4062
+      ]
+    },
+    "wm_vae": {
+      "canonical_iqm": 0.9427,
+      "canonical_ci95": [
+        0.3426,
+        1.7887
+      ]
     }
   },
   "probability_of_improvement": {

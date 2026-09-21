@@ -128,6 +128,71 @@ def test_recurrent_ql_loss():
     return True
 
 
+def test_marl_sequential_buffer():
+    from jax_port.marl.train_ql import MARLSequentialBuffer
+    from jax_port.marl.recurrent import RecurrentQ, make_ql_seq_update
+    from jax_port.marl.qmix import QMixer
+
+    N, A, O, St = 4, 3, 16, 24
+    L = 8
+    buf = MARLSequentialBuffer(capacity=1000, n_envs=N, n_agents=A, obs_dim=O, state_dim=St)
+    rng = np.random.default_rng(42)
+
+    # Insert sequential steps where each environment has a unique identifier in obs
+    for t in range(50):
+        # In obs, store [env_id, t, ...] to verify causality
+        o = np.zeros((N, A, O), np.float32)
+        for env_i in range(N):
+            o[env_i, :, 0] = float(env_i)
+            o[env_i, :, 1] = float(t)
+        a = rng.integers(0, 5, size=(N, A)).astype(np.int32)
+        r = np.ones(N, np.float32) * 0.5
+        o2 = np.copy(o)
+        o2[:, :, 1] += 1.0
+        s = np.zeros((N, St), np.float32)
+        s2 = np.zeros((N, St), np.float32)
+        d = np.zeros(N, bool)
+        buf.add(o, a, r, o2, s, s2, d)
+
+    bo, ba, br, bst, bd = buf.sample_seq(rng, batch=2, L=L)
+    assert bo.shape == (2, L + 1, A, O), f"Unexpected bo shape: {bo.shape}"
+    assert ba.shape == (2, L, A), f"Unexpected ba shape: {ba.shape}"
+    assert bd.shape == (2, L), f"Unexpected bd shape: {bd.shape}"
+
+    # Verify that each sampled trajectory comes from a SINGLE environment and is chronological
+    for b in range(2):
+        env_id = bo[b, 0, 0, 0]
+        # All steps must match the same environment
+        assert np.all(bo[b, :, :, 0] == env_id), "Sequence mixed multiple environments!"
+        # Time steps must be strictly contiguous: t, t+1, t+2, ...
+        times = bo[b, :, 0, 1]
+        diffs = np.diff(times)
+        assert np.all(diffs == 1.0), f"Sequence time steps are not contiguous: {times}"
+
+    # Verify end-to-end forward/backward with update function
+    from jax_port.marl.recurrent import REC_H, RecurrentQ, make_ql_seq_update
+    from jax_port.ppo import make_optimizer
+    qnet = RecurrentQ(n_actions=5)
+    mixer = QMixer(n_agents=A)
+    opt = make_optimizer()
+    k0, k1 = jax.random.split(jax.random.PRNGKey(42))
+    p = {
+        "q": qnet.init(k0, jnp.zeros((1, L, O)), jnp.zeros((1, REC_H)), jnp.zeros((1, L), bool)),
+        "mix": mixer.init(k1, jnp.zeros((1, A)), jnp.zeros((1, St))),
+    }
+    opt_state = opt.init(p)
+    update = make_ql_seq_update(qnet, mixer, opt, kind="qmix")
+    p_upd, opt_upd, loss = update(
+        p, opt_state, p,
+        jnp.asarray(bo[:, :-1]), jnp.asarray(ba), jnp.asarray(br),
+        jnp.asarray(bo[:, 1:]),
+        jnp.asarray(bst[:, :-1]), jnp.asarray(bst[:, 1:]),
+        jnp.asarray(bd),
+    )
+    assert bool(jnp.isfinite(loss)), "Loss is not finite with MARLSequentialBuffer"
+    return True
+
+
 if __name__ == "__main__":
     test_battle_won()
     print("battle_won OK", flush=True)
@@ -137,5 +202,8 @@ if __name__ == "__main__":
     print("losses OK", flush=True)
     test_recurrent_ql_loss()
     print("recurrent_ql_loss OK", flush=True)
+    test_marl_sequential_buffer()
+    print("marl_sequential_buffer OK", flush=True)
     print("MARL_TESTS_OK")
+
 

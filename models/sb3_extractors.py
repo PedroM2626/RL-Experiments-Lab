@@ -40,7 +40,7 @@ class ClassicCNNExtractor(BaseFeaturesExtractor):
                 # dummy HWC -> needs transpose to CHW for CNN
                 h, w, c = observation_space.shape
                 dummy_hwc = torch.zeros(1, h, w, c)
-                dummy = dummy_hwc.permute(0, 3, 1, 2)  # CHW
+                dummy = dummy_hwc.permute(0, 3, 1, 2).contiguous()  # CHW
             else:
                 dummy = torch.zeros(1, *observation_space.shape)
             n_flatten = self.cnn(dummy).shape[1]
@@ -56,7 +56,7 @@ class ClassicCNNExtractor(BaseFeaturesExtractor):
             observations = observations / 255.0
         if self.is_hwc and observations.dim() == 4 and observations.shape[-1] in [1,3,4]:
             # HWC -> CHW
-            observations = observations.permute(0, 3, 1, 2)
+            observations = observations.permute(0, 3, 1, 2).contiguous()
         return self.linear(self.cnn(observations))
 
 
@@ -104,7 +104,7 @@ class AttentionCNNExtractor(BaseFeaturesExtractor):
             if self.is_hwc:
                 h, w, c = observation_space.shape
                 dummy_hwc = torch.zeros(1, h, w, c)
-                dummy = dummy_hwc.permute(0, 3, 1, 2)
+                dummy = dummy_hwc.permute(0, 3, 1, 2).contiguous()
             else:
                 dummy = torch.zeros(1, *observation_space.shape)
             x = F.relu(self.conv1(dummy))
@@ -113,7 +113,7 @@ class AttentionCNNExtractor(BaseFeaturesExtractor):
             x = self.att2(x)
             x = F.relu(self.conv3(x))
             x = self.att3(x)
-            n_flatten = x.view(1, -1).shape[1]
+            n_flatten = x.reshape(1, -1).shape[1]
 
         self.fc = nn.Sequential(
             nn.Linear(n_flatten, features_dim),
@@ -126,12 +126,12 @@ class AttentionCNNExtractor(BaseFeaturesExtractor):
         elif observations.max() > 1.5:
             observations = observations / 255.0
         if self.is_hwc and observations.dim() == 4 and observations.shape[-1] in [1,3,4]:
-            observations = observations.permute(0, 3, 1, 2)
+            observations = observations.permute(0, 3, 1, 2).contiguous()
         x = F.relu(self.conv1(observations))
         x = self.att1(x)
         x = F.relu(self.conv2(x))
         x = self.att2(x)
         x = F.relu(self.conv3(x))
         x = self.att3(x)
-        x = x.view(x.size(0), -1)
+        x = x.reshape(x.size(0), -1)
         return self.fc(x)

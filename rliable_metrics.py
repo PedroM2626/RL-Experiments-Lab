@@ -46,6 +46,19 @@ def compute_trimmed_mean(scores: Union[np.ndarray, List[float]], trim_fraction: 
     return float(np.mean(arr[k:n - k]))
 
 
+def compute_mean(scores: Union[np.ndarray, List[float]]) -> float:
+    """Computes sample mean."""
+    arr = np.asarray(scores, dtype=np.float64).flatten()
+    return float(np.mean(arr)) if len(arr) > 0 else 0.0
+
+
+def compute_median(scores: Union[np.ndarray, List[float]]) -> float:
+    """Computes sample median."""
+    arr = np.asarray(scores, dtype=np.float64).flatten()
+    return float(np.median(arr)) if len(arr) > 0 else 0.0
+
+
+
 def stratified_bootstrap_ci(
     task_scores: Dict[str, np.ndarray],
     metric_fn: Callable[[np.ndarray], float] = compute_iqm,
@@ -98,6 +111,48 @@ def compute_performance_profile(
     
     probs = np.array([np.mean(flat >= tau) for tau in tau_grid], dtype=np.float64)
     return tau_grid, probs
+
+
+def compute_performance_profile_ci(
+    task_scores: Union[Dict[str, np.ndarray], np.ndarray],
+    tau_grid: Optional[np.ndarray] = None,
+    num_bootstraps: int = 2000,
+    alpha: float = 0.05,
+    seed: int = 42,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Computes empirical CDF performance profile P(score >= tau) with pointwise stratified bootstrap CIs.
+    
+    task_scores: Dict mapping task_name -> array of seed scores, or array.
+    tau_grid: thresholds grid in [0, 1].
+    Returns: (tau_grid, point_estimate_probs, ci_lower_probs, ci_upper_probs)
+    """
+    if tau_grid is None:
+        tau_grid = np.linspace(0.0, 1.0, 101)
+    rng = np.random.default_rng(seed)
+    
+    if isinstance(task_scores, dict):
+        tasks = list(task_scores.keys())
+        task_arrays = [np.asarray(task_scores[t], dtype=np.float64) for t in tasks]
+        point_scores = np.concatenate(task_arrays)
+        point_probs = np.array([np.mean(point_scores >= tau) for tau in tau_grid], dtype=np.float64)
+        
+        boot_matrix = np.empty((num_bootstraps, len(tau_grid)), dtype=np.float64)
+        for b in range(num_bootstraps):
+            resampled = [rng.choice(arr, size=len(arr), replace=True) for arr in task_arrays if len(arr) > 0]
+            flat_b = np.concatenate(resampled)
+            boot_matrix[b] = [np.mean(flat_b >= tau) for tau in tau_grid]
+    else:
+        flat = np.asarray(task_scores, dtype=np.float64).flatten()
+        point_probs = np.array([np.mean(flat >= tau) for tau in tau_grid], dtype=np.float64)
+        boot_matrix = np.empty((num_bootstraps, len(tau_grid)), dtype=np.float64)
+        n = len(flat)
+        for b in range(num_bootstraps):
+            flat_b = rng.choice(flat, size=n, replace=True)
+            boot_matrix[b] = [np.mean(flat_b >= tau) for tau in tau_grid]
+            
+    ci_lower = np.percentile(boot_matrix, 100 * (alpha / 2.0), axis=0)
+    ci_upper = np.percentile(boot_matrix, 100 * (1.0 - alpha / 2.0), axis=0)
+    return tau_grid, point_probs, ci_lower, ci_upper
 
 
 def compute_probability_of_improvement(

@@ -17,8 +17,11 @@ import numpy as np
 from rliable_metrics import (
     compute_iqm,
     compute_trimmed_mean,
+    compute_mean,
+    compute_median,
     stratified_bootstrap_ci,
     compute_performance_profile,
+    compute_performance_profile_ci,
     compute_probability_of_improvement,
 )
 
@@ -90,10 +93,22 @@ def main():
             span = span if span > 1e-6 else 1.0
             norm_data[a][g] = (scores - game_min[g]) / span
 
+    # Load random baselines if present for canonical Agarwal normalization
+    random_path = os.path.join(base_dir, "results", "random_baselines.json")
+    random_baselines = {}
+    if os.path.exists(random_path):
+        with open(random_path, "r", encoding="utf-8") as fp:
+            random_baselines = json.load(fp)
+
+    classic_means = {g: float(np.mean(data.get("cnn_classic", {}).get(g, [1.0]))) for g in all_games}
+
     # 3. Stratified Bootstrap Statistics across games
     results = {
         "normalization_bounds": {g: {"min": game_min[g], "max": game_max[g]} for g in all_games},
+        "random_baselines": random_baselines,
+        "classic_means": classic_means,
         "architectures": {},
+        "canonical_architectures": {},
         "probability_of_improvement": {},
     }
 
@@ -122,6 +137,19 @@ def main():
             "trimmed_ci95": [round(trim_lo, 4), round(trim_hi, 4)],
             "mean_normalized": round(mean_norm, 4),
         }
+
+        if random_baselines:
+            canonical_subset = {}
+            for g in ["bossfight", "starpilot", "dodgeball"]:
+                r_mean = random_baselines.get(g, {}).get("mean", 0.0)
+                c_mean = classic_means.get(g, 1.0)
+                denom = c_mean - r_mean if abs(c_mean - r_mean) > 1e-4 else 1.0
+                canonical_subset[g] = (data[a][g] - r_mean) / denom
+            c_iqm, (c_lo, c_hi) = stratified_bootstrap_ci(canonical_subset, metric_fn=compute_iqm)
+            results["canonical_architectures"][a] = {
+                "canonical_iqm": round(c_iqm, 4),
+                "canonical_ci95": [round(c_lo, 4), round(c_hi, 4)],
+            }
         suite_eval.append((a, iqm_est, iqm_lo, iqm_hi, trim_est, trim_lo, trim_hi, mean_norm))
 
     # Sort by normalized IQM
@@ -151,11 +179,11 @@ def main():
             }
             print(f"  P({a1:18s} > {a2:18s}) = {prob:5.3f} [{p_lo:5.3f}, {p_hi:5.3f}]")
 
-    # 5. Performance Profiles
+    # 5. Multi-panel Visualization (Bar Chart + Shaded Performance Profiles + Forest Plot)
     tau_grid = np.linspace(0.0, 1.0, 101)
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5), dpi=150)
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(19, 5.5), dpi=160)
 
-    # Plot IQM bar chart with bootstrap error bars
+    # Panel 1: Bar chart with IQM error bars
     names = [x[0] for x in suite_eval]
     iqms = [x[1] for x in suite_eval]
     yerr_lo = [x[1] - x[2] for x in suite_eval]
@@ -166,21 +194,55 @@ def main():
     ax1.set_yticks(y_pos)
     ax1.set_yticklabels(names, fontsize=8)
     ax1.invert_yaxis()  # top-down
-    ax1.set_xlabel("Normalized Interquartile Mean (IQM)")
-    ax1.set_title("Aggregated Score (IQM with 95% Stratified Bootstrap CI)")
+    ax1.set_xlabel("Normalized IQM")
+    ax1.set_title("Aggregated Score (IQM + 95% Bootstrap CI)")
     ax1.grid(True, linestyle="--", alpha=0.4, axis="x")
 
-    # Plot Performance Profiles for top-5
-    for a in top5_archs:
-        pooled = np.concatenate([norm_data[a][g] for g in ["bossfight", "starpilot", "dodgeball"]])
-        taus, probs = compute_performance_profile(pooled, tau_grid)
-        ax2.plot(taus, probs, label=a, linewidth=2)
+    # Panel 2: Performance Profiles with Shaded Bootstrap Confidence Bands (Agarwal et al., 2021)
+    colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"]
+    for idx, a in enumerate(top5_archs):
+        task_dict = {g: norm_data[a][g] for g in ["bossfight", "starpilot", "dodgeball"]}
+        taus, probs, ci_lo, ci_hi = compute_performance_profile_ci(task_dict, tau_grid, num_bootstraps=2000)
+        c = colors[idx % len(colors)]
+        ax2.plot(taus, probs, label=a, linewidth=2, color=c)
+        ax2.fill_between(taus, ci_lo, ci_hi, color=c, alpha=0.15)
 
     ax2.set_xlabel(r"Normalized Score Threshold ($\tau$)")
     ax2.set_ylabel(r"Fraction of Runs with Score $\geq \tau$")
-    ax2.set_title("Performance Profiles (Top 5 Suite Architectures)")
+    ax2.set_title("Performance Profiles (Pointwise 95% Bootstrap Bands)")
     ax2.grid(True, linestyle="--", alpha=0.4)
     ax2.legend(fontsize=8, loc="upper right")
+
+    # Panel 3: Forest Plot comparing multiple aggregators across Top 5 Architectures
+    metrics_spec = [
+        ("IQM", compute_iqm, "#1f77b4", "o"),
+        ("Trimmed 20%", compute_trimmed_mean, "#ff7f0e", "s"),
+        ("Median", compute_median, "#2ca02c", "^"),
+        ("Mean", compute_mean, "#d62728", "D"),
+    ]
+    y_offsets = np.linspace(-0.25, 0.25, len(metrics_spec))
+    top_y = np.arange(len(top5_archs))
+
+    for m_idx, (m_name, m_func, m_color, m_marker) in enumerate(metrics_spec):
+        pts, err_los, err_his = [], [], []
+        for a in top5_archs:
+            t_sub = {g: norm_data[a][g] for g in ["bossfight", "starpilot", "dodgeball"]}
+            est, (lo, hi) = stratified_bootstrap_ci(t_sub, metric_fn=m_func, num_bootstraps=2000)
+            pts.append(est)
+            err_los.append(est - lo)
+            err_his.append(hi - est)
+        ax3.errorbar(
+            pts, top_y + y_offsets[m_idx], xerr=[err_los, err_his],
+            fmt=m_marker, color=m_color, label=m_name, capsize=3, markersize=5
+        )
+
+    ax3.set_yticks(top_y)
+    ax3.set_yticklabels(top5_archs, fontsize=8)
+    ax3.invert_yaxis()
+    ax3.set_xlabel("Normalized Score")
+    ax3.set_title("Forest Plot: Multi-Metric 95% Bootstrap CIs")
+    ax3.grid(True, linestyle="--", alpha=0.4, axis="x")
+    ax3.legend(fontsize=8, loc="lower right")
 
     plt.tight_layout()
     out_img = os.path.join(base_dir, "results", "rliable_profile.png")

@@ -31,16 +31,16 @@ class ImpalaCNNExtractor(BaseFeaturesExtractor):
         self.block2 = ImpalaBlock(32, 64)
         self.block3 = ImpalaBlock(64, 64)
         with torch.no_grad():
-            dummy = torch.zeros(1,64,64,n_in).permute(0,3,1,2) if hwc else torch.zeros(1,*obs_space.shape)
+            dummy = torch.zeros(1,64,64,n_in).permute(0,3,1,2).contiguous() if hwc else torch.zeros(1,*obs_space.shape)
             x=self.block1(dummy); x=self.block2(x); x=self.block3(x)
-            n_flat=x.view(1,-1).shape[1]
+            n_flat=x.reshape(1,-1).shape[1]
         self.fc = nn.Sequential(nn.Linear(n_flat, features_dim), nn.ReLU())
     def forward(self, o):
         if o.dtype==torch.uint8: o=o.float()/255.0
         elif o.max()>1.5: o=o/255.0
-        if self.is_hwc and o.dim()==4 and o.shape[-1] in [1,3,4]: o=o.permute(0,3,1,2)
+        if self.is_hwc and o.dim()==4 and o.shape[-1] in [1,3,4]: o=o.permute(0,3,1,2).contiguous()
         x=self.block1(o); x=self.block2(x); x=self.block3(x)
-        return self.fc(x.view(x.size(0),-1))
+        return self.fc(x.reshape(x.size(0),-1))
 
 class ImpoolaCNNExtractor(BaseFeaturesExtractor):
     """Impoola-CNN GAP — Impala + Global Average Pooling"""
@@ -56,9 +56,9 @@ class ImpoolaCNNExtractor(BaseFeaturesExtractor):
     def forward(self, o):
         if o.dtype==torch.uint8: o=o.float()/255.0
         elif o.max()>1.5: o=o/255.0
-        if self.is_hwc and o.dim()==4 and o.shape[-1] in [1,3,4]: o=o.permute(0,3,1,2)
+        if self.is_hwc and o.dim()==4 and o.shape[-1] in [1,3,4]: o=o.permute(0,3,1,2).contiguous()
         x=self.block1(o); x=self.block2(x); x=self.block3(x)
-        x=self.gap(x).view(x.size(0),-1)
+        x=self.gap(x).reshape(x.size(0),-1)
         return self.fc(x)
 
 class LSTMAttentionExtractor(BaseFeaturesExtractor):

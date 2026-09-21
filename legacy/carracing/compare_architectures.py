@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 import torch
 import numpy as np
 import argparse
@@ -7,6 +8,13 @@ from datetime import datetime
 import json
 import matplotlib.pyplot as plt
 from tqdm import tqdm
+
+_REPO_ROOT = str(Path(__file__).resolve().parent.parent.parent)
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+_LEGACY_DIR = str(Path(__file__).resolve().parent)
+if _LEGACY_DIR not in sys.path:
+    sys.path.insert(0, _LEGACY_DIR)
 
 from env_setup import create_env
 from sac_trainer import SACTrainer
