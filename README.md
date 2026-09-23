@@ -149,6 +149,7 @@ Standard `Procgen` literature (original paper, `IDAAC`/`PPG`) reports `5M–25M`
 ### 3.8. Statistical Robustness — 95% CI + Effect Size (`scorecard_analysis.py`, `results/scorecard.json`)
 
 With `n=5 seeds`, `95% CI` is computed via Student's `t` (`df=4`, critical value `2.776`); `Cohen's d` compares top-1 vs top-2 per game:
+> **Data provenance:** the per-seed returns for the runs whose raw logs were pruned (`coinrun 50k`, `bossfight 100k` world models) are now read from `results/legacy_records.json`, the single machine-readable record of those runs — they used to be literals pasted inside `scorecard_analysis.py`. `tests/test_legacy_records.py` asserts that those arrays still reproduce the `mean`/`std`/`ci95` published below, and the same file supplies the section 3.7 ranking used by `retrain_analysis.py`.
 
 | Game | Top-1 vs Top-2 | Cohen's d | CIs Overlap? | Conclusion |
 |---|---|---:|---|---|
@@ -372,7 +373,7 @@ C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe -u compare_maze
 C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe -u compare_combined.py  # Aggregates logs_suite + logs_new_archs into global ranking
 py -3.10 -u re_eval_scorecard.py --device cuda  # Re-evaluates 30 eps stoch+det on 115 zips (no retraining)
 py -3.10 -u compare_suite_retrain.py --device cuda  # Retrains suite under new protocol (resume-safe)
-py -3.10 scorecard_analysis.py  # 95% CI + Cohen's d + AUC -> results/scorecard.json
+py -3.10 scorecard_analysis.py  # 95% CI + Cohen's d + AUC -> results/scorecard.json. Requires the logs_new_archs/ and logs_maze_heist/ run directories; without them it exits with an error rather than overwriting the published table with a reduced one (--logs_root / --force to override)
 py -3.10 retrain_analysis.py  # Retraining analysis + updated global ranking -> results/retrain_analysis.json
 py -3.10 -u re_eval_100.py --device cuda  # Definitive protocol: 100 eps across all 275 zips
 py -3.10 eval100_analysis.py  # Comparative analysis 30 vs 100 -> results/eval100_analysis.json

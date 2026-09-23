@@ -239,17 +239,17 @@
     }
   },
   "global_new": {
-    "cnn_classic": 1.16,
-    "wm_vae": 0.92,
-    "wm_ae": 1.13,
-    "aug_noise": 1.04,
-    "wm_recon": 1.05,
-    "cnn_cbam": 1.24,
     "aug_color": 1.02,
-    "cnn_spatial": 1.35,
     "aug_crop": 1.31,
+    "aug_noise": 1.04,
+    "cnn_cbam": 1.24,
+    "cnn_classic": 1.16,
     "cnn_mlp_vector": 1.36,
-    "wm_contrastive": 1.04
+    "cnn_spatial": 1.35,
+    "wm_ae": 1.13,
+    "wm_contrastive": 1.04,
+    "wm_recon": 1.05,
+    "wm_vae": 0.92
   },
   "global_old": {
     "spatial": 1.54,
