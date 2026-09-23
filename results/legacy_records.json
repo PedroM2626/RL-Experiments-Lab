@@ -1,0 +1,30 @@
+{
+  "_provenance": {
+    "note": "Per-seed returns and the section 3.7 global ranking transcribed from README section 7 / 3.7 on 2026-09-23. The raw training logs that produced them (logs_procgen/, logs_world_models/, logs_suite/, logs_new_archs/, logs_maze_heist/) were deleted to keep the repository small, so this file is the only machine-readable record of those runs. Previously these values lived as literals inside scorecard_analysis.py and retrain_analysis.py.",
+    "protocol": "5 seeds (42-46), 10 evaluation episodes, deterministic=False, unseen levels",
+    "retrainable_from_source": false,
+    "source_sections": ["README.md section 7", "README.md section 3.7"]
+  },
+  "per_seed": {
+    "coinrun_classic": [7.0, 6.0, 7.0, 9.0, 9.0],
+    "coinrun_cbam": [8.0, 8.0, 8.0, 8.0, 8.0],
+    "coinrun_spatial": [6.0, 0.0, 7.0, 9.0, 9.0],
+    "coinrun_mlp_vector": [7.0, 7.0, 8.0, 9.0, 9.0],
+    "bossfight_wm_vae": [0.0, 0.0, 0.1, 0.4, 0.4],
+    "bossfight_wm_ae": [0.0, 0.0, 0.1, 0.1, 1.3],
+    "bossfight_wm_recon": [0.0, 0.0, 0.0, 0.0, 0.1],
+    "bossfight_wm_contrastive": [0.0, 0.0, 0.0, 0.2, 1.6]
+  },
+  "global_ranking_top10_3_7": {
+    "spatial": 1.54,
+    "resnet18": 1.34,
+    "classic": 1.33,
+    "cbam": 1.33,
+    "mlp_vector": 1.25,
+    "lstm_attention": 1.20,
+    "vit": 1.20,
+    "aug_crop": 1.16,
+    "impoola": 1.12,
+    "ae": 1.11
+  }
+}

@@ -5,11 +5,23 @@ Complete analysis of suite retraining (new protocol) + merge with new_archs/maze
 - Writes results/retrain_analysis.json
 """
 import json
+import os
+
 import numpy as np
 
-base = ''
-retr = json.load(open('results/retrain_results.json', encoding='utf-8'))
-reev = json.load(open('results/re_eval_results.json', encoding='utf-8'))
+base = os.path.dirname(os.path.abspath(__file__))
+
+
+def load(*rel):
+    with open(os.path.join(base, *rel), encoding='utf-8') as f:
+        return json.load(f)
+
+
+retr = load('results', 'retrain_results.json')
+reev = load('results', 're_eval_results.json')
+# Section 3.7 ranking of the old protocol; its raw logs were deleted, so the values
+# live in results/legacy_records.json rather than in code.
+old_global = load('results', 'legacy_records.json')['global_ranking_top10_3_7']
 
 def aggregate(entries, prefix_filter=None):
     rows = {}
@@ -49,16 +61,11 @@ def arch_of(gk):
     return gk.split('_', 1)[1]
 
 glob_new = {}
-for a in set(arch_of(gk) for g in games for gk in suite[g]):
+for a in sorted(set(arch_of(gk) for g in games for gk in suite[g])):
     vals = [suite[g][f'{g}_{a}']['stoch'] for g in games if f'{g}_{a}' in suite[g]]
     if len(vals) == 3:
         glob_new[a] = round(float(np.mean(vals)), 2)
 
-old_global = {  # Section 3.7 of README (old protocol)
-    'spatial': 1.54, 'resnet18': 1.34, 'classic': 1.33, 'cbam': 1.33,
-    'mlp_vector': 1.25, 'lstm_attention': 1.20, 'vit': 1.20, 'aug_crop': 1.16,
-    'impoola': 1.12, 'ae': 1.11,
-}
 print('\n' + '=' * 78)
 print('NEW GLOBAL RANKING (suite retrain, 3 games average) vs OLD (Section 3.7)')
 print('=' * 78)
@@ -87,6 +94,6 @@ print('  ...')
 for gk, r in by_gap[-5:]:
     print(f"  {gk:34s} gap={r['gap']:+.2f} stoch={r['stoch']:.2f}")
 
-json.dump({'suite_by_game': suite, 'global_new': glob_new, 'global_old': old_global},
-          open('results/retrain_analysis.json', 'w'), indent=2)
+with open(os.path.join(base, 'results', 'retrain_analysis.json'), 'w', encoding='utf-8') as f:
+    json.dump({'suite_by_game': suite, 'global_new': glob_new, 'global_old': old_global}, f, indent=2)
 print('\nSaved: results/retrain_analysis.json')
