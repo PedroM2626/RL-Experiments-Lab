@@ -3570,6 +3570,22 @@
   }
  },
  "meta": {
-  "cells_with_curve": 865
+  "cells_with_curve": 865,
+  "cells_loaded": 897,
+  "marl_cells": 32,
+  "suites_loaded": {
+   "algo": 70,
+   "aux": 45,
+   "budget": 60,
+   "exploration": 40,
+   "gnn": 15,
+   "hard": 55,
+   "hrl": 40,
+   "main": 240,
+   "pilot": 20,
+   "spr": 30,
+   "temporal": 150,
+   "temporal_hard": 100
+  }
  }
 }
