@@ -247,6 +247,10 @@ def train(args):
             b_rew[t], b_done[t] = np.asarray(rew, np.float32), np.asarray(first)
             if exp is not None:
                 b_rew[t] = exp.step(b_obs[t], act, b_rew[t], obs, b_done[t])
+                if exp.n_steps == 1 and exp.bonus_cells == 0:
+                    raise RuntimeError(
+                        f"explore={args.explore} injected no bonus on the first step; the "
+                        f"run would be an unlabelled PPO run")
             cur_ret += b_rew[t]
             cur_len += 1
             for i in np.where(b_done[t])[0]:
@@ -338,6 +342,7 @@ def train(args):
     out = {"game": args.game, "seed": args.seed, "algo": args.algo,
            "extractor": args.extractor, "stack": args.stack,
            "obs_mode": mode, "augment": args.augment, "explore": args.explore,
+           "explore_stats": exp.stats() if exp is not None else None,
            "aux": args.aux,
            "timesteps": done_steps,
            "wall_s": round(dt, 1), "sps": round(done_steps / dt, 1),

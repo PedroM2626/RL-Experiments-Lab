@@ -21,6 +21,7 @@ CASES = [
     ("zoo", "jax_port.tests.test_zoo", "test_zoo", True),
     ("smoke", "jax_port.tests.test_smoke", "test_smoke_train", True),
     ("temporal", "jax_port.tests.test_temporal", "run_all", True),
+    ("exploration", "jax_port.tests.test_exploration", "run_all", True),
     ("marl", "jax_port.tests.test_marl", "run_all", True),
 ]
 

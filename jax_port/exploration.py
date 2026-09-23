@@ -117,6 +117,15 @@ class Exploration:
             self._train = train
             self.mem = [collections.deque(maxlen=1000) for _ in range(n_envs)]
         self.prev_phi = None
+        # Bookkeeping, not decoration: a bonus that is never added, or is added at a
+        # magnitude far below the extrinsic reward, produces a run that is really a PPO
+        # run. Both failure modes happened in this project, so every arm records what it
+        # actually injected (see README section 3.6).
+        self.n_steps = 0
+        self.bonus_cells = 0
+        self.bonus_sum = 0.0
+        self.bonus_max = 0.0
+        self.injected_sum = 0.0
 
     def reset(self, obs_u8):
         x = obs_u8.astype(jnp.float32) / 255.0
@@ -157,4 +166,28 @@ class Exploration:
                         ep[i] = 1.0
                     m.append(emb_n[i].copy())
                 bonus = rnd * ep
-        return np.asarray(rew, np.float32) + self.beta * bonus.astype(np.float32)
+        rew = np.asarray(rew, np.float32)
+        aug = rew + self.beta * bonus.astype(np.float32)
+        self.n_steps += 1
+        self.bonus_cells += bonus.size
+        self.bonus_sum += float(np.mean(bonus))
+        self.bonus_max = max(self.bonus_max, float(np.max(bonus)))
+        self.injected_sum += float(np.mean(aug - rew))
+        return aug.astype(np.float32)
+
+    def stats(self):
+        """What the arm really injected, so a null result can be read as null-by-scale.
+
+        `effective_bonus` is the mean reward increment the policy actually sees, which is the
+        number to compare against the game's own reward scale: the maze/heist study sits at
+        ~1e-7 against a 0/1 extrinsic reward, so the arm cannot shape behaviour however
+        correctly the mechanism runs. Recording it is what separates "curiosity does not
+        help" from "curiosity was never applied".
+        """
+        steps = max(1, self.n_steps)
+        return {
+            "kind": self.kind, "beta": self.beta,
+            "steps": self.n_steps, "bonus_cells": self.bonus_cells,
+            "bonus_mean": self.bonus_sum / steps, "bonus_max": self.bonus_max,
+            "effective_bonus": self.injected_sum / steps,
+        }
