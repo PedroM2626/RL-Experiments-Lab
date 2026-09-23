@@ -264,6 +264,7 @@ def run_cell(cell, args):
         distribution=cell.get("distribution", "easy"),
         obs=None, augment=cell.get("augment", "none"),
         explore=cell.get("explore", "none"), aux=cell.get("aux", "none"),
+        explore_beta=getattr(args, "explore_beta", 0.01),
         stack=cell.get("stack", 1),
         timesteps=cell["timesteps"],
         seed=cell["seed"], num_envs=args.num_envs, rollout=args.rollout,
@@ -295,6 +296,10 @@ def main():
     ap.add_argument("--ql-lr", type=float, default=1e-4,                    help="lr for vdn/qmix (study; paper uses 5e-5)")
     ap.add_argument("--ent", type=float, default=0.01)
     ap.add_argument("--no-walls", action="store_true")
+    ap.add_argument("--explore-beta", type=float, default=0.01,
+                    help="intrinsic-reward coefficient for the exploration suite; 0.0 turns "
+                         "the arm into a control (mechanism runs, nothing is injected). "
+                         "0.01 is what every published exploration cell used")
     ap.add_argument("--eval-eps", type=int, default=10)
     ap.add_argument("--eval-det-eps", type=int, default=0)
     ap.add_argument("--eval-train-eps", type=int, default=0)
