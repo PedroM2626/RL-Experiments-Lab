@@ -34,10 +34,10 @@ CONFIGS = [f"{g}_{a}" for g in ("maze", "heist") for a in ("ppo", "icm", "rnd", 
 BONUS_ARMS = ("icm", "rnd", "ngu")
 
 
-def load_runs(require_complete=True):
+def load_runs(logs_dir=LOGS, require_complete=True):
     """{config: {seed: cell}} merged from every run directory, newest file winning."""
     cells, sources, conflicts = {}, {}, []
-    for path in sorted(glob.glob(os.path.join(LOGS, "maze_heist_*", "comparison_results.json")),
+    for path in sorted(glob.glob(os.path.join(logs_dir, "maze_heist_*", "comparison_results.json")),
                        key=os.path.getmtime):
         with open(path, encoding="utf-8") as f:
             j = json.load(f)
@@ -65,6 +65,10 @@ def load_runs(require_complete=True):
             print(f"  {m}")
         if len(missing) > 20:
             print(f"  ... {len(missing) - 20} more")
+        for c in conflicts:
+            print(f"  {c}")
+        print("Re-run the sweep with --resume, or pass --allow-partial to inspect "
+              "incomplete data (it must not be published).")
         sys.exit(1)
     return out, sources, conflicts
 
