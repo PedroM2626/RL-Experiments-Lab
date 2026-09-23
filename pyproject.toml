@@ -1,0 +1,22 @@
+[project]
+name = "mle-procgen-benchmark"
+version = "1.0.0"
+description = "Systematic benchmark of visual architectures, world models and exploration in Procgen"
+readme = "README.md"
+requires-python = ">=3.10,<3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "Pedro Morato Lahoz" }]
+
+# Dependency pins live in requirements.txt (PyTorch/SB3 study, CUDA wheels) and
+# jax_port/requirements-jax.txt (JAX port venv, WSL). They cannot be merged: the two
+# stacks need conflicting numpy/gym versions (see README section 13.2), and neither
+# is installable as a PEP 621 extra here because torch must come from the cu121 index.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-q"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore:.*np.bool8.*",
+]

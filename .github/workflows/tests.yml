@@ -1,0 +1,46 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  study:
+    name: PyTorch/SB3 study tests (CPU)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          # CPU torch: the runners have no CUDA, so the cu121 wheel in
+          # requirements.txt is replaced by the same version from the CPU index.
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu "torch==2.5.1"
+          python -m pip install "numpy==1.26.4" "gym==0.26.2" "gymnasium==1.3.0" \
+            "stable-baselines3==2.9.0" "opencv-python-headless" "pytest==9.1.1"
+      - name: Compile every module (syntax gate)
+        run: python -m compileall -q . -x "\\.git|__pycache__|legacy"
+      - name: Test suite
+        run: python -m pytest tests -q
+
+  port:
+    name: JAX port tests (CPU)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+          cache: pip
+      - name: Install dependencies
+        run: |
+          python -m pip install "numpy==1.26.4" "jax==0.6.2" "flax==0.10.7" "optax==0.2.8" "pytest==9.1.1"
+      - name: Run registered port cases
+        # Cases whose environment is absent (procgen, jaxmarl) report SKIP; the
+        # runner still fails the build on any real assertion error.
+        run: python -m jax_port.tests.run_tests
