@@ -1,3 +1,12 @@
+# pip freeze of the WSL port venv (see SETUP_VENV.md), plus the imports that
+# freeze was missing (added 23/09/2026):
+#   jaxmarl  - imported by jax_port/marl/smax_vec.py; the MARL grid cells record it
+#              as version 0.1.0, but it is not part of this venv freeze. Install it
+#              from the upstream project you used for the SMAX runs, then refresh
+#              this file so the pin is explicit. Without it the marl suites cannot
+#              run at all (ImportError, not a skipped test).
+#   pytest   - runs jax_port/tests/ and tests/.
+pytest==8.3.3
 absl-py==2.5.0
 aiofiles==25.1.0
 cffi==1.17.1

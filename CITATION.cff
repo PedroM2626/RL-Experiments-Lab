@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use this benchmark, please cite the software as follows."
+title: "Systematic Benchmark of Visual Architectures, World Models and Exploration in Procgen"
+type: software
+authors:
+  - name: "Pedro Morato Lahoz"
+repository-code: "https://github.com/PedroM2626/RL-Experiments-Lab"
+license: MIT
+version: "1.0"
+date-released: "2026-09-23"
+abstract: >-
+  Five-seed, five-game, 100k-step comparison of visual feature extractors,
+  world-model auxiliaries, augmentations, exploration bonuses and hierarchical
+  controllers on Procgen, with RLiable aggregation (IQM, stratified bootstrap
+  CIs, performance profiles, probability of improvement) and a JAX/Flax port of
+  the same protocol.
+keywords:
+  - reinforcement-learning
+  - procgen
+  - benchmark
+  - generalization
+  - world-models
+references:
+  - type: conference-paper
+    title: "Leveraging Averaged Structures and Regularized Sequence for Efficient Self-Supervised Visual Representation Learning"
+  - type: conference-paper
+    title: "Deep Reinforcement Learning at the Edge of the Statistical Precipice"
+      authors:
+        - name: "Rishabh Agarwal et al."
+      year: 2021
+      booktitle: "NeurIPS"

@@ -651,6 +651,8 @@ Removal is framed not as lost effort, but as an essential measure of internal va
 
 **Restored to state `4f84ed3`:** All root `compare_*.py` scripts, `models/` (`sb3_extractors.py`, `cnn_attention.py`, `cnn_classic.py`, `combined_extractors.py`, `world_model_extractors.py`), `procgen_wrapper.py`, `*_analysis.py`, `re_eval_*.py`, `visualize_*.py`, pinned `requirements.txt` (ProcGen), original `.gitignore`, and original `results/` (JSONs + PNGs for sections 3–12).
 
+> **Accuracy note (23/09/2026):** "preserved in Git history" holds for the bulk of the inventory — `git log --all --diff-filter=A --name-only` confirms 29 `src/` modules, 20+ `experiments/` benchmarks and the JAX `results/*.json` artifacts are retrievable (e.g. `git show 5e88c16:src/ppo.py`). It does **not** hold for every name in the list above: the throwaway helper scripts `setup_procgen_env.sh`, `probe_procgen.sh`, `diag_env.sh`, `smoke_procgen.py`, `_verify_pg.py` and `_probe_pg3.py`, plus `boxing_final_results.txt` and `combinatorial_grid_results.json`, were never committed and are gone. They were scratch tooling and one duplicate of `combinatorial_matrix_results.json`, so nothing in sections 1–19 depends on them.
+
 ### 13.4. Purpose of Sections 14–16
 
 Sections 1–12 remain frozen as the scientific record of the completed study. Sections 14–16 serve as the **methodological research log**: documenting, with identical academic rigor, **the trajectory, decisions, architectural choices, and adaptations** encountered while porting this study to JAX — including verified milestones (Gates PA0 and PA1 cleared, §14.3 and §15.1), discarded paths, and open objectives. No metrics in sections 1–12 are altered here; this constitutes meta-documentation of process, not new study outcomes.
@@ -991,7 +993,7 @@ In `jax_port/marl/train_ql.py`, the terminal array `done` is converted to a JAX 
 
 ## 18. RLiable Evaluation Protocol & Canonical Benchmark Normalization
 
-To eliminate evaluation pathologies (such as outliers skewing the arithmetic mean, or uninformative point estimates lacking confidence intervals), the benchmark suite incorporates the evaluation methodology developed by **Agarwal et al. (NeurIPS 2021)** via `rliable_metrics.py` and `run_rliable_eval.py`.
+To eliminate evaluation pathologies (such as outliers skewing the arithmetic mean, or uninformative point estimates lacking confidence intervals), the benchmark suite incorporates the evaluation methodology developed by **Agarwal et al. (NeurIPS 2021)** via `rliable_metrics.py` and `run_rliable_eval.py`. Those two files are a self-contained implementation on top of NumPy — the `rliable` package is **not** a dependency of this repository and is not pinned in `requirements.txt`.
 
 ### 18.1. Empirical Random Baselines across Procgen
 Rather than assuming artificial minimum bounds, uniform random policies were empirically evaluated across 50 episodes per game on unseen levels (`num_levels=0`, `distribution_mode='easy'`, evaluation seed `1042` — the same protocol used to evaluate trained models). The measurements are produced by `random_baselines.py` (added 23/09/2026; previously the JSON existed with no script able to regenerate it) and can be reproduced with `py -3.10 random_baselines.py --episodes 50`:
