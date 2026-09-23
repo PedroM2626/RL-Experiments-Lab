@@ -241,7 +241,8 @@ def run_cell(cell, args):
         ns = types.SimpleNamespace(
             algo=cell["kind"], map=cell["game"], timesteps=cell["timesteps"],
             seed=cell["seed"], num_envs=32, lr=args.ql_lr,
-            recurrent=args.recurrent,
+            recurrent=args.recurrent, tau=args.tau,
+            target_update_interval=args.target_update_interval,
             eval_eps=ee[0], eval_envs=8, out=path)
         return MQ.train(ns)
     if cell["kind"] in ("mapoca", "cte", "tarmac"):
@@ -291,8 +292,7 @@ def main():
     ap.add_argument("--recurrent", action="store_true",
                     help="Recurrent IPPO GRU-128 (JaxMARL default for SMAX)")
     ap.add_argument("--lr", type=float, default=3e-4)
-    ap.add_argument("--ql-lr", type=float, default=1e-4,
-                    help="lr for vdn/qmix (study; paper uses 5e-5)")
+    ap.add_argument("--ql-lr", type=float, default=1e-4,                    help="lr for vdn/qmix (study; paper uses 5e-5)")
     ap.add_argument("--ent", type=float, default=0.01)
     ap.add_argument("--no-walls", action="store_true")
     ap.add_argument("--eval-eps", type=int, default=10)
@@ -304,6 +304,11 @@ def main():
     ap.add_argument("--lr-sens", action="store_true")
     ap.add_argument("--overwrite", action="store_true")
     ap.add_argument("--out-dir", default=os.path.join(BASE, "results_grade"))
+    ap.add_argument("--tau", type=float, default=0.0,
+                    help="Polyak coefficient for VDN/QMIX target nets; 0 = hard copy "
+                         "(train_ql default, and what every published MARL cell used)")
+    ap.add_argument("--target-update-interval", type=int, default=500,
+                    help="hard target copy frequency in gradient steps (used when --tau is 0)")
     ap.add_argument("--master", default=os.path.join(BASE, "results_grade", "master.json"))
     args = ap.parse_args()
     os.makedirs(args.out_dir, exist_ok=True)

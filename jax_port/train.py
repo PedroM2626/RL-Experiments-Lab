@@ -429,7 +429,12 @@ def _eval_xl_step(forward_fn, params, ob, mems, key):
     return (logits, value), np.asarray(new_mem)
 
 
-def main():
+def build_parser():
+    """Single source of truth for training arguments.
+
+    Tests construct args through this parser, so a renamed or added flag can no
+    longer leave a hand-built namespace silently out of date.
+    """
     ap = argparse.ArgumentParser()
     ap.add_argument("--game", default="coinrun")
     ap.add_argument("--algo", default="ppo", choices=["ppo", "a2c"])
@@ -458,7 +463,11 @@ def main():
     ap.add_argument("--eval-train-eps", type=int, default=0)
     ap.add_argument("--eval-envs", type=int, default=8)
     ap.add_argument("--out", default="jax_port/pa2_train.json")
-    train(ap.parse_args())
+    return ap
+
+
+def main():
+    train(build_parser().parse_args())
 
 
 if __name__ == "__main__":

@@ -13,11 +13,14 @@ import types
 def test_smoke_train():
     from jax_port import train as T
     out = os.path.join(tempfile.mkdtemp(), "smoke.json")
-    args = types.SimpleNamespace(
-        game="coinrun", algo="ppo", extractor="mlp", obs=None,
-        augment="none", explore="none", timesteps=1024, seed=3,
-        num_envs=8, rollout=32, minibatch=256, eval_eps=2,
-        eval_det_eps=0, eval_train_eps=0, eval_envs=2, out=out)
+    # Args come from train.py's own parser: a hand-built SimpleNamespace went stale
+    # twice (missing stack/distribution/aux) and the failure looked like an
+    # ImportError-skipped test rather than a broken contract.
+    args = T.build_parser().parse_args(
+        ["--game", "coinrun", "--algo", "ppo", "--extractor", "mlp",
+         "--timesteps", "1024", "--seed", "3", "--num-envs", "8",
+         "--rollout", "32", "--minibatch", "256", "--eval-eps", "2",
+         "--out", out])
     r = T.train(args)
     assert r["timesteps"] >= 1024 and r["sps"] > 100, r
     assert r["curve"], "AUC curve missing"
