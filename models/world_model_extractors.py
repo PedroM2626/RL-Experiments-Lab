@@ -33,17 +33,17 @@ import torch.nn as nn
 import torch.nn.functional as F
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
+from models.layout import to_chw
 
-def _to_chw_float(observations: torch.Tensor, is_hwc: bool) -> torch.Tensor:
+
+def _to_chw_float(observations: torch.Tensor) -> torch.Tensor:
     """Scale to [0, 1] and move channels first. Shared by forward() and dream() so the
     two paths can never disagree about how an observation is preprocessed."""
     if observations.dtype == torch.uint8:
         observations = observations.float() / 255.0
     elif observations.max() > 1.5:
         observations = observations / 255.0
-    if is_hwc and observations.dim() == 4 and observations.shape[-1] in [1, 3, 4]:
-        observations = observations.permute(0, 3, 1, 2).contiguous()
-    return observations
+    return to_chw(observations)
 
 
 class _NatureCNNDecoder(nn.Module):
@@ -105,7 +105,7 @@ class _ExtractorBase(BaseFeaturesExtractor):
             self.n_flat = int(probe.reshape(1, -1).shape[1])
 
     def prepare(self, observations: torch.Tensor) -> torch.Tensor:
-        return _to_chw_float(observations, self.is_hwc)
+        return _to_chw_float(observations)
 
     def augment(self, observations: torch.Tensor) -> torch.Tensor:
         """Train-time perturbation hook, applied from forward() with probability augment_p.
