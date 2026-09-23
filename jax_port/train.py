@@ -196,7 +196,8 @@ def train(args):
             jnp.zeros((256, 64, 64, 3), jnp.uint8), kw2)
         aux_tgt = spr["ema"](aux_tgt, bb0)
         aux_loss_acc = []
-    exp = (Exploration(args.explore, N, seed=args.seed)
+    exp = (Exploration(args.explore, N, seed=args.seed,
+                       beta=getattr(args, "explore_beta", 0.01))
            if args.explore != "none" else None)
     if exp is not None:
         exp.reset(obs)
@@ -455,6 +456,10 @@ def build_parser():
                     choices=["none", "crop", "color", "noise"])
     ap.add_argument("--explore", default="none",
                     choices=["none", "icm", "rnd", "ngu"])
+    ap.add_argument("--explore-beta", type=float, default=0.01,
+                    help="intrinsic-reward coefficient; 0.0 runs the mechanism but injects "
+                         "nothing, which is the control arm for 'is this spread the bonus "
+                         "or chaotic drift' (0.01 is what every published cell used)")
     ap.add_argument("--aux", default="none",
                     choices=["none", "spr", "curl", "cpc", "acl"],
                     help="spr/curl/cpc/acl = extension beyond study")
