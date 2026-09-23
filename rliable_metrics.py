@@ -5,7 +5,7 @@ Implements:
 - Interquartile Mean (IQM)
 - Trimmed Mean (e.g., 5% trimmed mean)
 - Game-level Min-Max normalization
-- Stratified Bootstrap Confidence Intervals (BCa and Percentile)
+- Stratified Bootstrap Confidence Intervals (percentile method)
 - Performance Profiles (Empirical CDF)
 - Probability of Improvement (Mann-Whitney / Wilcoxon style U-statistic)
 """
@@ -13,6 +13,10 @@ Implements:
 import math
 from typing import Callable, Dict, List, Optional, Tuple, Union
 import numpy as np
+
+# Single source of truth for the number of bootstrap replicates; README section 3.14
+# cites this value, so changing it here requires updating the report.
+NUM_BOOTSTRAPS = 10000
 
 
 def compute_iqm(scores: Union[np.ndarray, List[float]]) -> float:
@@ -62,38 +66,45 @@ def compute_median(scores: Union[np.ndarray, List[float]]) -> float:
 def stratified_bootstrap_ci(
     task_scores: Dict[str, np.ndarray],
     metric_fn: Callable[[np.ndarray], float] = compute_iqm,
-    num_bootstraps: int = 10000,
+    num_bootstraps: int = NUM_BOOTSTRAPS,
     alpha: float = 0.05,
     seed: int = 42,
 ) -> Tuple[float, Tuple[float, float]]:
-    """Calculates Stratified Bootstrap Confidence Intervals across tasks.
-    
+    """Stratified bootstrap CI for a per-task aggregated statistic (Agarwal et al., 2021).
+
     task_scores: dict mapping task_id -> array of seed scores (N_seeds,)
+
+    The aggregate is computed *within* each task and then averaged across tasks, so
+    every task contributes equally regardless of how many seeds it happens to have.
+    Each replicate resamples runs with replacement inside each task (stratification).
     Returns: (point_estimate, (ci_lower, ci_upper))
     """
+    tasks = sorted(task_scores)
+    task_arrays = {t: np.asarray(task_scores[t], dtype=np.float64).flatten() for t in tasks}
+    non_empty = [t for t in tasks if task_arrays[t].size > 0]
+    if not non_empty:
+        return 0.0, (0.0, 0.0)
+
+    point_estimate = float(np.mean([metric_fn(task_arrays[t]) for t in non_empty]))
+
     rng = np.random.default_rng(seed)
-    tasks = list(task_scores.keys())
-    
-    # Pool baseline point estimate
-    all_scores = np.concatenate([np.asarray(task_scores[t], dtype=np.float64) for t in tasks])
-    point_estimate = float(metric_fn(all_scores))
-    
     bootstrap_estimates = np.empty(num_bootstraps, dtype=np.float64)
-    task_arrays = [np.asarray(task_scores[t], dtype=np.float64) for t in tasks]
-    task_lens = [len(arr) for arr in task_arrays]
-    
     for b in range(num_bootstraps):
-        resampled_task_scores = []
-        for arr, n_seeds in zip(task_arrays, task_lens):
-            if n_seeds > 0:
-                sampled = rng.choice(arr, size=n_seeds, replace=True)
-                resampled_task_scores.append(sampled)
-        pooled_b = np.concatenate(resampled_task_scores)
-        bootstrap_estimates[b] = metric_fn(pooled_b)
-        
+        per_task = [metric_fn(rng.choice(task_arrays[t], size=task_arrays[t].size, replace=True))
+                    for t in non_empty]
+        bootstrap_estimates[b] = np.mean(per_task)
+
     ci_lower = float(np.percentile(bootstrap_estimates, 100 * (alpha / 2.0)))
     ci_upper = float(np.percentile(bootstrap_estimates, 100 * (1.0 - alpha / 2.0)))
     return point_estimate, (ci_lower, ci_upper)
+
+
+def _profile_probs(sorted_scores: np.ndarray, tau_grid: np.ndarray) -> np.ndarray:
+    """P(score >= tau) for every tau in one vectorized pass over a sorted score array."""
+    n = sorted_scores.size
+    if n == 0:
+        return np.zeros(tau_grid.shape, dtype=np.float64)
+    return (n - np.searchsorted(sorted_scores, tau_grid, side="left")) / n
 
 
 def compute_performance_profile(
@@ -105,18 +116,18 @@ def compute_performance_profile(
     normalized_scores: (N_runs,) or (N_tasks, N_seeds)
     Returns: (tau_grid, probabilities)
     """
-    flat = np.asarray(normalized_scores, dtype=np.float64).flatten()
+    flat = np.sort(np.asarray(normalized_scores, dtype=np.float64).flatten())
     if tau_grid is None:
         tau_grid = np.linspace(0.0, 1.0, 101)
     
-    probs = np.array([np.mean(flat >= tau) for tau in tau_grid], dtype=np.float64)
+    probs = _profile_probs(flat, tau_grid)
     return tau_grid, probs
 
 
 def compute_performance_profile_ci(
     task_scores: Union[Dict[str, np.ndarray], np.ndarray],
     tau_grid: Optional[np.ndarray] = None,
-    num_bootstraps: int = 2000,
+    num_bootstraps: int = NUM_BOOTSTRAPS,
     alpha: float = 0.05,
     seed: int = 42,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
@@ -133,22 +144,22 @@ def compute_performance_profile_ci(
     if isinstance(task_scores, dict):
         tasks = list(task_scores.keys())
         task_arrays = [np.asarray(task_scores[t], dtype=np.float64) for t in tasks]
-        point_scores = np.concatenate(task_arrays)
-        point_probs = np.array([np.mean(point_scores >= tau) for tau in tau_grid], dtype=np.float64)
-        
+        point_scores = np.sort(np.concatenate(task_arrays))
+        point_probs = _profile_probs(point_scores, tau_grid)
+        sources = [arr for arr in task_arrays if arr.size > 0]
+
         boot_matrix = np.empty((num_bootstraps, len(tau_grid)), dtype=np.float64)
         for b in range(num_bootstraps):
-            resampled = [rng.choice(arr, size=len(arr), replace=True) for arr in task_arrays if len(arr) > 0]
-            flat_b = np.concatenate(resampled)
-            boot_matrix[b] = [np.mean(flat_b >= tau) for tau in tau_grid]
+            resampled = [rng.choice(arr, size=arr.size, replace=True) for arr in sources]
+            flat_b = np.sort(np.concatenate(resampled))
+            boot_matrix[b] = _profile_probs(flat_b, tau_grid)
     else:
-        flat = np.asarray(task_scores, dtype=np.float64).flatten()
-        point_probs = np.array([np.mean(flat >= tau) for tau in tau_grid], dtype=np.float64)
+        flat = np.sort(np.asarray(task_scores, dtype=np.float64).flatten())
+        point_probs = _profile_probs(flat, tau_grid)
         boot_matrix = np.empty((num_bootstraps, len(tau_grid)), dtype=np.float64)
-        n = len(flat)
+        n = flat.size
         for b in range(num_bootstraps):
-            flat_b = rng.choice(flat, size=n, replace=True)
-            boot_matrix[b] = [np.mean(flat_b >= tau) for tau in tau_grid]
+            boot_matrix[b] = _profile_probs(np.sort(rng.choice(flat, size=n, replace=True)), tau_grid)
             
     ci_lower = np.percentile(boot_matrix, 100 * (alpha / 2.0), axis=0)
     ci_upper = np.percentile(boot_matrix, 100 * (1.0 - alpha / 2.0), axis=0)
@@ -158,7 +169,7 @@ def compute_performance_profile_ci(
 def compute_probability_of_improvement(
     scores_a: Dict[str, np.ndarray],
     scores_b: Dict[str, np.ndarray],
-    num_bootstraps: int = 10000,
+    num_bootstraps: int = NUM_BOOTSTRAPS,
     seed: int = 42,
 ) -> Tuple[float, Tuple[float, float]]:
     """Estimates the probability P(Score_A > Score_B) across common tasks.

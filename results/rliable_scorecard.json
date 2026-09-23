@@ -22,359 +22,726 @@
     }
   },
   "random_baselines": {
+    "_protocol": {
+      "produced_by": "random_baselines.py",
+      "eval_seed": 1042,
+      "distribution_mode": "easy",
+      "num_levels": 0,
+      "episodes_per_game": 50,
+      "generated_at": "2026-09-23T16:03:23"
+    },
     "bossfight": {
-      "mean": 0.02,
-      "std": 0.13999999999999999
+      "mean": 0.0,
+      "std": 0.0,
+      "n_episodes": 50,
+      "episodes": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
     },
     "starpilot": {
-      "mean": 1.7,
-      "std": 1.9209372712298545
+      "mean": 1.78,
+      "std": 1.8215266080058972,
+      "n_episodes": 50,
+      "episodes": [
+        1.0,
+        2.0,
+        1.0,
+        1.0,
+        2.0,
+        2.0,
+        4.0,
+        0.0,
+        2.0,
+        0.0,
+        1.0,
+        0.0,
+        2.0,
+        3.0,
+        2.0,
+        0.0,
+        1.0,
+        3.0,
+        1.0,
+        4.0,
+        0.0,
+        0.0,
+        3.0,
+        1.0,
+        2.0,
+        5.0,
+        2.0,
+        0.0,
+        3.0,
+        1.0,
+        5.0,
+        0.0,
+        3.0,
+        4.0,
+        2.0,
+        1.0,
+        0.0,
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        2.0,
+        1.0,
+        1.0,
+        5.0,
+        0.0,
+        9.0,
+        4.0
+      ]
     },
     "dodgeball": {
-      "mean": 0.68,
-      "std": 1.1737120600896969
+      "mean": 0.96,
+      "std": 1.354659381843394,
+      "n_episodes": 50,
+      "episodes": [
+        0.0,
+        0.0,
+        2.0,
+        2.0,
+        2.0,
+        0.0,
+        0.0,
+        2.0,
+        0.0,
+        4.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        4.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        2.0,
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        2.0,
+        2.0,
+        4.0,
+        0.0,
+        0.0,
+        4.0,
+        2.0,
+        0.0,
+        0.0,
+        0.0,
+        4.0,
+        0.0,
+        2.0,
+        2.0,
+        0.0,
+        0.0
+      ]
     },
     "maze": {
-      "mean": 4.0,
-      "std": 4.898979485566356
+      "mean": 4.4,
+      "std": 5.0142653642240695,
+      "n_episodes": 50,
+      "episodes": [
+        0.0,
+        10.0,
+        0.0,
+        10.0,
+        0.0,
+        0.0,
+        10.0,
+        0.0,
+        0.0,
+        0.0,
+        10.0,
+        10.0,
+        0.0,
+        0.0,
+        10.0,
+        0.0,
+        10.0,
+        0.0,
+        0.0,
+        10.0,
+        0.0,
+        0.0,
+        0.0,
+        10.0,
+        10.0,
+        10.0,
+        10.0,
+        0.0,
+        0.0,
+        10.0,
+        10.0,
+        0.0,
+        10.0,
+        10.0,
+        10.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        10.0,
+        0.0,
+        10.0,
+        0.0,
+        0.0,
+        10.0,
+        0.0,
+        10.0,
+        0.0,
+        10.0
+      ]
     },
     "heist": {
-      "mean": 3.2,
-      "std": 4.664761515876241
+      "mean": 2.8,
+      "std": 4.535573676110728,
+      "n_episodes": 50,
+      "episodes": [
+        0.0,
+        0.0,
+        0.0,
+        10.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        10.0,
+        10.0,
+        0.0,
+        0.0,
+        0.0,
+        10.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        10.0,
+        10.0,
+        0.0,
+        10.0,
+        10.0,
+        10.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        10.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        10.0,
+        10.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        10.0,
+        0.0,
+        0.0,
+        10.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ]
     }
   },
+  "reference_arch": "cnn_classic",
   "classic_means": {
     "bossfight": 0.194,
     "dodgeball": 0.96,
-    "heist": 1.0,
-    "maze": 1.0,
     "starpilot": 2.2520000000000002
   },
   "architectures": {
     "aug_color": {
-      "iqm": 0.3636,
+      "iqm": 0.399,
       "iqm_ci95": [
-        0.253,
-        0.4674
+        0.255,
+        0.4929
       ],
       "trimmed_mean": 0.3811,
       "trimmed_ci95": [
-        0.2823,
-        0.4676
+        0.2826,
+        0.467
       ],
       "mean_normalized": 0.3811
     },
     "aug_crop": {
-      "iqm": 0.5058,
+      "iqm": 0.494,
       "iqm_ci95": [
-        0.395,
-        0.6289
+        0.3738,
+        0.6541
       ],
       "trimmed_mean": 0.5135,
       "trimmed_ci95": [
-        0.402,
-        0.635
+        0.3984,
+        0.6319
       ],
       "mean_normalized": 0.5135
     },
     "aug_noise": {
-      "iqm": 0.4289,
+      "iqm": 0.4341,
       "iqm_ci95": [
-        0.245,
-        0.5256
+        0.2528,
+        0.5432
       ],
       "trimmed_mean": 0.3949,
       "trimmed_ci95": [
-        0.2713,
-        0.505
+        0.2726,
+        0.508
       ],
       "mean_normalized": 0.3949
     },
     "cnn_cbam": {
-      "iqm": 0.5108,
+      "iqm": 0.5202,
       "iqm_ci95": [
-        0.4028,
-        0.6065
+        0.3629,
+        0.6465
       ],
       "trimmed_mean": 0.5021,
       "trimmed_ci95": [
-        0.3956,
-        0.6074
+        0.3935,
+        0.6065
       ],
       "mean_normalized": 0.5021
     },
     "cnn_classic": {
-      "iqm": 0.4408,
+      "iqm": 0.4111,
       "iqm_ci95": [
-        0.3621,
-        0.5334
+        0.344,
+        0.5222
       ],
       "trimmed_mean": 0.4318,
       "trimmed_ci95": [
-        0.3633,
-        0.5096
+        0.3623,
+        0.5079
       ],
       "mean_normalized": 0.4318
     },
     "cnn_mlp_vector": {
-      "iqm": 0.6244,
+      "iqm": 0.5293,
       "iqm_ci95": [
-        0.4653,
-        0.7767
+        0.4202,
+        0.7327
       ],
       "trimmed_mean": 0.5809,
       "trimmed_ci95": [
-        0.4625,
-        0.7106
+        0.4624,
+        0.7101
       ],
       "mean_normalized": 0.5809
     },
     "cnn_spatial": {
-      "iqm": 0.5334,
+      "iqm": 0.4884,
       "iqm_ci95": [
-        0.4098,
-        0.626
+        0.3833,
+        0.632
       ],
       "trimmed_mean": 0.5048,
       "trimmed_ci95": [
-        0.4117,
-        0.6034
+        0.4109,
+        0.6049
       ],
       "mean_normalized": 0.5048
     },
     "impala": {
-      "iqm": 0.4516,
+      "iqm": 0.4194,
       "iqm_ci95": [
-        0.3414,
-        0.5354
+        0.3106,
+        0.5364
       ],
       "trimmed_mean": 0.4256,
       "trimmed_ci95": [
-        0.3345,
-        0.5169
+        0.3347,
+        0.5158
       ],
       "mean_normalized": 0.4256
     },
     "impoola": {
-      "iqm": 0.456,
+      "iqm": 0.4129,
       "iqm_ci95": [
-        0.3221,
-        0.6306
+        0.3187,
+        0.616
       ],
       "trimmed_mean": 0.4531,
       "trimmed_ci95": [
-        0.346,
-        0.5838
+        0.3455,
+        0.5829
       ],
       "mean_normalized": 0.4531
     },
     "lstm_attention": {
-      "iqm": 0.5441,
+      "iqm": 0.483,
       "iqm_ci95": [
-        0.4053,
-        0.6427
+        0.3845,
+        0.6351
       ],
       "trimmed_mean": 0.4986,
       "trimmed_ci95": [
-        0.4048,
-        0.6016
+        0.4055,
+        0.6021
       ],
       "mean_normalized": 0.4986
     },
     "resnet18": {
-      "iqm": 0.5984,
+      "iqm": 0.5325,
       "iqm_ci95": [
-        0.3922,
-        0.7649
+        0.3685,
+        0.7358
       ],
       "trimmed_mean": 0.5463,
       "trimmed_ci95": [
-        0.4111,
-        0.6858
+        0.4099,
+        0.6869
       ],
       "mean_normalized": 0.5463
     },
     "vit": {
-      "iqm": 0.3363,
+      "iqm": 0.3257,
       "iqm_ci95": [
-        0.2049,
-        0.5403
+        0.2286,
+        0.538
       ],
       "trimmed_mean": 0.3716,
       "trimmed_ci95": [
-        0.2552,
+        0.257,
         0.5117
       ],
       "mean_normalized": 0.3716
     },
     "wm_ae": {
-      "iqm": 0.4031,
+      "iqm": 0.3736,
       "iqm_ci95": [
-        0.3358,
-        0.459
+        0.311,
+        0.452
       ],
       "trimmed_mean": 0.3808,
       "trimmed_ci95": [
-        0.3319,
-        0.4326
+        0.3324,
+        0.4334
       ],
       "mean_normalized": 0.3808
     },
     "wm_contrastive": {
-      "iqm": 0.4289,
+      "iqm": 0.4341,
       "iqm_ci95": [
-        0.245,
-        0.5256
+        0.2528,
+        0.5432
       ],
       "trimmed_mean": 0.3949,
       "trimmed_ci95": [
-        0.2713,
-        0.505
+        0.2726,
+        0.508
       ],
       "mean_normalized": 0.3949
     },
     "wm_recon": {
-      "iqm": 0.442,
+      "iqm": 0.4071,
       "iqm_ci95": [
-        0.2911,
-        0.6387
+        0.2763,
+        0.5977
       ],
       "trimmed_mean": 0.4376,
       "trimmed_ci95": [
-        0.3174,
-        0.573
+        0.3198,
+        0.5732
       ],
       "mean_normalized": 0.4376
     },
     "wm_vae": {
-      "iqm": 0.4542,
+      "iqm": 0.4403,
       "iqm_ci95": [
-        0.3557,
-        0.5787
+        0.3217,
+        0.5741
       ],
-      "trimmed_mean": 0.4334,
+      "trimmed_mean": 0.4426,
       "trimmed_ci95": [
-        0.3299,
-        0.5511
+        0.3239,
+        0.5721
       ],
       "mean_normalized": 0.4334
     }
   },
   "canonical_architectures": {
     "aug_color": {
-      "canonical_iqm": 0.7495,
+      "canonical_iqm": 0.8463,
       "canonical_ci95": [
-        0.2749,
-        1.3117
+        -0.4582,
+        1.7531
+      ],
+      "games": [
+        "bossfight",
+        "starpilot"
       ]
     },
     "aug_crop": {
-      "canonical_iqm": 1.1656,
+      "canonical_iqm": 2.0091,
       "canonical_ci95": [
-        0.4975,
-        1.9766
+        0.7238,
+        3.7702
+      ],
+      "games": [
+        "bossfight",
+        "starpilot"
       ]
     },
     "aug_noise": {
-      "canonical_iqm": 0.4726,
+      "canonical_iqm": 1.4916,
       "canonical_ci95": [
-        0.0652,
-        1.4799
+        -0.3637,
+        2.7903
+      ],
+      "games": [
+        "bossfight",
+        "starpilot"
       ]
     },
     "cnn_cbam": {
-      "canonical_iqm": 1.4064,
+      "canonical_iqm": 1.6784,
       "canonical_ci95": [
-        0.6144,
-        2.2982
+        0.1535,
+        2.9233
+      ],
+      "games": [
+        "bossfight",
+        "starpilot"
       ]
     },
     "cnn_classic": {
-      "canonical_iqm": 0.8738,
+      "canonical_iqm": 0.7293,
       "canonical_ci95": [
-        0.4836,
-        1.2731
+        0.151,
+        2.047
+      ],
+      "games": [
+        "bossfight",
+        "starpilot"
       ]
     },
     "cnn_mlp_vector": {
-      "canonical_iqm": 1.5083,
+      "canonical_iqm": 2.0202,
       "canonical_ci95": [
-        0.9188,
-        2.4584
+        0.8309,
+        3.9905
+      ],
+      "games": [
+        "bossfight",
+        "starpilot"
       ]
     },
     "cnn_spatial": {
-      "canonical_iqm": 1.1571,
+      "canonical_iqm": 1.7163,
       "canonical_ci95": [
-        0.6478,
-        1.8976
+        0.5654,
+        3.3477
+      ],
+      "games": [
+        "bossfight",
+        "starpilot"
       ]
     },
     "impala": {
-      "canonical_iqm": 0.844,
+      "canonical_iqm": 1.0094,
       "canonical_ci95": [
-        0.4147,
-        1.4025
+        -0.1345,
+        2.3324
+      ],
+      "games": [
+        "bossfight",
+        "starpilot"
       ]
     },
     "impoola": {
-      "canonical_iqm": 0.8015,
+      "canonical_iqm": 0.7947,
       "canonical_ci95": [
-        0.3875,
-        1.2964
+        -0.06,
+        3.1934
+      ],
+      "games": [
+        "bossfight",
+        "starpilot"
       ]
     },
     "lstm_attention": {
-      "canonical_iqm": 1.0937,
+      "canonical_iqm": 1.5763,
       "canonical_ci95": [
-        0.6503,
-        1.7722
+        0.5634,
+        3.276
+      ],
+      "games": [
+        "bossfight",
+        "starpilot"
       ]
     },
     "resnet18": {
-      "canonical_iqm": 1.2909,
+      "canonical_iqm": 1.6934,
       "canonical_ci95": [
-        0.4299,
-        2.6671
+        0.4546,
+        3.5855
+      ],
+      "games": [
+        "bossfight",
+        "starpilot"
       ]
     },
     "vit": {
-      "canonical_iqm": 0.273,
+      "canonical_iqm": 0.2048,
       "canonical_ci95": [
-        -0.1182,
-        0.8894
+        -0.279,
+        2.7367
+      ],
+      "games": [
+        "bossfight",
+        "starpilot"
       ]
     },
     "wm_ae": {
-      "canonical_iqm": 0.5983,
+      "canonical_iqm": 0.5807,
       "canonical_ci95": [
-        0.2077,
-        1.1057
+        0.039,
+        1.245
+      ],
+      "games": [
+        "bossfight",
+        "starpilot"
       ]
     },
     "wm_contrastive": {
-      "canonical_iqm": 0.4726,
+      "canonical_iqm": 1.4916,
       "canonical_ci95": [
-        0.0652,
-        1.4799
+        -0.3637,
+        2.7903
+      ],
+      "games": [
+        "bossfight",
+        "starpilot"
       ]
     },
     "wm_recon": {
-      "canonical_iqm": 0.8313,
+      "canonical_iqm": 0.5907,
       "canonical_ci95": [
-        0.4241,
-        1.4062
+        -0.6522,
+        2.7491
+      ],
+      "games": [
+        "bossfight",
+        "starpilot"
       ]
     },
     "wm_vae": {
-      "canonical_iqm": 0.9427,
+      "canonical_iqm": 1.2895,
       "canonical_ci95": [
-        0.3426,
-        1.7887
+        0.0167,
+        2.8015
+      ],
+      "games": [
+        "bossfight",
+        "starpilot"
       ]
     }
   },
+  "canonical_exclusions": {
+    "dodgeball": "cnn_classic mean 0.960 does not exceed random 0.960"
+  },
   "probability_of_improvement": {
+    "resnet18_vs_cnn_mlp_vector": {
+      "p": 0.413,
+      "ci95": [
+        0.2,
+        0.64
+      ]
+    },
+    "resnet18_vs_cnn_cbam": {
+      "p": 0.5,
+      "ci95": [
+        0.267,
+        0.733
+      ]
+    },
+    "resnet18_vs_aug_crop": {
+      "p": 0.56,
+      "ci95": [
+        0.333,
+        0.773
+      ]
+    },
+    "resnet18_vs_cnn_spatial": {
+      "p": 0.54,
+      "ci95": [
+        0.32,
+        0.753
+      ]
+    },
     "cnn_mlp_vector_vs_resnet18": {
       "p": 0.587,
       "ci95": [
@@ -382,10 +749,17 @@
         0.8
       ]
     },
-    "cnn_mlp_vector_vs_lstm_attention": {
-      "p": 0.62,
+    "cnn_mlp_vector_vs_cnn_cbam": {
+      "p": 0.527,
       "ci95": [
-        0.393,
+        0.307,
+        0.747
+      ]
+    },
+    "cnn_mlp_vector_vs_aug_crop": {
+      "p": 0.633,
+      "ci95": [
+        0.42,
         0.827
       ]
     },
@@ -396,95 +770,11 @@
         0.84
       ]
     },
-    "cnn_mlp_vector_vs_cnn_cbam": {
-      "p": 0.527,
-      "ci95": [
-        0.307,
-        0.747
-      ]
-    },
-    "resnet18_vs_cnn_mlp_vector": {
-      "p": 0.413,
-      "ci95": [
-        0.2,
-        0.64
-      ]
-    },
-    "resnet18_vs_lstm_attention": {
-      "p": 0.527,
-      "ci95": [
-        0.307,
-        0.74
-      ]
-    },
-    "resnet18_vs_cnn_spatial": {
-      "p": 0.54,
-      "ci95": [
-        0.32,
-        0.753
-      ]
-    },
-    "resnet18_vs_cnn_cbam": {
+    "cnn_cbam_vs_resnet18": {
       "p": 0.5,
       "ci95": [
         0.267,
-        0.733
-      ]
-    },
-    "lstm_attention_vs_cnn_mlp_vector": {
-      "p": 0.38,
-      "ci95": [
-        0.18,
-        0.607
-      ]
-    },
-    "lstm_attention_vs_resnet18": {
-      "p": 0.473,
-      "ci95": [
-        0.253,
-        0.693
-      ]
-    },
-    "lstm_attention_vs_cnn_spatial": {
-      "p": 0.52,
-      "ci95": [
-        0.3,
-        0.733
-      ]
-    },
-    "lstm_attention_vs_cnn_cbam": {
-      "p": 0.44,
-      "ci95": [
-        0.22,
-        0.667
-      ]
-    },
-    "cnn_spatial_vs_cnn_mlp_vector": {
-      "p": 0.36,
-      "ci95": [
-        0.16,
-        0.58
-      ]
-    },
-    "cnn_spatial_vs_resnet18": {
-      "p": 0.46,
-      "ci95": [
-        0.24,
-        0.68
-      ]
-    },
-    "cnn_spatial_vs_lstm_attention": {
-      "p": 0.48,
-      "ci95": [
-        0.267,
-        0.7
-      ]
-    },
-    "cnn_spatial_vs_cnn_cbam": {
-      "p": 0.473,
-      "ci95": [
-        0.253,
-        0.693
+        0.727
       ]
     },
     "cnn_cbam_vs_cnn_mlp_vector": {
@@ -494,18 +784,11 @@
         0.707
       ]
     },
-    "cnn_cbam_vs_resnet18": {
-      "p": 0.5,
+    "cnn_cbam_vs_aug_crop": {
+      "p": 0.54,
       "ci95": [
-        0.267,
-        0.727
-      ]
-    },
-    "cnn_cbam_vs_lstm_attention": {
-      "p": 0.56,
-      "ci95": [
-        0.34,
-        0.773
+        0.347,
+        0.747
       ]
     },
     "cnn_cbam_vs_cnn_spatial": {
@@ -514,6 +797,66 @@
         0.307,
         0.747
       ]
+    },
+    "aug_crop_vs_resnet18": {
+      "p": 0.44,
+      "ci95": [
+        0.227,
+        0.653
+      ]
+    },
+    "aug_crop_vs_cnn_mlp_vector": {
+      "p": 0.367,
+      "ci95": [
+        0.173,
+        0.58
+      ]
+    },
+    "aug_crop_vs_cnn_cbam": {
+      "p": 0.46,
+      "ci95": [
+        0.253,
+        0.667
+      ]
+    },
+    "aug_crop_vs_cnn_spatial": {
+      "p": 0.447,
+      "ci95": [
+        0.24,
+        0.667
+      ]
+    },
+    "cnn_spatial_vs_resnet18": {
+      "p": 0.46,
+      "ci95": [
+        0.24,
+        0.68
+      ]
+    },
+    "cnn_spatial_vs_cnn_mlp_vector": {
+      "p": 0.36,
+      "ci95": [
+        0.16,
+        0.58
+      ]
+    },
+    "cnn_spatial_vs_cnn_cbam": {
+      "p": 0.473,
+      "ci95": [
+        0.253,
+        0.693
+      ]
+    },
+    "cnn_spatial_vs_aug_crop": {
+      "p": 0.553,
+      "ci95": [
+        0.34,
+        0.76
+      ]
     }
-  }
+  },
+  "canonical_games": [
+    "bossfight",
+    "starpilot"
+  ]
 }

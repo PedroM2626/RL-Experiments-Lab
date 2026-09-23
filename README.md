@@ -277,35 +277,40 @@ Using the definitive 100-episode evaluation dataset across all 275 models (`resu
 - `maze`: $[0.80, 3.80]$
 - `starpilot`: $[0.28, 3.10]$
 
-For each architecture evaluated across the 3 core suite games (`bossfight`, `starpilot`, `dodgeball`), we computed the **Interquartile Mean (IQM)**, **20% Trimmed Mean**, and **95% Stratified Bootstrap Confidence Intervals** (with $B = 10{,}000$ resamples), along with **Performance Profiles** ($\tau \in [0, 1]$) and **Pairwise Probability of Improvement**:
+For each architecture evaluated across the 3 core suite games (`bossfight`, `starpilot`, `dodgeball`), we computed the **Interquartile Mean (IQM)**, **5% Trimmed Mean**, and **95% Stratified Bootstrap Confidence Intervals** (with $B = 10{,}000$ resamples), along with **Performance Profiles** ($\tau \in [0, 1]$) and **Pairwise Probability of Improvement**:
 
-| Architecture | Normalized IQM | 95% Bootstrap CI | 20% Trimmed Mean | 95% Trimmed CI |
+> **Aggregation correction (23/09/2026):** the aggregator previously applied the metric **once to the pooled array** of all games' scores, which lets any game with more seeds dominate the estimate. It now follows Agarwal et al. literally — the metric is computed **within each game** and then **averaged across games** (equal weight per game), with resampling stratified inside each game. Because the three suite games have equal seed counts, the point estimates shift only slightly, but the confidence intervals widen (they are no longer computed on a 45-element pooled sample), and the IQM ordering of `resnet18` and `cnn_mlp_vector` inverts. The single bootstrap constant is now `rliable_metrics.NUM_BOOTSTRAPS = 10000`; the forest and profile panels previously ran at $B = 2{,}000$.
+
+| Architecture | Normalized IQM | 95% Bootstrap CI | 5% Trimmed Mean | 95% Trimmed CI |
 |---|---:|:---:|---:|:---:|
-| `cnn_mlp_vector` | **0.624** | [0.465, 0.777] | 0.581 | [0.463, 0.711] |
-| `resnet18` | 0.598 | [0.392, 0.765] | 0.546 | [0.411, 0.686] |
-| `lstm_attention` | 0.544 | [0.405, 0.643] | 0.499 | [0.405, 0.602] |
-| `cnn_spatial` | 0.533 | [0.410, 0.626] | 0.505 | [0.412, 0.603] |
-| `cnn_cbam` | 0.511 | [0.403, 0.607] | 0.502 | [0.396, 0.607] |
-| `aug_crop` | 0.506 | [0.395, 0.629] | 0.514 | [0.402, 0.635] |
-| `impoola` | 0.456 | [0.322, 0.631] | 0.453 | [0.346, 0.584] |
-| `wm_vae` | 0.454 | [0.356, 0.579] | 0.433 | [0.330, 0.551] |
-| `impala` | 0.452 | [0.341, 0.535] | 0.426 | [0.335, 0.517] |
-| `wm_recon` | 0.442 | [0.291, 0.639] | 0.438 | [0.317, 0.573] |
-| `cnn_classic` | 0.441 | [0.362, 0.533] | 0.432 | [0.363, 0.510] |
-| `wm_contrastive` | 0.429 | [0.245, 0.526] | 0.395 | [0.271, 0.505] |
-| `aug_noise` | 0.429 | [0.245, 0.526] | 0.395 | [0.271, 0.505] |
-| `wm_ae` | 0.403 | [0.336, 0.459] | 0.381 | [0.332, 0.433] |
-| `aug_color` | 0.364 | [0.253, 0.467] | 0.381 | [0.282, 0.468] |
-| `vit` | 0.336 | [0.205, 0.540] | 0.372 | [0.255, 0.512] |
+| `resnet18` | **0.532** | [0.368, 0.736] | 0.546 | [0.410, 0.687] |
+| `cnn_mlp_vector` | 0.529 | [0.420, 0.733] | **0.581** | [0.462, 0.710] |
+| `cnn_cbam` | 0.520 | [0.363, 0.646] | 0.502 | [0.394, 0.607] |
+| `aug_crop` | 0.494 | [0.374, 0.654] | 0.513 | [0.398, 0.632] |
+| `cnn_spatial` | 0.488 | [0.383, 0.632] | 0.505 | [0.411, 0.605] |
+| `lstm_attention` | 0.483 | [0.385, 0.635] | 0.499 | [0.406, 0.602] |
+| `wm_vae` | 0.440 | [0.322, 0.574] | 0.443 | [0.324, 0.572] |
+| `aug_noise` | 0.434 | [0.253, 0.543] | 0.395 | [0.273, 0.508] |
+| `wm_contrastive` | 0.434 | [0.253, 0.543] | 0.395 | [0.273, 0.508] |
+| `impala` | 0.419 | [0.311, 0.536] | 0.426 | [0.335, 0.516] |
+| `impoola` | 0.413 | [0.319, 0.616] | 0.453 | [0.345, 0.583] |
+| `cnn_classic` | 0.411 | [0.344, 0.522] | 0.432 | [0.362, 0.508] |
+| `wm_recon` | 0.407 | [0.276, 0.598] | 0.438 | [0.320, 0.573] |
+| `aug_color` | 0.399 | [0.255, 0.493] | 0.381 | [0.283, 0.467] |
+| `wm_ae` | 0.374 | [0.311, 0.452] | 0.381 | [0.332, 0.433] |
+| `vit` | 0.326 | [0.229, 0.538] | 0.372 | [0.257, 0.512] |
 
 > **Key Robust Statistical Findings:**
-> 1. **Overlapping 95% Confidence Intervals Across Top Tier:** The stratified bootstrap 95% CIs for the top 6 architectures (`cnn_mlp_vector` $[0.465, 0.777]$, `resnet18` $[0.392, 0.765]$, `lstm_attention` $[0.405, 0.643]$, `cnn_spatial` $[0.410, 0.626]$, `cnn_cbam` $[0.403, 0.607]$, `aug_crop` $[0.395, 0.629]$) substantially overlap. Under NeurIPS 2021 statistical guidelines, ranking these models by point IQM estimate alone is statistically unwarranted.
+> 1. **Overlapping 95% Confidence Intervals Across Top Tier:** The stratified bootstrap 95% CIs for the top 6 architectures (`resnet18` $[0.368, 0.736]$, `cnn_mlp_vector` $[0.420, 0.733]$, `cnn_cbam` $[0.363, 0.646]$, `aug_crop` $[0.374, 0.654]$, `cnn_spatial` $[0.383, 0.632]$, `lstm_attention` $[0.385, 0.635]$) substantially overlap. Under NeurIPS 2021 statistical guidelines, ranking these models by point IQM estimate alone is statistically unwarranted. The two leading architectures also disagree across aggregators (`resnet18` wins IQM, `cnn_mlp_vector` wins trimmed mean and unnormalized mean) — further evidence that the top tier is a single statistical cluster.
 > 2. **Pairwise Probability of Improvement:** Agarwal et al.'s probability of improvement $P(X > Y)$ computes the probability that a randomly selected seed/run of architecture $X$ yields higher normalized return than architecture $Y$:
 >    - $P(\text{mlp\_vector} > \text{resnet18}) = 0.587$ (95% CI: $[0.360, 0.800]$): Because the 95% CI spans $0.50$, neither model statistically dominates the other.
->    - $P(\text{mlp\_vector} > \text{lstm\_attention}) = 0.620$ (95% CI: $[0.393, 0.827]$).
->    - $P(\text{mlp\_vector} > \text{cnn\_spatial}) = 0.640$ (95% CI: $[0.427, 0.840]$).
+>    - $P(\text{mlp\_vector} > \text{cnn\_spatial}) = 0.640$ (95% CI: $[0.427, 0.840]$): also non-significant.
+>    - $P(\text{mlp\_vector} > \text{aug\_crop}) = 0.633$ (95% CI: $[0.420, 0.827]$).
 >    - $P(\text{resnet18} > \text{cnn\_cbam}) = 0.500$ (95% CI: $[0.267, 0.733]$): Exact parity.
+>    Every pairwise comparison among the top 5 falls inside $[0.36, 0.64]$ with CIs crossing $0.5$ — no architecture in this benchmark is demonstrably superior to another.
 > 3. **Performance Profiles:** The cumulative performance profile (see Figure 4.9, `results/rliable_profile.png`) demonstrates that `cnn_mlp_vector` and `resnet18` dominate higher normalized return thresholds ($\tau > 0.6$), whereas `lstm_attention`, `cnn_spatial`, and `cnn_cbam` show higher probability mass at moderate thresholds ($\tau \approx 0.5$). Data serialized in `results/rliable_scorecard.json`.
+> 4. **Canonical (Agarwal) normalization covers only 2 of the 3 suite games:** `dodgeball` is excluded because the reference architecture `cnn_classic` does not beat the empirical random policy there (see section 18.1). `maze` and `heist` are excluded because no `cnn_classic` arm was ever trained on them. A previously published `classic_means` value of `1.0` for those two games was a silent code fallback, not a measurement; it has been removed.
+
 
 ---
 
@@ -371,6 +376,9 @@ py -3.10 scorecard_analysis.py  # 95% CI + Cohen's d + AUC -> results/scorecard.
 py -3.10 retrain_analysis.py  # Retraining analysis + updated global ranking -> results/retrain_analysis.json
 py -3.10 -u re_eval_100.py --device cuda  # Definitive protocol: 100 eps across all 275 zips
 py -3.10 eval100_analysis.py  # Comparative analysis 30 vs 100 -> results/eval100_analysis.json
+py -3.10 random_baselines.py --episodes 50  # Empirical random anchors on unseen levels -> results/random_baselines.json (section 18.1)
+py -3.10 run_rliable_eval.py  # IQM / trimmed mean / stratified bootstrap CIs / profiles -> results/rliable_scorecard.json + rliable_profile.png (section 3.14)
+py -3.10 -m pytest tests -q  # Extractor + statistical aggregation tests
 py -3.10 probe_actions.py  # Action space probing (basis for HRL skills)
 py -3.10 -u compare_hrl.py --device cuda  # Independent benchmark: HRL vs Flat RL (jumper/plunder)
 py -3.10 -u compare_hrl_learned.py --device cuda  # hrl_learned arm (RUN AFTER compare_hrl.py: both write to results/hrl_results.json)
@@ -978,13 +986,16 @@ In `jax_port/marl/train_ql.py`, the terminal array `done` is converted to a JAX 
 To eliminate evaluation pathologies (such as outliers skewing the arithmetic mean, or uninformative point estimates lacking confidence intervals), the benchmark suite incorporates the evaluation methodology developed by **Agarwal et al. (NeurIPS 2021)** via `rliable_metrics.py` and `run_rliable_eval.py`.
 
 ### 18.1. Empirical Random Baselines across Procgen
-Rather than assuming artificial minimum bounds, uniform random policies were empirically evaluated across 50 episodes per game on unseen levels:
-- `bossfight`: $0.02 \pm 0.14$
-- `starpilot`: $1.70 \pm 1.92$
-- `dodgeball`: $0.68 \pm 1.17$
-- `maze`: $4.00 \pm 4.90$
-- `heist`: $3.20 \pm 4.66$
-Raw outputs are serialized in `results/random_baselines.json`.
+Rather than assuming artificial minimum bounds, uniform random policies were empirically evaluated across 50 episodes per game on unseen levels (`num_levels=0`, `distribution_mode='easy'`, evaluation seed `1042` — the same protocol used to evaluate trained models). The measurements are produced by `random_baselines.py` (added 23/09/2026; previously the JSON existed with no script able to regenerate it) and can be reproduced with `py -3.10 random_baselines.py --episodes 50`:
+- `bossfight`: $0.00 \pm 0.00$
+- `starpilot`: $1.78 \pm 1.82$
+- `dodgeball`: $0.96 \pm 1.35$
+- `maze`: $4.40 \pm 5.01$
+- `heist`: $2.80 \pm 4.54$
+
+Per-episode returns and the protocol record are serialized in `results/random_baselines.json`. Standard deviations are sample standard deviations ($ddof=1$).
+
+> ⚠️ **Consequence for `maze` and `heist` (must be read together with section 3.12):** under this protocol a uniform random policy solves `maze` in 22 of 50 episodes and `heist` in 14 of 50, while every trained arm on those two games lands at `maze` $2.76$–$2.80$ and `heist` $0.72$ — i.e. **below the random point estimate**. Taking the standard errors of the anchors ($4.40 \pm 0.71$ S.E. for `maze`, $2.80 \pm 0.64$ S.E. for `heist`, $n=50$), `heist` is clearly worse than random (95% CI $[1.54, 4.06]$ does not reach $0.72$) whereas `maze` is borderline (95% CI $[2.97, 5.83]$ just overlaps $2.80$). Procgen `maze`/`heist` in `easy` mode use small levels with a 600-step budget, so a random walk reaches the goal often enough to score $9$–$10$ more frequently than these policies. Two conclusions follow: (i) the `maze`/`heist` rows of the section 3.6 and 3.12 tables must **not** be read as "ICM beats PPO" — all four arms are within $0.04$ of each other *and* at or below the random anchor; (ii) these two games are excluded from canonical normalization (section 3.14 item 4). The identical-value pattern across `ppo`/`icm`/`rnd`/`ngu` is also consistent with the intrinsic-reward wrappers silently degrading to plain PPO (`compare_maze_heist.py` wrapped every bonus block in `except Exception: pass` until 23/09/2026); instrumenting and re-running that benchmark is an open item.
 
 ### 18.2. Canonical Normalization Formula
 Per Agarwal et al., game returns are normalized against empirical random baselines and maximum task performance:
@@ -993,9 +1004,10 @@ Both Canonical Agarwal normalization and empirical min-max spans are computed an
 
 ### 18.3. Scorecard and Statistical Profiles
 The consolidated scorecard across top architectures (`results/rliable_profile.png`) presents three complementary panels:
-1. **Aggregated Interquartile Mean (IQM):** Computed across the middle 50% of normalized scores with 95% Stratified Bootstrap Confidence Intervals (2,000 bootstrap iterations).
-2. **Empirical Performance Profiles with Shaded Bootstrap Bands:** Cumulative distribution functions $\hat{F}(\tau)$ plotted with pointwise 95% bootstrap confidence bands (`fill_between`), showing the fraction of runs exceeding threshold $\tau$.
-3. **Multi-Metric Forest Plot:** Comparative visualization of IQM, 20% Trimmed Mean, Median, and Arithmetic Mean.
+1. **Aggregated Interquartile Mean (IQM):** Computed across the middle 50% of normalized scores, averaged over the three suite games, with 95% Stratified Bootstrap Confidence Intervals ($B = 10{,}000$ replicates, taken from `rliable_metrics.NUM_BOOTSTRAPS`).
+2. **Empirical Performance Profiles with Shaded Bootstrap Bands:** Cumulative distribution functions $\hat{F}(\tau)$ plotted with pointwise 95% bootstrap confidence bands (`fill_between`), showing the fraction of runs exceeding threshold $\tau$ (same $B = 10{,}000$).
+3. **Multi-Metric Forest Plot:** Comparative visualization of IQM, 5% Trimmed Mean, Median, and Arithmetic Mean over the top 5 architectures.
+4. **Canonical normalization scope:** `results/rliable_scorecard.json` now records `canonical_games` and `canonical_exclusions` with an explicit reason per excluded game, instead of silently substituting a placeholder reference mean.
 
 ---
 

@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from rliable_metrics import (
+    NUM_BOOTSTRAPS,
     compute_iqm,
     compute_trimmed_mean,
     compute_mean,
@@ -25,6 +26,11 @@ from rliable_metrics import (
     compute_probability_of_improvement,
 )
 
+# The retrained suite is the only arm evaluated on all three games; the exploration
+# arms (icm/ngu/ppo/rnd) exist solely for maze/heist and carry no cnn_classic baseline.
+SUITE_GAMES = ["bossfight", "starpilot", "dodgeball"]
+REFERENCE_ARCH = "cnn_classic"
+
 
 def load_eval100_data(filepath="results/eval100_results.json"):
     with open(filepath, "r", encoding="utf-8") as f:
@@ -32,16 +38,23 @@ def load_eval100_data(filepath="results/eval100_results.json"):
     
     # game_arch -> list of seed returns
     game_arch_scores = {}
+    skipped = []
     for key, val in raw.items():
         if "error" in val:
             continue
         # key format: {game}_{arch}_seed{seed}
         parts = key.rsplit("_seed", 1)
         if len(parts) != 2:
+            skipped.append(key)
             continue
-        game_arch = parts[0]
-        score = val.get("stoch_unseen", 0.0)
-        game_arch_scores.setdefault(game_arch, []).append(score)
+        if "stoch_unseen" not in val:
+            # A missing metric must never be silently scored as 0.0.
+            skipped.append(key)
+            continue
+        game_arch_scores.setdefault(parts[0], []).append(float(val["stoch_unseen"]))
+
+    if skipped:
+        print(f"WARNING: {len(skipped)} entries excluded for lacking 'stoch_unseen': {skipped[:10]}")
         
     return game_arch_scores
 
@@ -100,20 +113,50 @@ def main():
         with open(random_path, "r", encoding="utf-8") as fp:
             random_baselines = json.load(fp)
 
-    classic_means = {g: float(np.mean(data.get("cnn_classic", {}).get(g, [1.0]))) for g in all_games}
+    classic_means = {}
+    for g in all_games:
+        runs = data.get(REFERENCE_ARCH, {}).get(g)
+        if runs is None or len(runs) == 0:
+            print(f"NOTE: no {REFERENCE_ARCH} runs for '{g}' — excluded from canonical normalization")
+            continue
+        classic_means[g] = float(np.mean(runs))
 
     # 3. Stratified Bootstrap Statistics across games
     results = {
         "normalization_bounds": {g: {"min": game_min[g], "max": game_max[g]} for g in all_games},
         "random_baselines": random_baselines,
+        "reference_arch": REFERENCE_ARCH,
         "classic_means": classic_means,
         "architectures": {},
         "canonical_architectures": {},
+        "canonical_exclusions": {},
         "probability_of_improvement": {},
     }
 
+    # A game enters canonical (Agarwal) normalization only if it has both an empirical
+    # random baseline and reference runs whose mean actually beats that baseline.
+    canonical_games = []
+    for g in SUITE_GAMES:
+        r_mean = random_baselines.get(g, {}).get("mean")
+        if r_mean is None:
+            results["canonical_exclusions"][g] = "no empirical random baseline"
+            continue
+        if g not in classic_means:
+            results["canonical_exclusions"][g] = f"no {REFERENCE_ARCH} reference runs"
+            continue
+        if classic_means[g] - r_mean <= 1e-4:
+            results["canonical_exclusions"][g] = (
+                f"{REFERENCE_ARCH} mean {classic_means[g]:.3f} does not exceed random {r_mean:.3f}")
+            continue
+        canonical_games.append(g)
+    results["canonical_games"] = canonical_games
+    if random_baselines and not canonical_games:
+        raise RuntimeError("canonical normalization requested, but no game has a valid random/reference pair")
+    for g, why in results["canonical_exclusions"].items():
+        print(f"NOTE: '{g}' excluded from canonical normalization — {why}")
+
     # Focus on the 3-game suite architectures (evaluated across bossfight, starpilot, dodgeball)
-    suite_archs = [a for a in all_archs if set(["bossfight", "starpilot", "dodgeball"]).issubset(data[a].keys())]
+    suite_archs = [a for a in all_archs if set(SUITE_GAMES).issubset(data[a].keys())]
 
     print("\n" + "=" * 80)
     print("SUITE ARCHITECTURES — NORMALIZED METRICS (3 GAMES: B/S/D)")
@@ -123,8 +166,8 @@ def main():
 
     suite_eval = []
     for a in suite_archs:
-        # Subdict for the 3 suite games
-        task_subset = {g: norm_data[a][g] for g in ["bossfight", "starpilot", "dodgeball"]}
+        # Subdict for the suite games
+        task_subset = {g: norm_data[a][g] for g in SUITE_GAMES}
         iqm_est, (iqm_lo, iqm_hi) = stratified_bootstrap_ci(task_subset, metric_fn=compute_iqm)
         trim_est, (trim_lo, trim_hi) = stratified_bootstrap_ci(task_subset, metric_fn=compute_trimmed_mean)
         all_norm = np.concatenate(list(task_subset.values()))
@@ -138,17 +181,16 @@ def main():
             "mean_normalized": round(mean_norm, 4),
         }
 
-        if random_baselines:
+        if canonical_games:
             canonical_subset = {}
-            for g in ["bossfight", "starpilot", "dodgeball"]:
-                r_mean = random_baselines.get(g, {}).get("mean", 0.0)
-                c_mean = classic_means.get(g, 1.0)
-                denom = c_mean - r_mean if abs(c_mean - r_mean) > 1e-4 else 1.0
-                canonical_subset[g] = (data[a][g] - r_mean) / denom
+            for g in canonical_games:
+                r_mean = random_baselines[g]["mean"]
+                canonical_subset[g] = (data[a][g] - r_mean) / (classic_means[g] - r_mean)
             c_iqm, (c_lo, c_hi) = stratified_bootstrap_ci(canonical_subset, metric_fn=compute_iqm)
             results["canonical_architectures"][a] = {
                 "canonical_iqm": round(c_iqm, 4),
                 "canonical_ci95": [round(c_lo, 4), round(c_hi, 4)],
+                "games": list(canonical_games),
             }
         suite_eval.append((a, iqm_est, iqm_lo, iqm_hi, trim_est, trim_lo, trim_hi, mean_norm))
 
@@ -169,8 +211,8 @@ def main():
         for a2 in top5_archs:
             if a1 == a2:
                 continue
-            t_a1 = {g: norm_data[a1][g] for g in ["bossfight", "starpilot", "dodgeball"]}
-            t_a2 = {g: norm_data[a2][g] for g in ["bossfight", "starpilot", "dodgeball"]}
+            t_a1 = {g: norm_data[a1][g] for g in SUITE_GAMES}
+            t_a2 = {g: norm_data[a2][g] for g in SUITE_GAMES}
             prob, (p_lo, p_hi) = compute_probability_of_improvement(t_a1, t_a2)
             key_pair = f"{a1}_vs_{a2}"
             results["probability_of_improvement"][key_pair] = {
@@ -201,8 +243,8 @@ def main():
     # Panel 2: Performance Profiles with Shaded Bootstrap Confidence Bands (Agarwal et al., 2021)
     colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd"]
     for idx, a in enumerate(top5_archs):
-        task_dict = {g: norm_data[a][g] for g in ["bossfight", "starpilot", "dodgeball"]}
-        taus, probs, ci_lo, ci_hi = compute_performance_profile_ci(task_dict, tau_grid, num_bootstraps=2000)
+        task_dict = {g: norm_data[a][g] for g in SUITE_GAMES}
+        taus, probs, ci_lo, ci_hi = compute_performance_profile_ci(task_dict, tau_grid)
         c = colors[idx % len(colors)]
         ax2.plot(taus, probs, label=a, linewidth=2, color=c)
         ax2.fill_between(taus, ci_lo, ci_hi, color=c, alpha=0.15)
@@ -216,7 +258,7 @@ def main():
     # Panel 3: Forest Plot comparing multiple aggregators across Top 5 Architectures
     metrics_spec = [
         ("IQM", compute_iqm, "#1f77b4", "o"),
-        ("Trimmed 20%", compute_trimmed_mean, "#ff7f0e", "s"),
+        ("Trimmed 5%", compute_trimmed_mean, "#ff7f0e", "s"),
         ("Median", compute_median, "#2ca02c", "^"),
         ("Mean", compute_mean, "#d62728", "D"),
     ]
@@ -226,8 +268,8 @@ def main():
     for m_idx, (m_name, m_func, m_color, m_marker) in enumerate(metrics_spec):
         pts, err_los, err_his = [], [], []
         for a in top5_archs:
-            t_sub = {g: norm_data[a][g] for g in ["bossfight", "starpilot", "dodgeball"]}
-            est, (lo, hi) = stratified_bootstrap_ci(t_sub, metric_fn=m_func, num_bootstraps=2000)
+            t_sub = {g: norm_data[a][g] for g in SUITE_GAMES}
+            est, (lo, hi) = stratified_bootstrap_ci(t_sub, metric_fn=m_func)
             pts.append(est)
             err_los.append(est - lo)
             err_his.append(hi - est)
