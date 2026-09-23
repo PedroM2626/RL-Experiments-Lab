@@ -51,7 +51,7 @@ def run_suite(games, timesteps, seeds, log_dir, device):
                     m,s,model = train_one(game, cls, kw, timesteps, seed, log_dir, device, vector=False)
                     print(f"-> {m:.2f}"); all_results[gk].append({'seed':seed,'mean_reward':m})
                     try: model.save(os.path.join(comp_dir, f"{gk}_seed{seed}.zip"))
-                    except: pass
+                    except Exception as e: print(f"WARNING: checkpoint save failed for {gk}_seed{seed}: {e}")
                 except Exception as e:
                     import traceback; traceback.print_exc(); all_results[gk].append({'seed':seed,'mean_reward':None,'error':str(e)})
         # Procgen CNN
@@ -64,7 +64,7 @@ def run_suite(games, timesteps, seeds, log_dir, device):
                     m,s,model = train_one(game, cls, kw, timesteps, seed, log_dir, device, vector=vec)
                     print(f"-> {m:.2f}"); all_results[gk].append({'seed':seed,'mean_reward':m})
                     try: model.save(os.path.join(comp_dir, f"{gk}_seed{seed}.zip"))
-                    except: pass
+                    except Exception as e: print(f"WARNING: checkpoint save failed for {gk}_seed{seed}: {e}")
                 except Exception as e:
                     import traceback; traceback.print_exc(); all_results[gk].append({'seed':seed,'mean_reward':None,'error':str(e)})
         # Augment (only bossfight/starpilot/dodgeball, but runs on all for comparison)
@@ -83,7 +83,7 @@ def run_suite(games, timesteps, seeds, log_dir, device):
                     m,s,model = train_one(game, cls, dict(features_dim=512), timesteps, seed, log_dir, device, vector=False)
                     print(f"-> {m:.2f}"); all_results[gk].append({'seed':seed,'mean_reward':m})
                     try: model.save(os.path.join(comp_dir, f"{gk}_seed{seed}.zip"))
-                    except: pass
+                    except Exception as e: print(f"WARNING: checkpoint save failed for {gk}_seed{seed}: {e}")
                 except Exception as e:
                     import traceback; traceback.print_exc(); all_results[gk].append({'seed':seed,'mean_reward':None,'error':str(e)})
 

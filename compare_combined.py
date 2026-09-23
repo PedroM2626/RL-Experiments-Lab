@@ -62,7 +62,7 @@ def main():
                     print(f"{gk} seed {seed}: {mean:.2f} +/- {std:.2f}")
                     results[gk].append({'seed': seed, 'mean_reward': mean, 'std_reward': std})
                     try: model.save(os.path.join(comp_dir, f"{gk}_seed{seed}.zip"))
-                    except: pass
+                    except Exception as e: print(f"WARNING: checkpoint save failed for {gk}_seed{seed}: {e}")
                 except Exception as e:
                     import traceback; traceback.print_exc()
                     results[gk].append({'seed': seed, 'mean_reward': None, 'error': str(e)})

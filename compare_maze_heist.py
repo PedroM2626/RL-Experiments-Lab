@@ -1,139 +1,40 @@
 """
 Maze+Heist PPO vs ICM vs RND vs NGU — 2 games × 4 configs × 5 seeds × 100k
 ICM: forward+inverse, RND: random target, NGU: RND+episodic
+The bonus wrappers live in models/bonuses.py; each run asserts the mechanism actually
+fired, so an arm cannot silently degrade to plain PPO.
 """
-import os, json, argparse, collections
+import os, json, argparse
 from datetime import datetime
-import numpy as np, torch, torch.nn as nn, torch.nn.functional as F
-import gymnasium as gymn
+import numpy as np, torch
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.evaluation import evaluate_policy
 from procgen_wrapper import make_procgen_env
 from models.sb3_extractors import ClassicCNNExtractor
+from models.bonuses import ICMWrapper, RNDWrapper, NGUWrapper
 
-class ICMWrapper(gymn.Wrapper):
-    def __init__(self, env, beta=0.01):
-        super().__init__(env)
-        self.beta=beta
-        # phi: same CNN as Classic
-        self.phi = nn.Sequential(nn.Conv2d(3,32,8,stride=4), nn.ReLU(), nn.Conv2d(32,64,4,stride=2), nn.ReLU(), nn.Conv2d(64,64,3,stride=1), nn.ReLU(), nn.Flatten())
-        with torch.no_grad():
-            dummy=torch.zeros(1,3,64,64); n_flat=self.phi(dummy).shape[1]
-        self.forward_model = nn.Sequential(nn.Linear(n_flat+15, 512), nn.ReLU(), nn.Linear(512, n_flat))
-        self.inverse_model = nn.Sequential(nn.Linear(n_flat*2, 512), nn.ReLU(), nn.Linear(512, 15))
-        self.opt = torch.optim.Adam(list(self.phi.parameters())+list(self.forward_model.parameters())+list(self.inverse_model.parameters()), lr=1e-4)
-        self.prev_phi=None
-    def reset(self, **kw):
-        obs,_=self.env.reset(**kw)
-        chw=np.transpose(obs,(2,0,1)) if obs.shape==(64,64,3) else obs
-        # procgen wrapper already CHW, so handle
-        if isinstance(obs, np.ndarray) and obs.shape==(3,64,64):
-            chw=obs
-        elif isinstance(obs, np.ndarray) and obs.shape==(64,64,3):
-            chw=np.transpose(obs,(2,0,1))
-        else:
-            chw=obs
-        with torch.no_grad():
-            phi=self.phi(torch.from_numpy(chw).unsqueeze(0).float()/255.0)
-        self.prev_phi=phi
-        return obs,{}
-    def step(self, action):
-        obs, reward, terminated, truncated, info = self.env.step(action)
-        # intrinsic via forward error (simplified, train every step)
-        try:
-            # phi(s)
-            # need to handle obs CHW vs HWC
-            if isinstance(obs, np.ndarray) and obs.shape==(3,64,64):
-                chw=obs
-            elif isinstance(obs, np.ndarray) and obs.shape==(64,64,3):
-                chw=np.transpose(obs,(2,0,1))
-            else:
-                chw=obs
-            phi_next=self.phi(torch.from_numpy(chw).unsqueeze(0).float()/255.0)
-            a_onehot=F.one_hot(torch.tensor([action]), num_classes=15).float()
-            pred_phi=self.forward_model(torch.cat([self.prev_phi, a_onehot], dim=1))
-            loss_forward=F.mse_loss(pred_phi, phi_next)
-            intrinsic=loss_forward.item()
-            # update
-            self.opt.zero_grad(); loss_forward.backward(); self.opt.step()
-            reward = reward + self.beta*intrinsic
-            self.prev_phi=phi_next.detach()
-        except Exception:
-            pass
-        return obs, reward, terminated, truncated, info
+WRAPPERS = {'icm': ICMWrapper, 'rnd': RNDWrapper, 'ngu': NGUWrapper}
 
-class RNDWrapper(gymn.Wrapper):
-    def __init__(self, env, beta=0.01):
-        super().__init__(env); self.beta=beta
-        self.target=nn.Sequential(nn.Conv2d(3,32,8,stride=4), nn.ReLU(), nn.Conv2d(32,64,4,stride=2), nn.ReLU(), nn.Flatten(), nn.Linear(1024,512))
-        self.predictor=nn.Sequential(nn.Conv2d(3,32,8,stride=4), nn.ReLU(), nn.Conv2d(32,64,4,stride=2), nn.ReLU(), nn.Flatten(), nn.Linear(1024,512))
-        for p in self.target.parameters(): p.requires_grad=False
-        self.opt=torch.optim.Adam(self.predictor.parameters(), lr=1e-4)
-    def step(self, action):
-        obs, reward, terminated, truncated, info = self.env.step(action)
-        try:
-            if isinstance(obs, np.ndarray) and obs.shape==(3,64,64):
-                chw=obs
-            elif isinstance(obs, np.ndarray) and obs.shape==(64,64,3):
-                chw=np.transpose(obs,(2,0,1))
-            else:
-                chw=obs
-            x=torch.from_numpy(chw).unsqueeze(0).float()/255.0
-            with torch.no_grad(): t=self.target(x)
-            p=self.predictor(x)
-            loss=F.mse_loss(p,t)
-            intrinsic=loss.item()
-            self.opt.zero_grad(); loss.backward(); self.opt.step()
-            reward = reward + self.beta*intrinsic
-        except Exception:
-            pass
-        return obs, reward, terminated, truncated, info
-
-class NGUWrapper(RNDWrapper):
-    def __init__(self, env, beta=0.01):
-        super().__init__(env, beta)
-        self.memory=collections.deque(maxlen=1000)
-    def step(self, action):
-        obs, reward, terminated, truncated, info = self.env.step(action)
-        try:
-            if isinstance(obs, np.ndarray) and obs.shape==(3,64,64):
-                chw=obs
-            elif isinstance(obs, np.ndarray) and obs.shape==(64,64,3):
-                chw=np.transpose(obs,(2,0,1))
-            else:
-                chw=obs
-            x=torch.from_numpy(chw).unsqueeze(0).float()/255.0
-            with torch.no_grad(): t=self.target(x)
-            p=self.predictor(x)
-            rnd_loss=F.mse_loss(p,t).item()
-            # episodic novelty: distance to kNN in memory (simplified)
-            phi=p.detach().cpu().numpy().flatten()
-            if len(self.memory)>10:
-                dists=[np.linalg.norm(phi - m) for m in list(self.memory)[-100:]]
-                episodic=np.mean(sorted(dists)[:5])
-            else:
-                episodic=1.0
-            self.memory.append(phi)
-            loss=F.mse_loss(p,t)
-            self.opt.zero_grad(); loss.backward(); self.opt.step()
-            reward = reward + self.beta*(rnd_loss * episodic)
-        except Exception:
-            pass
-        return obs, reward, terminated, truncated, info
 
 def train_one(game, wrapper, timesteps, seed, log_dir, device):
     def make_env():
         env=make_procgen_env(game, num_levels=200, distribution_mode='easy', seed=seed, vector=False)
-        if wrapper=='icm': env=ICMWrapper(env)
-        elif wrapper=='rnd': env=RNDWrapper(env)
-        elif wrapper=='ngu': env=NGUWrapper(env)
+        if wrapper: env=WRAPPERS[wrapper](env)
         return Monitor(env)
     vec=DummyVecEnv([make_env])
     eval_env=DummyVecEnv([lambda: Monitor(make_procgen_env(game, num_levels=0, distribution_mode='easy', seed=seed+1000, vector=False))])
     model=PPO("CnnPolicy", vec, verbose=0, learning_rate=3e-4, n_steps=256, batch_size=64, n_epochs=3, gamma=0.99, gae_lambda=0.95, clip_range=0.2, seed=seed, device=device, policy_kwargs={"features_extractor_class": ClassicCNNExtractor, "features_extractor_kwargs": dict(features_dim=512)}, tensorboard_log=log_dir)
     model.learn(total_timesteps=timesteps)
+    if wrapper:
+        # env_method reaches the innermost wrapper through Monitor's attribute proxying
+        st = vec.env_method('stats')[0]
+        print(f"[{game}_{wrapper}] intrinsic bonus applied on {st['bonus_applied']}/{st['steps']} "
+              f"steps, mean={st['intrinsic_mean']:.5f}")
+        if st['bonus_applied'] == 0:
+            raise RuntimeError(f"{wrapper} arm added no intrinsic reward at all — the run would "
+                               f"be an unlabelled PPO run (stats={st})")
     mean,std=evaluate_policy(model, eval_env, n_eval_episodes=10, deterministic=False)
     vec.close(); eval_env.close()
     return float(mean), float(std), model
@@ -165,7 +66,7 @@ def main():
                     print(f"{gk} seed {seed}: {mean:.2f} +/- {std:.2f}")
                     results[gk].append({'seed': seed, 'mean_reward': mean, 'std_reward': std})
                     try: model.save(os.path.join(comp_dir, f"{gk}_seed{seed}.zip"))
-                    except: pass
+                    except Exception as e: print(f"WARNING: checkpoint save failed for {gk}_seed{seed}: {e}")
                 except Exception as e:
                     import traceback; traceback.print_exc()
                     results[gk].append({'seed': seed, 'mean_reward': None, 'error': str(e)})

@@ -12,36 +12,28 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from procgen_wrapper import make_procgen_env
 from models.world_model_extractors import ContrastiveExtractor
 
-# Subclass ContrastiveExtractor to support augment_type
+# Augmentation variants of the ContrastiveExtractor arm: each overrides only the
+# train-time perturbation hook, never forward().
 class ContrastiveCrop(ContrastiveExtractor):
-    def __init__(self, obs_space, features_dim=512): super().__init__(obs_space, features_dim); self.augment_type='crop'
-    def forward(self, obs):
-        if obs.dtype==torch.uint8: obs=obs.float()/255.0
-        elif obs.max()>1.5: obs=obs/255.0
-        if self.is_hwc and obs.dim()==4 and obs.shape[-1] in [1,3,4]: obs=obs.permute(0,3,1,2)
-        if self.training and torch.rand(1).item()<0.5:
-            # random crop 56->64 (pad 4)
-            obs = torch.nn.functional.pad(obs, (4,4,4,4), mode='replicate')
-            h,w = obs.shape[2], obs.shape[3]
-            top = torch.randint(0, h-64+1, (1,)).item(); left = torch.randint(0, w-64+1, (1,)).item()
-            obs = obs[:,:,top:top+64, left:left+64]
-        return self.fc(self.cnn(obs))
+    def augment(self, obs):
+        # random crop back to 64x64 from a 4-pixel replicated pad
+        obs = torch.nn.functional.pad(obs, (4, 4, 4, 4), mode='replicate')
+        h, w = obs.shape[2], obs.shape[3]
+        top = torch.randint(0, h - 64 + 1, (1,)).item()
+        left = torch.randint(0, w - 64 + 1, (1,)).item()
+        return obs[:, :, top:top + 64, left:left + 64]
+
 
 class ContrastiveColor(ContrastiveExtractor):
-    def __init__(self, obs_space, features_dim=512): super().__init__(obs_space, features_dim); self.augment_type='color'
-    def forward(self, obs):
-        if obs.dtype==torch.uint8: obs=obs.float()/255.0
-        elif obs.max()>1.5: obs=obs/255.0
-        if self.is_hwc and obs.dim()==4 and obs.shape[-1] in [1,3,4]: obs=obs.permute(0,3,1,2)
-        if self.training and torch.rand(1).item()<0.5:
-            # simple color jitter: brightness/contrast
-            obs = obs * (0.8 + torch.rand(1,device=obs.device)*0.4)
-            obs = torch.clamp(obs,0,1)
-        return self.fc(self.cnn(obs))
+    def augment(self, obs):
+        # brightness/contrast jitter
+        return torch.clamp(obs * (0.8 + torch.rand(1, device=obs.device) * 0.4), 0, 1)
+
 
 class ContrastiveNoise(ContrastiveExtractor):
-    def __init__(self, obs_space, features_dim=512): super().__init__(obs_space, features_dim); self.augment_type='noise'
-    # uses original forward (noise 0.01)
+    # inherits the base additive-noise perturbation, i.e. identical to the wm_contrastive
+    # arm of compare_world_models.py — documented as a duplicate in README section 6.1
+    pass
 
 def train_one(game, num_levels, cls, timesteps, seed, log_dir, device):
     def make_env(): return Monitor(make_procgen_env(game, num_levels=num_levels, distribution_mode='easy', seed=seed, vector=False))
@@ -79,7 +71,7 @@ def main():
                 print(f"{key} seed {seed}: {mean:.2f} +/- {std:.2f}")
                 results[key].append({'seed': seed, 'mean_reward': mean, 'std_reward': std})
                 try: model.save(os.path.join(comp_dir, f"{key}_seed{seed}.zip"))
-                except: pass
+                except Exception as e: print(f"WARNING: checkpoint save failed for {key}_seed{seed}: {e}")
             except Exception as e:
                 import traceback; traceback.print_exc()
                 results[key].append({'seed': seed, 'mean_reward': None, 'error': str(e)})
