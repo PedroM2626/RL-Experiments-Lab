@@ -14,6 +14,7 @@ import argparse
 import json
 import os
 import sys
+import re
 import glob
 import numpy as np
 
@@ -52,15 +53,29 @@ def load_per_seed(base, logs_root):
             print(f"NOTE: no {tag} run JSONs under {logs_root} — the configs that came from "
                   f"them can only be reused from the committed results/scorecard.json")
             continue
+        # a sweep split across processes writes one directory per subset, so cells are
+        # merged by (config, seed) instead of one file replacing another wholesale.
+        cells = {}
         for path in paths:
             with open(path, encoding='utf-8') as f:
                 j = json.load(f)
             for k, v in j.items():
-                data[k] = [x['mean_reward'] for x in v if x['mean_reward'] is not None]
-                sources[k] = f"{tag}: {os.path.relpath(path, logs_root)}"
+                if k.startswith('_'):
+                    continue  # _protocol and friends, not a config
+                for x in v:
+                    if x.get('mean_reward') is None:
+                        continue
+                    prev = cells.get((k, x['seed']))
+                    if prev is not None and abs(prev - x['mean_reward']) > 1e-9:
+                        print(f"NOTE: {k} seed {x['seed']} measured twice "
+                              f"({prev:.3f} then {x['mean_reward']:.3f}); keeping the later")
+                    cells[(k, x['seed'])] = x['mean_reward']
+                    sources[k] = f"{tag}: {os.path.relpath(path, logs_root)}"
+        for (k, _seed) in sorted(cells):
+            data.setdefault(k, []).append(cells[(k, _seed)])
     legacy = load_legacy_records(base)
-    data.update(legacy)
-    sources.update({k: 'results/legacy_records.json' for k in legacy})
+    data.update({k: v for k, v in legacy.items() if k not in data})
+    sources.update({k: 'results/legacy_records.json' for k in legacy if k in data})
     return data, sources
 
 
@@ -84,12 +99,53 @@ def guard_no_data_loss(out_path, results, force):
               "(--logs_root) to recompute them, or pass --force to accept the reduced output.")
         sys.exit(1)
 
+def tb_run_cells(log_dir, valid_keys):
+    """Attribute each tensorboard run directory to a config key.
+
+    Runs created by compare_maze_heist.py are named '<game>_<arm>_seed<n>[_<counter>]', so
+    each curve carries its own config; SB3 appends the counter when a name repeats, which is
+    what --resume does, so the highest counter for a cell is the run that actually finished.
+    When no directory is named, this falls back to the legacy positional convention in which
+    the k-th PPO_k directory was the k-th entry of the expected order — that assumption is
+    wrong for a split or resumed sweep, which is why the naming exists.
+    Returns ([(key, dir)], notes).
+    """
+    valid = set(valid_keys)
+    named, unnamed = {}, []
+    if not os.path.isdir(log_dir):
+        return [], [f"{log_dir} does not exist"]
+    for d in sorted(os.listdir(log_dir)):
+        full = os.path.join(log_dir, d)
+        if not os.path.isdir(full):
+            continue
+        m = re.fullmatch(r"(.+)_seed(\d+)(?:_(\d+))?", d)
+        if m and m.group(1) in valid:
+            counter = int(m.group(3) or 0)
+            cell = (m.group(1), int(m.group(2)))
+            if cell not in named or counter > named[cell][0]:
+                named[cell] = (counter, full)
+        else:
+            unnamed.append(full)
+    notes = []
+    if named:
+        if unnamed:
+            notes.append(f"{len(unnamed)} tensorboard run(s) not attributable to a config and "
+                         f"skipped: {[os.path.basename(u) for u in unnamed][:5]}")
+        runs = [(key, full) for (key, _seed), (_c, full) in sorted(named.items())]
+    else:
+        notes.append("no named runs found, falling back to positional PPO_n attribution")
+        runs = [(key, os.path.join(log_dir, f"PPO_{i}")) for i, key in enumerate(valid_keys, start=1)]
+    return runs, notes
+
+
 def auc_from_tb(log_dir, order, total=100000):
-    """order: list of keys in order of PPO_n creation; returns pairs (key, auc_norm)"""
+    """Tensorboard learning curves -> (key, auc_norm) pairs, normalised by the step budget."""
     from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+    runs, notes = tb_run_cells(log_dir, order)
+    for note in notes:
+        print(f"NOTE: {log_dir}: {note}")
     out = []
-    for i, key in enumerate(order, start=1):
-        d = os.path.join(log_dir, f"PPO_{i}")
+    for key, d in runs:
         if not os.path.isdir(d): continue
         try:
             ea = EventAccumulator(d); ea.Reload()
