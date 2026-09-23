@@ -193,17 +193,20 @@ def test_marl_sequential_buffer():
     return True
 
 
+def run_all():
+    """Entry point used by tests.run_tests: every case, not just test_losses."""
+    return {
+        "battle_won": test_battle_won(),
+        "adapter": test_adapter(),
+        "losses": test_losses(),
+        "recurrent_ql_loss": test_recurrent_ql_loss(),
+        "marl_sequential_buffer": test_marl_sequential_buffer(),
+    }
+
+
 if __name__ == "__main__":
-    test_battle_won()
-    print("battle_won OK", flush=True)
-    test_adapter()
-    print("adapter OK", flush=True)
-    test_losses()
-    print("losses OK", flush=True)
-    test_recurrent_ql_loss()
-    print("recurrent_ql_loss OK", flush=True)
-    test_marl_sequential_buffer()
-    print("marl_sequential_buffer OK", flush=True)
+    for name, ok in run_all().items():
+        print(f"{name} OK ({ok})", flush=True)
     print("MARL_TESTS_OK")
 
 

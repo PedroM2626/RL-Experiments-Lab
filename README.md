@@ -830,7 +830,7 @@ ttot = mixer.apply(target_mixer_params, target_qs, states)
 # Mathematically corrected Bellman target:
 target_tot = rew + gamma * (1.0 - done) * mixer.apply(target_mixer_params, target_qs, next_states)
 ```
-Without scaling by $r + \gamma(1-d) Q_{tot}^{target}$, the mixer loss $L = (Q_{tot} - target)^2$ was deprived of the external reward signal. In addition to repairing the Bellman target equation, we integrated Polyak soft target updates (`--tau`, default $0.005$) and configurable update frequencies into `jax_port/marl/train_ql.py`, verified via unit tests in `jax_port/tests/test_marl.py` (`MARL_TESTS_OK`).
+Without scaling by $r + \gamma(1-d) Q_{tot}^{target}$, the mixer loss $L = (Q_{tot} - target)^2$ was deprived of the external reward signal. In addition to repairing the Bellman target equation, we integrated Polyak soft target updates (`--tau`) and configurable update frequencies (`--target-update-interval`) into `jax_port/marl/train_ql.py`, verified via unit tests in `jax_port/tests/test_marl.py` (`MARL_TESTS_OK`). Correction (23/09/2026): this paragraph previously stated a `--tau` default of `0.005`; the actual default is `tau = 0.0`, which selects the hard target copy every `500` gradient steps, and no published MARL cell passed `--tau` — so every MARL result in section 15.4.4 was produced with hard target updates. `run_grade.py` now exposes both flags so the grid can reach them.
 
 #### 15.4.5. Temporal Architecture Bake-Off — 10 Memory Models, 100k Steps, 5 Seeds (06–07/09/2026, Suite `temporal`)
 
@@ -1035,10 +1035,13 @@ The repository contains automated unit tests across both PyTorch and JAX backend
 - **World-Model Extractor Tests (`tests/test_world_model_extractors.py`):** `dream()` must return the input's spatial resolution, must share one encoder with `forward()`, and must react to encoder weights; the augmentation hook is only applied in training mode.
 - **Intrinsic Reward Tests (`tests/test_exploration_bonuses.py`):** every bonus wrapper must add a bonus on every step, accept HWC and CHW observations, raise on a malformed observation instead of degrading to plain PPO, keep the RND target frozen, and scale linearly with `beta`.
 
-- **JAX / MARL Test Suite (`jax_port/tests/test_marl.py`):**
-  - Validates `MARLSequentialBuffer` temporal sequence integrity and per-environment isolation.
-  - Verifies recurrent Q-learning Bellman target masking and gradient updates.
-  - Validates multi-agent environment battle metrics and win-rate accounting.
+- **JAX Port Test Suite (`python -m jax_port.tests.run_tests`)** — six registered modules, each SKIP-ponly on a missing optional dependency:
+  - `test_stats`: Student-t CI, Cohen's d, AUC normalization and the top-1-vs-top-2 CI-overlap predicate (both the separated and the indistinguishable case).
+  - `test_parity`: old-gym Procgen vs the JAX env on observations, rewards and autoreset over 200 steps.
+  - `test_zoo`: all 13 backbones forward-pass with shape and parameter-count checks.
+  - `test_smoke`: end-to-end PPO training run; its arguments are built by `train.build_parser()` so a flag rename cannot leave a stale hand-built namespace behind.
+  - `test_temporal`: memory-backbone shapes and `StackVec` stacking — previously orphaned, never invoked by the runner.
+  - `test_marl`: `run_all()` executes **all five** cases — `MARLSequentialBuffer` temporal integrity and per-environment isolation, recurrent Q-learning Bellman target masking and gradient updates, battle metrics and win-rate accounting, adapter autoreset, and the finite-loss sweep over the seven algorithms. Before 23/09/2026 the runner registered only `test_losses`, while this section cited the other four as validation evidence.
 
 ---
 

@@ -1,4 +1,8 @@
-"""CPU: temporal zoo shapes + StackVec (no GPU)."""
+"""CPU: temporal backbone (memory) shapes + StackVec frame stacking (no GPU).
+
+Registered in tests.run_tests as "temporal"; before 23/09/2026 the aggregate runner
+never listed this module, so these two cases only ran when invoked directly.
+"""
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -49,6 +53,11 @@ def test_stack():
     print("STACK_OK")
 
 
+def run_all():
+    """Entry point used by tests.run_tests."""
+    return {"temporal_shapes": test_temporal_shapes(), "stack": test_stack()}
+
+
 if __name__ == "__main__":
-    test_temporal_shapes()
-    test_stack()
+    run_all()
+    print("TEMPORAL_TESTS_OK")
