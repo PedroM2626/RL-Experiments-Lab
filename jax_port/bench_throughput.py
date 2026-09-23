@@ -4,8 +4,8 @@ Measures, by env count, (a) env-only FPS (random actions, autoreset) and
 (b) env+transfer+JIT preprocessing FPS (uint8 CHW -> float32 /255
 on device cuda:0). Legacy baseline from SB3 study: ~300 FPS (Section 1.4).
 
-Usage (in /root/procgen-jax venv, via WSL):
-    /root/procgen-jax/bin/python jax_port/bench_throughput.py \
+Usage (inside the WSL venv):
+    PYTHONPATH="$REPO" "$PY" -m jax_port.bench_throughput \
         --game coinrun --num-envs 1 4 16 --steps 3000 --seed 42
 Output: stdout table + JSON in jax_port/pa1_throughput.json.
 """

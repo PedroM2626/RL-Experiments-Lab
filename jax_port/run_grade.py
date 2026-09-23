@@ -6,11 +6,11 @@ Suites (--suite, repeatable and combinable):
   algo        : ppo/a2c/dqn/qrdqn x starpilot/dodgeball/bossfight (+--lr-sens)
   hrl         : flat/skip4/hrl/hrl_learned x jumper/plunder (frame budget)
   budget      : resnet18+mlp x starpilot/dodgeball (honors given --timesteps)
-Usage:
-    .../train.py ...  # no; this script orchestrates everything in ONE process
-    wsl -e env PYTHONPATH=... /root/procgen-jax/bin/python \
-      jax_port/run_grade.py --suite main --games bossfight --seeds 42 \
-      --timesteps 100000 --eval-full --out-dir jax_port/results_grade
+Usage (see jax_port/README.md for the venv setup):
+    python -m jax_port.run_grade --suite main --games bossfight --seeds 42 \
+      --timesteps 100000 --eval-full
+Cell outputs default to <this package>/results_grade/, independent of the
+working directory.
 Cell: {cfg}__{game}__seed{s}__{t}k.json; skips completed cells (resume).
 --eval-full => 100 stoch + 100 det + 15 train (definitive protocol).
 """
@@ -20,6 +20,8 @@ import json
 import os
 import time
 import types
+
+BASE = os.path.dirname(os.path.abspath(__file__))
 
 MAIN_CONFIGS = ["classic", "cbam", "spatial", "mlp", "aug_crop", "aug_color",
                 "aug_noise", "impala", "impoola", "lstm_attention", "vit",
@@ -301,8 +303,8 @@ def main():
                     help="filters cfgs (e.g. classic mlp mlp_vector ppo icm flat)")
     ap.add_argument("--lr-sens", action="store_true")
     ap.add_argument("--overwrite", action="store_true")
-    ap.add_argument("--out-dir", default="jax_port/results_grade")
-    ap.add_argument("--master", default="jax_port/results_grade/master.json")
+    ap.add_argument("--out-dir", default=os.path.join(BASE, "results_grade"))
+    ap.add_argument("--master", default=os.path.join(BASE, "results_grade", "master.json"))
     args = ap.parse_args()
     os.makedirs(args.out_dir, exist_ok=True)
     master = {}

@@ -14,10 +14,8 @@ Protocol faithful to study where it matters, tuned where throughput demands:
     (grayscale 16x16, study's ``ProcgenVectorWrapper``, without cv2:
     luminance + 4x mean-pool = exact INTER_AREA).
 
-Usage (venv /root/procgen-jax, via WSL):
-    wsl -e env PYTHONPATH=/mnt/c/Users/Acer/Downloads/MLE \
-      /root/procgen-jax/bin/python \
-      /mnt/c/Users/Acer/Downloads/MLE/jax_port/train.py \
+Usage (inside the WSL venv; PYTHONPATH is the checkout root):
+    env PYTHONPATH="$REPO" "$PY" -m jax_port.train \
       --game coinrun --timesteps 100000 --seed 42 --num-envs 64
 """
 
