@@ -4,6 +4,8 @@ import torch.nn.functional as F
 import gymnasium as gym
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 
+from models.layout import to_chw
+
 def _is_hwc(space):
     return len(space.shape)==3 and space.shape[2] in [1,3,4]
 
@@ -38,7 +40,7 @@ class ImpalaCNNExtractor(BaseFeaturesExtractor):
     def forward(self, o):
         if o.dtype==torch.uint8: o=o.float()/255.0
         elif o.max()>1.5: o=o/255.0
-        if self.is_hwc and o.dim()==4 and o.shape[-1] in [1,3,4]: o=o.permute(0,3,1,2).contiguous()
+        o = to_chw(o)
         x=self.block1(o); x=self.block2(x); x=self.block3(x)
         return self.fc(x.reshape(x.size(0),-1))
 
@@ -56,7 +58,7 @@ class ImpoolaCNNExtractor(BaseFeaturesExtractor):
     def forward(self, o):
         if o.dtype==torch.uint8: o=o.float()/255.0
         elif o.max()>1.5: o=o/255.0
-        if self.is_hwc and o.dim()==4 and o.shape[-1] in [1,3,4]: o=o.permute(0,3,1,2).contiguous()
+        o = to_chw(o)
         x=self.block1(o); x=self.block2(x); x=self.block3(x)
         x=self.gap(x).reshape(x.size(0),-1)
         return self.fc(x)
@@ -81,7 +83,7 @@ class LSTMAttentionExtractor(BaseFeaturesExtractor):
     def forward(self, o):
         if o.dtype==torch.uint8: o=o.float()/255.0
         elif o.max()>1.5: o=o/255.0
-        if self.is_hwc and o.dim()==4 and o.shape[-1] in [1,3,4]: o=o.permute(0,3,1,2)
+        o = to_chw(o)
         f=self.cnn(o)  # B x N
         # simulate sequence of 4 with identical feature (to maintain LSTM structure)
         seq=f.unsqueeze(1).repeat(1,4,1)  # B x 4 x N
@@ -107,7 +109,7 @@ class ViTExtractor(BaseFeaturesExtractor):
     def forward(self, o):
         if o.dtype==torch.uint8: o=o.float()/255.0
         elif o.max()>1.5: o=o/255.0
-        if self.is_hwc and o.dim()==4 and o.shape[-1] in [1,3,4]: o=o.permute(0,3,1,2)
+        o = to_chw(o)
         x=self.proj(o)  # B x dim x H/p x W/p
         x=x.flatten(2).transpose(1,2)  # B x N x dim
         x=x+self.pos_emb
@@ -142,7 +144,7 @@ class ResNet18Extractor(BaseFeaturesExtractor):
     def forward(self, o):
         if o.dtype==torch.uint8: o=o.float()/255.0
         elif o.max()>1.5: o=o/255.0
-        if self.is_hwc and o.dim()==4 and o.shape[-1] in [1,3,4]: o=o.permute(0,3,1,2)
+        o = to_chw(o)
         x=self.stem(o)
         # layer1 (residual identity)
         for b in self.layer1:

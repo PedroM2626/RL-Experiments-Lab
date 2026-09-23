@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import gymnasium as gym
 from stable_baselines3.common.torch_layers import BaseFeaturesExtractor
 from models.cnn_attention import CBAMModule, SpatialAttentionModule
+from models.layout import to_chw
 
 class ClassicCNNExtractor(BaseFeaturesExtractor):
     """
@@ -54,9 +55,7 @@ class ClassicCNNExtractor(BaseFeaturesExtractor):
             observations = observations.float() / 255.0
         elif observations.max() > 1.5:
             observations = observations / 255.0
-        if self.is_hwc and observations.dim() == 4 and observations.shape[-1] in [1,3,4]:
-            # HWC -> CHW
-            observations = observations.permute(0, 3, 1, 2).contiguous()
+        observations = to_chw(observations)
         return self.linear(self.cnn(observations))
 
 
@@ -125,8 +124,7 @@ class AttentionCNNExtractor(BaseFeaturesExtractor):
             observations = observations.float() / 255.0
         elif observations.max() > 1.5:
             observations = observations / 255.0
-        if self.is_hwc and observations.dim() == 4 and observations.shape[-1] in [1,3,4]:
-            observations = observations.permute(0, 3, 1, 2).contiguous()
+        observations = to_chw(observations)
         x = F.relu(self.conv1(observations))
         x = self.att1(x)
         x = F.relu(self.conv2(x))
