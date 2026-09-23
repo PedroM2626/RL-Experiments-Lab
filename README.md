@@ -321,6 +321,16 @@ For each architecture evaluated across the 3 core suite games (`bossfight`, `sta
 
 All generated visual artifacts and figures are versioned under `results/`.
 
+**Provenance (added 23/09/2026 — previously no figure had a stated producer):**
+
+| Figures | Drawn by | Data source | Rebuildable today |
+|---|---|---|---|
+| `coinrun_50k_cnn_vs_mlp.png` (4.1), `bossfight_100k_world_models.png` (4.2) | `report_figures.py` | `results/legacy_records.json` (per-seed values of the pruned runs) | ✅ `py -3.10 report_figures.py` |
+| `rliable_profile.png` (4.9) | `run_rliable_eval.py` | `results/eval100_results.json` + `results/random_baselines.json` | ✅ `py -3.10 run_rliable_eval.py` |
+| `suite_*` (4.3), `bossfight_hard_100k.png` (4.4), `new_archs_*` (4.5), `maze_heist_*` (4.6), `global_16.png` (4.7) | `compare_suite.py`, `compare_bossfight_hard.py`, `compare_new_archs.py`, `compare_maze_heist.py`, `compare_combined.py` | their `logs_*/<run>/` directories, which are git-ignored and were pruned | ❌ needs the benchmark re-run (commands in section 5); the files below are the originals from those runs |
+
+`py -3.10 report_figures.py --check` fails if this README embeds a figure that is not in the repository, or one with no recorded producer in the table above. It runs as a step in `.github/workflows/tests.yml` and is asserted again in `tests/test_report_figures.py`, so a figure can no longer drift away from its data silently. Regenerating 4.1/4.2 in place reproduces the same means and per-seed values; the error bars are sample standard deviations (`ddof=1`, matching section 3.8) and therefore slightly wider than the population standard deviations quoted in section 7.
+
 ### 4.1. Coinrun 50k — CNN vs MLP (With/Without Vision)
 ![Coinrun 50k — CNN vs MLP](results/coinrun_50k_cnn_vs_mlp.png)
 
@@ -381,7 +391,8 @@ py -3.10 -u re_eval_100.py --device cuda  # Definitive protocol: 100 eps across 
 py -3.10 eval100_analysis.py  # Comparative analysis 30 vs 100 -> results/eval100_analysis.json
 py -3.10 random_baselines.py --episodes 50  # Empirical random anchors on unseen levels -> results/random_baselines.json (section 18.1)
 py -3.10 run_rliable_eval.py  # IQM / trimmed mean / stratified bootstrap CIs / profiles -> results/rliable_scorecard.json + rliable_profile.png (section 3.14)
-py -3.10 -m pytest tests -q  # Extractor + statistical aggregation tests
+py -3.10 report_figures.py  # Rebuilds figures 4.1/4.2 from results/legacy_records.json; prints which of the other 11 need a re-run
+py -3.10 -m pytest tests -q  # 84 tests: extractors, SB3 integration, bonuses, world models, aggregation, provenance
 py -3.10 probe_actions.py  # Action space probing (basis for HRL skills)
 py -3.10 -u compare_hrl.py --device cuda  # Independent benchmark: HRL vs Flat RL (jumper/plunder)
 py -3.10 -u compare_hrl_learned.py --device cuda  # hrl_learned arm (RUN AFTER compare_hrl.py: both write to results/hrl_results.json)
@@ -395,7 +406,7 @@ py -3.10 -u lr_sensitivity.py --device cuda  # Learning rate sensitivity test fo
 
 **`cuda` Runtime Estimates:** `coinrun 50k` `5×50k` `~35 min`; `bossfight 100k` `5×100k` `~67 min`; `suite 100k` `3 games × 11 × 5 × 100k` `16.5M steps` `~15h` (`20:41→04:47`); `bossfight hard` `~2.5h`; `new archs 100k` `3 games × 5 × 5 × 100k` `7.5M steps` `~12h` (`13:45→01:39`); `maze+heist 100k` `2 games × 4 × 5 × 100k` `4M steps` `~6.5h` (`01:48→08:23`); `combined` immediate; `re-eval 115 zips` `~70 min`; `suite retrain 165 models` `~28h` (`bossfight ~10 min/model`, `dodgeball ~3 min/model`); `re-eval 100 eps 275 zips` `~5h`.
 
-**Continuous integration:** `.github/workflows/tests.yml` runs on every push to `main` and on pull requests — one job installs the CPU build of the study stack and runs `python -m pytest tests -q` behind a `compileall` syntax gate over every module in the repository; a second job installs JAX/Flax/Optax on CPU and runs `python -m jax_port.tests.run_tests`, whose cases report SKIP when an environment-only dependency (procgen, jaxmarl) is absent but fail the build on any assertion error. Neither job retrains anything: they protect the analysis and extractor code, not the benchmark numbers.
+**Continuous integration:** `.github/workflows/tests.yml` runs on every push to `main` and on pull requests — one job installs the CPU build of the study stack and runs, in order, a `compileall` syntax gate over every module in the repository, `python report_figures.py --check` (every figure this README embeds must exist and must have a producer recorded in the section 4 table), and `python -m pytest tests -q`; a second job installs JAX/Flax/Optax on CPU and runs `python -m jax_port.tests.run_tests`, whose cases report SKIP when an environment-only dependency (procgen, jaxmarl) is absent but fail the build on any assertion error. Neither job retrains anything: they protect the analysis, extractor and documentation-integrity code, not the benchmark numbers.
 
 ---
 
@@ -518,7 +529,9 @@ The primary leverage point was not accumulating more architectures, but rigorous
 
 ## 8. Videos
 
-Rendered on demand via `visualize_side_by_side.py` (commands documented in section 4.8): `bossfight_dreams.mp4` (World Models with reconstructed dreams) and `coinrun_side_by_side.mp4` (CNN vs MLP side-by-side rollout). Output is formatted as `.mp4` with `128×128` panels per agent stacked horizontally (`hstack`) at `15 FPS`; latent decoding (`dream()`) implemented for `VAE/AE/Recon` (`models/world_model_extractors.py:6` `dream()` `deconv`), while `Contrastive` displays `no dream`. Requires `.zip` checkpoints produced during benchmark runs.
+Rendered on demand via `visualize_side_by_side.py` (commands documented in section 4.8): `bossfight_dreams.mp4` (World Models with reconstructed dreams) and `coinrun_side_by_side.mp4` (CNN vs MLP side-by-side rollout). Output is formatted as `.mp4` with `128×128` panels per agent stacked horizontally (`hstack`) at `15 FPS`; latent decoding (`dream()`) implemented for `VAE/AE/Recon` (`models/world_model_extractors.py` `dream()` `deconv`), while `Contrastive` displays `no dream`. Requires `.zip` checkpoints produced during benchmark runs.
+
+> **No video files are committed:** `results/` has never contained an `.mp4` in this repository's history, so both names above are outputs you generate locally. The only committed dream artifacts are `jax_port/dreams/bossfight_dreams.gif` and `jax_port/dreams/dreamer_imagined.gif`. Note also that until the 23/09/2026 extractor fix, `AEExtractor.dream()` decoded through a second encoder branch that `forward()` never used, so an "AE dream" panel from the old code visualized an untrained path; a failed decode now renders a panel labelled `dream unavailable` instead of an unlabeled black frame.
 
 ## 9. Hardware and Limitations
 
@@ -1037,6 +1050,8 @@ The repository contains automated unit tests across both PyTorch and JAX backend
 - **Legacy Data Provenance Tests (`tests/test_legacy_records.py`):** assert that `results/legacy_records.json` still reproduces the published `mean`/`std`/`ci95` of section 3.8 and the section 3.7 ranking used by `retrain_analysis.py`.
 - **World-Model Extractor Tests (`tests/test_world_model_extractors.py`):** `dream()` must return the input's spatial resolution, must share one encoder with `forward()`, and must react to encoder weights; the augmentation hook is only applied in training mode.
 - **Intrinsic Reward Tests (`tests/test_exploration_bonuses.py`):** every bonus wrapper must add a bonus on every step, accept HWC and CHW observations, raise on a malformed observation instead of degrading to plain PPO, keep the RND target frozen, and scale linearly with `beta`.
+- **Grid Analysis Tests (`tests/test_grid_analysis.py`):** `jax_port/cells_summary.json` must still regenerate the published `analysis_full.json` (every cell, ranking and metric), which is what makes the committed summary an adequate stand-in for the git-ignored raw grid logs.
+- **Figure Provenance Tests (`tests/test_report_figures.py`):** the set of figures embedded in this README must equal the `PROVENANCE` map, each entry must name a script that still exists and a real data source, and the figures claimed rebuildable must have their per-seed arrays present (5 seeds each) in `results/legacy_records.json`.
 
 - **JAX Port Test Suite (`python -m jax_port.tests.run_tests`)** — six registered modules, each SKIP-ponly on a missing optional dependency:
   - `test_stats`: Student-t CI, Cohen's d, AUC normalization and the top-1-vs-top-2 CI-overlap predicate (both the separated and the indistinguishable case).
