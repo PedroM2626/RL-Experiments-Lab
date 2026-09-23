@@ -395,6 +395,8 @@ py -3.10 -u lr_sensitivity.py --device cuda  # Learning rate sensitivity test fo
 
 **`cuda` Runtime Estimates:** `coinrun 50k` `5×50k` `~35 min`; `bossfight 100k` `5×100k` `~67 min`; `suite 100k` `3 games × 11 × 5 × 100k` `16.5M steps` `~15h` (`20:41→04:47`); `bossfight hard` `~2.5h`; `new archs 100k` `3 games × 5 × 5 × 100k` `7.5M steps` `~12h` (`13:45→01:39`); `maze+heist 100k` `2 games × 4 × 5 × 100k` `4M steps` `~6.5h` (`01:48→08:23`); `combined` immediate; `re-eval 115 zips` `~70 min`; `suite retrain 165 models` `~28h` (`bossfight ~10 min/model`, `dodgeball ~3 min/model`); `re-eval 100 eps 275 zips` `~5h`.
 
+**Continuous integration:** `.github/workflows/tests.yml` runs on every push to `main` and on pull requests — one job installs the CPU build of the study stack and runs `python -m pytest tests -q` behind a `compileall` syntax gate over every module in the repository; a second job installs JAX/Flax/Optax on CPU and runs `python -m jax_port.tests.run_tests`, whose cases report SKIP when an environment-only dependency (procgen, jaxmarl) is absent but fail the build on any assertion error. Neither job retrains anything: they protect the analysis and extractor code, not the benchmark numbers.
+
 ---
 
 ## 6. Proposed Future Benchmarks
