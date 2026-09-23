@@ -22,20 +22,22 @@ venv.bak/
 
 logs*/
 
-# results/ (gráficos e vídeos versionados no README) e models/ (código-fonte)
-# NÃO são ignorados.
+# results/ (figures and videos referenced by the README) and models/ (source
+# code) are deliberately tracked.
 
 *.log
 *.stdout.txt
 *.stderr.txt
-*.txt
-!requirements.txt
-!jax_port/requirements-jax.txt
+# No blanket *.txt here: it silently excluded any text deliverable and kept only
+# two whitelisted requirements files. Scratch text output is covered by the
+# *.stdout.txt / *.stderr.txt patterns above.
 
 .DS_Store
 Thumbs.db
 
-# outputs brutos da grade JAX (centenas de JSONs; so a analise final e versionada)
+# raw JAX grid output (hundreds of JSONs). The publishable aggregate is versioned:
+# jax_port/analysis_full.json + jax_port/cells_summary.json, which reproduce each
+# other (tests/test_grid_analysis.py).
 jax_port/results_grade/
-# follow-ups e parciais (idem; conclusoes vao para o README)
+# follow-ups and partial runs (same rationale; conclusions live in the README)
 jax_port/results_followup/

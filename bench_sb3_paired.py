@@ -9,9 +9,9 @@ Config B (throughput): identical, except SubprocVecEnv n=64 + batch 1024
 
 Measurement: wall clock of ``model.learn()`` ONLY (environment/model build,
 evaluation, and checkpointing excluded). SPS = model.num_timesteps / wall.
-Usage (study venv, Windows):
-    & "C:/Users/Acer/AppData/Local/Programs/Python/Python310/python.exe" `
-      bench_sb3_paired.py --vec dummy --n-envs 1 --batch-size 64 `
+Usage (study venv, Windows; Python 3.10 — see requirements.txt):
+    py -3.10 bench_sb3_paired.py `
+      --vec dummy --n-envs 1 --batch-size 64 `
       --timesteps 100000 --seed 42 --game coinrun --out sb3_A.json
 """
 

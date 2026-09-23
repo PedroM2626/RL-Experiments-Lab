@@ -1,17 +1,17 @@
-"""Dreamer completo em Flax (extensao; loop fechado, nao so RSSM).
+"""Full Dreamer in Flax (extension; closed loop, not only the RSSM).
 
-Componentes DreamerV3-lite, todos Flax, discreto ProcGen:
-  RSSM: encoder ClassicCNN (1024) + GRU deter 256 + latente gaussiano
-    64D (prior p(z|h) / posterior q(z|h,feat)) + decoders (obs/reward/continue)
-  losses WM: recon BCE + reward MSE + continue BCE + KL dyn 0.5 / rep 0.1
-  comportamento: actor+critic MLP(512) treinados em IMAGINACAO
-    (H=15 rollouts latentes do prior), lambda-returns, EMA critic,
-    entropia 3e-4. Politica age no env real so p/ encher o buffer.
-Simplificacoes documentadas vs V3: latente gaussiano (nao 32x32
-categorico), GRU-256 (nao 512+), reward MSE cru (sem symlog/twohot),
-sem free-nats/clip de KL.
-Loop: coleta real (actor) -> updates WM em sequencias BxL do buffer
-  -> imaginacao + updates actor/critic -> repete.
+DreamerV3-lite components, all Flax, discrete ProcGen:
+  RSSM: ClassicCNN encoder (1024) + GRU deterministic 256 + 64D gaussian
+    latent (prior p(z|h) / posterior q(z|h,feat)) + decoders (obs/reward/continue)
+  WM losses: recon BCE + reward MSE + continue BCE + KL dyn 0.5 / rep 0.1
+  behaviour: MLP(512) actor+critic trained in IMAGINATION
+    (H=15 latent rollouts from the prior), lambda-returns, EMA critic,
+    entropy 3e-4. The policy acts in the real env only to fill the buffer.
+Documented simplifications vs V3: gaussian latent (not 32x32
+categorical), GRU-256 (not 512+), raw MSE reward loss (no symlog/twohot),
+no free-nats / KL clipping.
+Loop: real collection (actor) -> WM updates on BxL buffer sequences
+  -> imagination + actor/critic updates -> repeat.
 """
 
 import flax.linen as nn

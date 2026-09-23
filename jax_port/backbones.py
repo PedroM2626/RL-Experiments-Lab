@@ -224,9 +224,9 @@ class LSTMAttention(nn.Module):
 
 
 class VAEBackbone(nn.Module):
-    """Replica de ``VAEExtractor`` (forward estocastico): mu/logvar 128D,
-    z = mu + eps*std (reparam), fc_out -> 512. SEM termo KL no loss PPO
-    (o estudo tambem nao otimiza KL/dream/proj — so o forward entra)."""
+    """Replica of ``VAEExtractor`` (stochastic forward): mu/logvar 128D,
+    z = mu + eps*std (reparameterization), fc_out -> 512. NO KL term in the PPO
+    loss (the study likewise never optimizes KL/dream/proj — only forward runs)."""
     latent: int = 128
 
     @nn.compact

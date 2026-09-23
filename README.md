@@ -1,6 +1,6 @@
 # Systematic Benchmark of Visual Architectures, World Models, and Exploration in Procgen — A Study with 5 Seeds, 5 Games, and 100k Steps
 
-**Python 3.10.11 + Procgen 0.10.7 + Stable-Baselines3 2.9.0 + PyTorch 2.5.1+cu121 (RTX 4070) — `C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe`**
+**Python 3.10.11 + Procgen 0.10.7 + Stable-Baselines3 2.9.0 + PyTorch 2.5.1+cu121 (RTX 4070) — `py -3.10` (Python 3.10.11)**
 
 > **Abstract.** Systematic evaluation of **16 architectures** across **6 families** (`CNN` vs `Attention` vs `World Models` vs `Augment` vs `New Archs` vs `Exploration`) with **5 seeds** (`42-46`), **5 games** (`bossfight`, `starpilot`, `dodgeball`, `maze`, `heist` + `coinrun` control), and **two difficulty settings** (`easy 200` / `hard 200` / `eval 0`) in `Procgen` (`~300 FPS` on `cuda`, `50k` in `~3 min`). All experiments use `frame_stack=1` (`3×64×64` `CHW` `uint8`), `PPO` (`lr 3e-4`, `n_steps 256`, `batch 64`, `n_epochs 3`, `γ 0.99`, `λ 0.95`, `clip 0.2`), and `tensorboard` for training monitoring. Evaluation initially used `10 episodes` and was systematically hardened throughout the study up to the definitive protocol: **`100 eps` stochastic + deterministic on unseen levels (`seed+1000`)** — sections 3.10→3.12.
 
@@ -363,16 +363,16 @@ py -3.10 visualize_side_by_side.py --benchmark procgen --game coinrun --log_dir 
 pip install -r requirements.txt
 
 # Or install manually with verified release pins:
-C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe -m pip install procgen==0.10.7 stable-baselines3==2.9.0 gymnasium==1.3.0 gym==0.26.2 torch==2.5.1+cu121 opencv-python==4.8.0.74 --extra-index-url https://download.pytorch.org/whl/cu121
+py -3.10 -m pip install procgen==0.10.7 stable-baselines3==2.9.0 gymnasium==1.3.0 gym==0.26.2 torch==2.5.1+cu121 opencv-python==4.8.0.74 --extra-index-url https://download.pytorch.org/whl/cu121
 
 # Execute 5-seed benchmarks
-C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe -u compare_world_models.py --timesteps 100000 --seeds 42 43 44 45 46 --num_levels 200 --log_dir ./logs_world_models --device cuda
-C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe -u compare_procgen.py --game coinrun --timesteps 50000 --seeds 42 43 44 45 46 --num_levels 200 --log_dir ./logs_procgen --device cuda
-C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe -u compare_suite.py --games bossfight starpilot dodgeball --timesteps 100000 --seeds 42 43 44 45 46 --log_dir ./logs_suite --device cuda
-C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe -u compare_bossfight_hard.py --timesteps 100000 --seeds 42 43 44 45 46 --log_dir ./logs_bossfight_hard --device cuda
-C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe -u compare_new_archs.py --timesteps 100000 --seeds 42 43 44 45 46 --games bossfight starpilot dodgeball --log_dir ./logs_new_archs --device cuda
-C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe -u compare_maze_heist.py --timesteps 100000 --seeds 42 43 44 45 46 --games maze heist --log_dir ./logs_maze_heist --device cuda
-C:\Users\Acer\AppData\Local\Programs\Python\Python310\python.exe -u compare_combined.py  # Aggregates logs_suite + logs_new_archs into global ranking
+py -3.10 -u compare_world_models.py --timesteps 100000 --seeds 42 43 44 45 46 --num_levels 200 --log_dir ./logs_world_models --device cuda
+py -3.10 -u compare_procgen.py --game coinrun --timesteps 50000 --seeds 42 43 44 45 46 --num_levels 200 --log_dir ./logs_procgen --device cuda
+py -3.10 -u compare_suite.py --games bossfight starpilot dodgeball --timesteps 100000 --seeds 42 43 44 45 46 --log_dir ./logs_suite --device cuda
+py -3.10 -u compare_bossfight_hard.py --timesteps 100000 --seeds 42 43 44 45 46 --log_dir ./logs_bossfight_hard --device cuda
+py -3.10 -u compare_new_archs.py --timesteps 100000 --seeds 42 43 44 45 46 --games bossfight starpilot dodgeball --log_dir ./logs_new_archs --device cuda
+py -3.10 -u compare_maze_heist.py --timesteps 100000 --seeds 42 43 44 45 46 --games maze heist --log_dir ./logs_maze_heist --device cuda
+py -3.10 -u compare_combined.py  # Aggregates logs_suite + logs_new_archs into global ranking
 py -3.10 -u re_eval_scorecard.py --device cuda  # Re-evaluates 30 eps stoch+det on 115 zips (no retraining)
 py -3.10 -u compare_suite_retrain.py --device cuda  # Retrains suite under new protocol (resume-safe)
 py -3.10 scorecard_analysis.py  # 95% CI + Cohen's d + AUC -> results/scorecard.json. Requires the logs_new_archs/ and logs_maze_heist/ run directories; without them it exits with an error rather than overwriting the published table with a reduced one (--logs_root / --force to override)
@@ -764,6 +764,7 @@ Each component of the original study corresponds to a JAX module in `jax_port/`,
 - Addressed bugs and edge cases: Flax default SAME padding inflating parameters to 2.1M (corrected to VALID); `stop_gradient` syntax; DQN entrypoint hook; device-side gather latency; `np.trapezoid` compatibility under `numpy 1.26`.
 - Mini-grid execution: 26/26 cells (HRL 4 + main 16 + algo 6) completed in ~6 min; resume functionality verified via `master.json`.
 - Test execution: `wsl -e env PYTHONPATH=... /root/procgen-jax/bin/python -m jax_port.tests.run_tests` (stats+parity+zoo+smoke, ~3 min); full grid executed via `run_grade.py --suite <s> --games <g> --seeds 42-46 --timesteps 100000 --eval-full` (10 suites, 615/615 cells completed, documented in `analysis_full.json`).
+- **Path conventions (updated 23/09/2026):** every `jax_port/` module resolves its own package directory, so `run_grade.py` writes into `jax_port/results_grade/` and `analyze_grade.py` / `analyze_temporal_hard.py` read and write inside `jax_port/` regardless of the current working directory. No source file hardcodes `/mnt/c/...` or `C:\Users\...` any more (the literal commands quoted in sections 14-15 are kept as the historical record of what was executed); a WSL invocation is just `PYTHONPATH=<checkout> <venv>/bin/python -m jax_port.<module>`. The orchestration scripts take overrides instead of literals: `marl_10m_run.sh` / `marl_2s3z_run.sh` honor `REPO`, `PY`, `SEEDS`, `LR`, `ENT`; `continue_grade.ps1` honors `REPO` and `PROCGEN_JAX_VENV` (default `/root/procgen-jax`). `.gitattributes` pins `*.sh` to LF because those scripts are executed inside WSL from the Windows checkout.
 - **Figures:** `jax_port/figures/01-06.png` (global CI, paired speedup, budget scaling, HRL, algorithm families, top-10 n=10) generated programmatically by `make_figures.py` directly from serialized JSON results.
 - **`hrl_learned` at 500k Steps:** On `plunder` across 3 seeds: learned achieves 4.19 vs fixed 3.42 (at 100k: 4.23 vs 3.19). Advantage persists stably; co-training sustains performance without divergence under 5× budget.
 - **Dreams Reconstruction (VAE/AE):** `jax_port/dream.py` (mirrored decoders with SAME padding for exact 64×64 reconstruction) — 20k frames on `bossfight`: VAE BCE 0.37 / KL 0.02, AE 0.32 (~30 s each); generated `jax_port/dreams/dreams_panel.png` + `bossfight_dreams.gif` (300 steps, structured visual dreams: pixel std 44–60 vs 57 ground truth). Rendered as GIF due to upstream `imageio-ffmpeg` audio argument incompatibility in the venv.

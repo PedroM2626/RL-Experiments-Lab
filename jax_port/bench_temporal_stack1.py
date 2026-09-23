@@ -297,7 +297,9 @@ def main():
     parser.add_argument("--eval-eps", type=int, default=20)
     parser.add_argument("--distribution", type=str, default="easy")
     parser.add_argument("--models", nargs="+", default=["classic", "recurrent_lstm", "regularized_recurrent_lstm", "recurrent_s5"])
-    parser.add_argument("--output", type=str, default="/mnt/c/Users/Acer/Downloads/MLE/jax_port/results_stack1_bench.json")
+    parser.add_argument("--output", type=str,
+                        default=os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                             "results_stack1_bench.json"))
     args = parser.parse_args()
 
     models = args.models
