@@ -16,6 +16,15 @@ def test_stats():
     assert abs(cohen_d([1, 2, 3], [4, 5, 6]) + 3.0) < 1e-9
     assert abs(auc_norm([{"steps": 0, "ret20": 0.0},
                          {"steps": 100, "ret20": 2.0}], 100) - 1.0) < 1e-9
+    # CI overlap: separated cells must report overlap=False, near-identical ones True.
+    # The formula used before 23/09/2026 reported overlap=False for both.
+    separated = rank_cells({"a": [10.0, 10.1, 9.9, 10.05, 10.02],
+                            "b": [0.0, 0.1, -0.1, 0.05, 0.02]})
+    assert separated["top1_vs_top2"]["overlap"] is False, separated["top1_vs_top2"]
+    indistinguishable = rank_cells({"a": [1.0, 1.2, 0.8, 1.1, 0.9],
+                                    "b": [1.05, 0.9, 1.1, 1.0, 0.95]})
+    assert indistinguishable["top1_vs_top2"]["overlap"] is True, \
+        indistinguishable["top1_vs_top2"]
     r = rank_cells({"a": [1.0, 1.1, 0.9, 1.0, 1.0],
                     "b": [0.0, 0.1, -0.1, 0.0, 0.05]})
     assert r["ranking"][0]["cell"] == "a"

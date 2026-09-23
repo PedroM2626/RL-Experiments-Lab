@@ -63,9 +63,14 @@ def rank_cells(cell_means):
         b = cell_means[rows[1]["cell"]]
         ma, _, _, _ = mean_ci(a)
         mb, _, _, _ = mean_ci(b)
+        a_lo, a_hi = rows[0]["ci95"]
+        b_lo, b_hi = rows[1]["ci95"]
         out["top1_vs_top2"] = {
             "top1": rows[0]["cell"], "top2": rows[1]["cell"],
             "diff": ma - mb, "cohen_d": cohen_d(a, b),
-            "overlap": not (rows[0]["ci95"][0] > rows[1]["ci95"][1]
-                            or rows[1]["ci95"][1] > rows[0]["ci95"][0])}
+            # Two intervals are disjoint iff one lies strictly above the other.
+            # This previously read `not (a_lo > b_hi or b_hi > a_lo)`, whose second
+            # term is true whenever the top-1 mean is inside top-2's interval, so
+            # `overlap` came out False almost always and overstated significance.
+            "overlap": not (a_hi < b_lo or b_hi < a_lo)}
     return out

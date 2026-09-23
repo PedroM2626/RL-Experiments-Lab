@@ -711,6 +711,8 @@ As a prerequisite for PA0, running background workloads were safely terminated (
 
 **Current Status.** The primary working tree remains the fully reproducible ProcGen/SB3 study (sections 1–12; reproduction commands in section 5). The JAX port, co-located on `main` under `jax_port/` (without modifying root study files), spans the full experimental design: 13 backbones, PPO/A2C, DQN/QR-DQN, ICM/RND/NGU, data augmentations, 4-arm HRL, stoch+det+gap evaluation, statistical metrics (CI/Cohen/AUC), and the full 615-cell multi-seed parity grid — completely executed and serialized in `jax_port/analysis_full.json` (§15.4.3).
 
+> **Evidence note (23/09/2026):** the raw per-cell grid outputs are git-ignored, so `jax_port/cells_summary.json` (897 cells = 865 evaluated + 32 MARL) is the committed record they were reduced to. `python -m jax_port.analyze_grade --from_summary jax_port/cells_summary.json` regenerates `analysis_full.json` from that record alone, and `tests/test_grid_analysis.py` fails if the two drift apart. `analyze_grade.py` resolves its own paths and refuses to overwrite a richer analysis with a thinner one (previously a fresh clone silently rewrote the aggregate into an empty file). The top-1-vs-top-2 `overlap` flag in `jax_port/stats.py` is also corrected: its condition was inverted in a way that reported non-overlap almost always, overstating significance — the rankings themselves are unchanged and the regenerated aggregate matches the published one.
+
 ### 15.1. PA1 — Pipeline and Measured Throughput (04/09/2026, venv `/root/procgen-jax`, WSL2, `coinrun`, Random Actions, 3000 Steps)
 
 Reproducible command (executed via WSL, without torch/sb3/cv2 dependencies in the port venv):
