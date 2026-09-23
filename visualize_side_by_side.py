@@ -128,8 +128,15 @@ def run_side_by_side(benchmark='world_models', game='bossfight', log_dir='./logs
                         cv2.rectangle(dream, (0,0), (128,14), (0,0,0), -1)
                         cv2.putText(dream, "dream", (2,11), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255,200,0), 1)
                         dream_frames.append(dream)
-                except Exception:
-                    dream_frames.append(np.zeros((128,128,3), dtype=np.uint8))
+                except Exception as e:
+                    # Never emit an unlabeled black panel as a "dream": it reads as a
+                    # reconstruction result while being nothing of the sort.
+                    print(f"WARNING: dream() failed for agent {idx}: {type(e).__name__}: {e}")
+                    missing = np.zeros((128, 128, 3), dtype=np.uint8) + 40
+                    cv2.rectangle(missing, (0, 0), (128, 14), (0, 0, 0), -1)
+                    cv2.putText(missing, "dream unavailable", (2, 11),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
+                    dream_frames.append(missing)
             else:
                 # contrastive without dream -> shows obs with noise
                 if obs.shape[0] in [3,12]:

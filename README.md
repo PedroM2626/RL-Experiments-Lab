@@ -128,7 +128,8 @@ Standard `Procgen` literature (original paper, `IDAAC`/`PPG`) reports `5M–25M`
 |---|---:|---:|---:|---:|
 | `maze` | **2.4±1.49** | 1.8±1.46 | **2.4±1.49** | **2.4±1.49** |
 | `heist` | **0.8±0.74** | 0.6±0.80 | **0.8±0.74** | **0.8±0.74** |
-> `ICM` underperforms vanilla `PPO` (`maze` `1.8` vs `2.4`, `heist` `0.6` vs `0.8`); `RND`/`NGU` match `PPO` — `100k` is insufficient for curiosity to excel in `maze`/`heist` `easy`; `NGU` does not beat `RND` (episodic memory provides no leverage across `200` levels). `heist` at `0.8` confirms that hierarchical sparse rewards (`3 keys`) require `>100k`.
+> ❌ **Invalid arms (found 23/09/2026):** `rnd` and `ngu` are not exploration results at all. Their wrapper hardcoded `nn.Linear(1024, 512)` after a two-convolution stem that flattens to `2304`, so every step raised `RuntimeError`, which the wrapper's `except Exception: pass` swallowed — the two arms ran as unlabelled vanilla `PPO`, which is exactly why their per-seed values are byte-identical to `ppo` above. The geometry is fixed in `models/bonuses.py` (sizes now probed from the network, as `icm` already did), failures propagate, and each run now asserts that a bonus was actually added. `icm` was never affected (its `n_flat` was probed). **The `rnd`/`ngu` rows must be re-measured before any conclusion about curiosity is drawn from this table.**
+> `ICM` underperforms vanilla `PPO` (`maze` `1.8` vs `2.4`, `heist` `0.6` vs `0.8`); `100k` is insufficient for curiosity to excel in `maze`/`heist` `easy`. Note also (section 18.1) that the uniform random policy scores `4.40` on `maze` and `2.80` on `heist` under this evaluation protocol, i.e. above every trained arm here — `heist` `0.8` confirms that hierarchical sparse rewards (`3 keys`) require `>100k`, and `NGU`'s episodic memory remains untested by this table.
 
 ### 3.7. Global 16 Architectures — 3-Game Average (Top 10 of 16 Displayed)
 `logs_suite` + `logs_new_archs` aggregated (`16.5M + 7.5M` steps) — `mean` of `3` `means` per architecture:
@@ -159,7 +160,7 @@ With `n=5 seeds`, `95% CI` is computed via Student's `t` (`df=4`, critical value
 | `maze` | `ppo 2.4` `[0.32, 4.48]` vs `icm 1.8` `[-0.24, 3.84]` | 0.36 (small) | ✅ Yes | ICM "worse" **not confirmed** |
 | `heist` | `ppo 0.8` vs `icm 0.6` | 0.23 (small) | ✅ Yes | Statistical tie |
 | `coinrun` | `cbam 8.0` `[8.0, 8.0]` vs `mlp 8.0` `[6.76, 9.24]` | 0.0 | — | Tie; `cbam` exhibits zero variance |
-> **Critical takeaway:** No top-1 vs top-2 difference is statistically significant with `5 seeds` — the rankings in sections 3.x represent **empirical trends**, not definitive conclusions. Only `dodgeball resnet vs vit` (`d=0.956`) approaches a reliable effect. Exact ties between `RND`/`NGU` and `PPO` (`d=0`, identical per-seed returns) indicate that intrinsic bonuses were not differentially triggered in this budget.
+> **Critical takeaway:** No top-1 vs top-2 difference is statistically significant with `5 seeds` — the rankings in sections 3.x represent **empirical trends**, not definitive conclusions. Only `dodgeball resnet vs vit` (`d=0.956`) approaches a reliable effect. The exact ties between `RND`/`NGU` and `PPO` (`d=0`, identical per-seed returns) were not a null result — they were the broken wrapper of section 3.6, confirmed on 23/09/2026.
 > ⚠️ **Superseded:** This ranking was measured under the legacy protocol (`10 eps`); retraining the suite under the new protocol (section 3.11) **inverts the top-2** (`mlp_vector` surpasses `spatial`).
 
 ### 3.9. Sample Efficiency (AUC) — Partial Scorecard (`rollout/ep_rew_mean` TensorBoard, 5 Seeds)
@@ -173,6 +174,7 @@ With `n=5 seeds`, `95% CI` is computed via Student's `t` (`df=4`, critical value
 | `dodgeball` | `resnet 1.175` | `resnet > impala 1.169 > impoola 1.151 > lstm 1.114 > vit 1.032` | ≈ Identical to final ranking |
 | `maze` | `ppo=rnd=ngu 3.785` | all > `icm 3.658` | ICM trails in AUC as well (not only at convergence) |
 | `heist` | `ppo=rnd=ngu 1.826` | all > `icm 1.792` | Identical pattern |
+> `rnd`/`ngu` rows in this table are the disabled-wrapper arms of section 3.6, not curiosity results.
 > **Finding:** `starpilot_impala` displays the highest learning rate curve but lowest final evaluation reward — proving that "fastest learner" ≠ "best asymptotic model" (the ⚡ AUC axis is orthogonal to the 🧠 performance axis).
 
 ### 3.10. Extended Re-Evaluation — `re_eval_scorecard.py` (Completed: `115/115`, `0 errors`)
@@ -252,7 +254,7 @@ Re-evaluation of identical checkpoints across `100 eps unseen` stochastic + `100
 
 **Global Suite Ranking @ 100 eps:** `mlp_vector 1.43` > `resnet18 1.34` > `spatial 1.28` > `lstm_attention 1.26` > `aug_crop 1.25`.
 
-> **4 Findings from the 30→100 Upgrade:** (1) **`mlp_vector` consolidates global 1st place** (`1.25`@10eps → `1.36`@30 → `1.43`@100 — the only model consistently at the top across all protocols). (2) **`ICM` advantage dissolves**: `2.80→2.76` in `maze` vs `ppo/rnd/ngu 2.47→2.80` — the "`ICM` wins" finding in section 3.10 was `30 eps` sample variance; the definitive conclusion returns to an exact tie with `PPO`. (3) **Top-1 in `starpilot`/`dodgeball` inverts again** (`lstm→mlp`, `mlp→resnet18`) while `bossfight` remains stable — the upper tier is solid, while mid-tier rankings remain fluid. (4) **Mean absolute delta |Δ| is `0.108`** between @30 and @100: variance converges, and residual position shifts reinforce section 3.8: with `5 seeds`, no strict ranking order is mathematically frozen; the study reports credible trends with confidence intervals.
+> **4 Findings from the 30→100 Upgrade:** (1) **`mlp_vector` consolidates global 1st place** (`1.25`@10eps → `1.36`@30 → `1.43`@100 — the only model consistently at the top across all protocols). (2) **`ICM` advantage dissolves**: `2.80→2.76` in `maze` vs `ppo/rnd/ngu 2.47→2.80` — the "`ICM` wins" finding in section 3.10 was `30 eps` sample variance; the definitive conclusion returns to an exact tie with `PPO`. The `rnd`/`ngu` columns are not evidence of anything: those two arms ran with their intrinsic bonus disabled by the wrapper defect documented in section 3.6, so their numbers are `PPO`'s by construction. (3) **Top-1 in `starpilot`/`dodgeball` inverts again** (`lstm→mlp`, `mlp→resnet18`) while `bossfight` remains stable — the upper tier is solid, while mid-tier rankings remain fluid. (4) **Mean absolute delta |Δ| is `0.108`** between @30 and @100: variance converges, and residual position shifts reinforce section 3.8: with `5 seeds`, no strict ranking order is mathematically frozen; the study reports credible trends with confidence intervals.
 
 ### 3.13. Budget Scaling — `compare_budget_scaling.py` (Completed: `24/24`, `0 errors`)
 
@@ -403,7 +405,7 @@ py -3.10 -u lr_sensitivity.py --device cuda  # Learning rate sensitivity test fo
 |---|---|---|---|
 | 1 | `mujoco-walker:50` | **Offline RL** `100k` `bossfight` `expert` `BC` vs `IQL` vs `CQL` vs `Decision Transformer` | `~40 min` offline |
 
-### 6.1. Instrumentation Roadmap — 6 Prioritized Enhancements
+### 6.1. Instrumentation Roadmap — 7 Prioritized Enhancements
 
 The primary leverage point was not accumulating more architectures, but rigorously instrumenting the existing set. Ranked by `cost × value`:
 
@@ -415,6 +417,7 @@ The primary leverage point was not accumulating more architectures, but rigorous
 | 4 | **Scorecard: robustness + sample efficiency (AUC)** | ✅ AUC completed (section 3.9); robustness = std | Normalized `AUC(reward, env_steps)` from TensorBoard curves for `new_archs`/`maze_heist`; shifts focus from "who won" to "who learns faster"; **did not require retraining** |
 | 5 | **Scorecard: generalization gap** | ✅ Completed (item 1, no retraining) | `gap = train(200 levels, training seed) − unseen`; ≈ `0`/negative across most models → no empirical memorization (section 3.10) |
 | 6 | **Budget scaling `100k→250k→500k`** | ✅ Completed (`compare_budget_scaling.py` → section 3.13) | `24 runs` (`250k+500k` × `resnet18+mlp_vector` × `starpilot+dodgeball` × `3 seeds`); verdict: **curves plateau — additional budget was unnecessary** |
+| 7 | **Re-measure the `rnd`/`ngu` exploration arms** | ⏳ Pending (defect found 23/09/2026) | The wrapper geometry bug of section 3.6 made both arms unlabelled `PPO` runs. The fix is in `models/bonuses.py` (dimensions probed from the network, no swallowed errors, per-run assertion that the bonus fired); re-running `compare_maze_heist.py` (`2 games × 4 arms × 5 seeds × 100k`, `~6.5 h`) is what turns section 3.6 back into an exploration benchmark |
 
 **Final Scorecard** (4 metric axes — `Performance` = re-eval `30 eps stoch`, `AUC` section 3.9, `Generalization` = gen gap section 3.10, `Robustness` = ±std across seeds; sorted by Performance):
 
@@ -455,6 +458,7 @@ The primary leverage point was not accumulating more architectures, but rigorous
 | `aug_color` | 1.02 | — | −0.06 | ±0.48 |
 | `wm_vae` | 0.92 | — | +0.11 | ±0.32 (n=2–3) |
 > Note: `ContrastiveNoise` subclasses `ContrastiveExtractor` without altering the `forward` pass (`compare_augment_contrastive.py:42`) — under identical seeds, it is an exact duplicate of `wm_contrastive` (identical empirical results across all 3 games). Treat as `9` independent configurations, not `11`.
+> Note: the `ppo`=`rnd`=`ngu` equalities in the 🧠/⚡/🌎/🎲 rows above are not measured ties — `rnd`/`ngu` ran with their intrinsic bonus disabled by a network-geometry bug that was silently caught (section 3.6). Those two arms need re-measurement.
 > Cross-sectional analysis (unified data, `275` models under the new protocol): **Global top-4: `mlp_vector 1.36` > `spatial 1.35` > `lstm_attention 1.34` > `aug_crop 1.31`** — all statistically indistinguishable (section 3.8). `starpilot_lstm_attention` remains the sole configuration leading all 4 scorecard axes within a single game; now tied in Performance with `cnn_spatial` (`2.63`). `resnet18` concedes the top spot of `dodgeball` to `cnn_mlp_vector` (`1.21` vs `1.07`). `ICM` leads `maze`/`heist` in final reward but trails in AUC. Generalization gap is ≈ `0`/negative across the vast majority — no memorization (exception: `maze` `+0.7~+0.8`).
 > 📌 **Note:** Values above correspond to the `30 eps` protocol; the definitive `100 eps` protocol (section 3.12) reinforces `mlp_vector` at the top (`1.43`), restores `resnet18` to the top of `dodgeball`, and equates `ICM` with vanilla `PPO` in `maze`/`heist`.
 
@@ -996,7 +1000,7 @@ Rather than assuming artificial minimum bounds, uniform random policies were emp
 
 Per-episode returns and the protocol record are serialized in `results/random_baselines.json`. Standard deviations are sample standard deviations ($ddof=1$).
 
-> ⚠️ **Consequence for `maze` and `heist` (must be read together with section 3.12):** under this protocol a uniform random policy solves `maze` in 22 of 50 episodes and `heist` in 14 of 50, while every trained arm on those two games lands at `maze` $2.76$–$2.80$ and `heist` $0.72$ — i.e. **below the random point estimate**. Taking the standard errors of the anchors ($4.40 \pm 0.71$ S.E. for `maze`, $2.80 \pm 0.64$ S.E. for `heist`, $n=50$), `heist` is clearly worse than random (95% CI $[1.54, 4.06]$ does not reach $0.72$) whereas `maze` is borderline (95% CI $[2.97, 5.83]$ just overlaps $2.80$). Procgen `maze`/`heist` in `easy` mode use small levels with a 600-step budget, so a random walk reaches the goal often enough to score $9$–$10$ more frequently than these policies. Two conclusions follow: (i) the `maze`/`heist` rows of the section 3.6 and 3.12 tables must **not** be read as "ICM beats PPO" — all four arms are within $0.04$ of each other *and* at or below the random anchor; (ii) these two games are excluded from canonical normalization (section 3.14 item 4). The identical-value pattern across `ppo`/`icm`/`rnd`/`ngu` is also consistent with the intrinsic-reward wrappers silently degrading to plain PPO (`compare_maze_heist.py` wrapped every bonus block in `except Exception: pass` until 23/09/2026); instrumenting and re-running that benchmark is an open item.
+> ⚠️ **Consequence for `maze` and `heist` (must be read together with section 3.12):** under this protocol a uniform random policy solves `maze` in 22 of 50 episodes and `heist` in 14 of 50, while every trained arm on those two games lands at `maze` $2.76$–$2.80$ and `heist` $0.72$ — i.e. **below the random point estimate**. Taking the standard errors of the anchors ($4.40 \pm 0.71$ S.E. for `maze`, $2.80 \pm 0.64$ S.E. for `heist`, $n=50$), `heist` is clearly worse than random (95% CI $[1.54, 4.06]$ does not reach $0.72$) whereas `maze` is borderline (95% CI $[2.97, 5.83]$ just overlaps $2.80$). Procgen `maze`/`heist` in `easy` mode use small levels with a 600-step budget, so a random walk reaches the goal often enough to score $9$–$10$ more frequently than these policies. Two conclusions follow: (i) the `maze`/`heist` rows of the section 3.6 and 3.12 tables must **not** be read as "ICM beats PPO" — all four arms are within $0.04$ of each other *and* at or below the random anchor; (ii) these two games are excluded from canonical normalization (section 3.14 item 4). The `ppo`/`icm`/`rnd`/`ngu` arms are also where the broken-wrapper defect of section 3.6 was found: the exact `ppo`=`rnd`=`ngu` equality across `maze` and `heist` was not a null result but a swallowed `RuntimeError`, now fixed and covered by `tests/test_exploration_bonuses.py`.
 
 ### 18.2. Canonical Normalization Formula
 Per Agarwal et al., game returns are normalized against empirical random baselines and maximum task performance:
@@ -1021,6 +1025,11 @@ The repository contains automated unit tests across both PyTorch and JAX backend
   - Verifies autograd backward pass and ensures non-zero parameter gradients.
   - Tests compatibility across Procgen HWC $(64, 64, 3)$ and standard CHW $(3, 64, 64)$ observation formats.
   - Validates non-contiguous tensor layout handling (`contiguous()` and `reshape()`).
+- **Statistical Aggregation Tests (`tests/test_rliable_metrics.py`):** pin the per-game-then-average aggregation semantics, the single bootstrap constant, profile monotonicity and probability-of-improvement antisymmetry.
+- **Legacy Data Provenance Tests (`tests/test_legacy_records.py`):** assert that `results/legacy_records.json` still reproduces the published `mean`/`std`/`ci95` of section 3.8 and the section 3.7 ranking used by `retrain_analysis.py`.
+- **World-Model Extractor Tests (`tests/test_world_model_extractors.py`):** `dream()` must return the input's spatial resolution, must share one encoder with `forward()`, and must react to encoder weights; the augmentation hook is only applied in training mode.
+- **Intrinsic Reward Tests (`tests/test_exploration_bonuses.py`):** every bonus wrapper must add a bonus on every step, accept HWC and CHW observations, raise on a malformed observation instead of degrading to plain PPO, keep the RND target frozen, and scale linearly with `beta`.
+
 - **JAX / MARL Test Suite (`jax_port/tests/test_marl.py`):**
   - Validates `MARLSequentialBuffer` temporal sequence integrity and per-environment isolation.
   - Verifies recurrent Q-learning Bellman target masking and gradient updates.
