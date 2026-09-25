@@ -1,0 +1,371 @@
+{
+  "_provenance": {
+    "game": "caveflyer",
+    "stack": 1,
+    "timesteps": 57344,
+    "seeds": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "eval_eps_per_seed": 20
+  },
+  "summary": {
+    "classic": {
+      "mean": 3.2,
+      "std": 1.304,
+      "ci95": [
+        1.581,
+        4.819
+      ],
+      "cohens_d_vs_classic": 0.0,
+      "per_seed": {
+        "42": 1.0,
+        "43": 4.0,
+        "44": 4.0,
+        "45": 3.0,
+        "46": 4.0
+      }
+    },
+    "recurrent_lstm": {
+      "mean": 3.9,
+      "std": 1.14,
+      "ci95": [
+        2.485,
+        5.315
+      ],
+      "cohens_d_vs_classic": 0.572,
+      "per_seed": {
+        "42": 2.5,
+        "43": 5.0,
+        "44": 4.0,
+        "45": 3.0,
+        "46": 5.0
+      }
+    },
+    "regularized_recurrent_lstm": {
+      "mean": 3.2,
+      "std": 0.908,
+      "ci95": [
+        2.072,
+        4.328
+      ],
+      "cohens_d_vs_classic": 0.0,
+      "per_seed": {
+        "42": 3.0,
+        "43": 4.5,
+        "44": 3.0,
+        "45": 2.0,
+        "46": 3.5
+      }
+    },
+    "recurrent_s5": {
+      "mean": 3.6,
+      "std": 1.14,
+      "ci95": [
+        2.185,
+        5.015
+      ],
+      "cohens_d_vs_classic": 0.327,
+      "per_seed": {
+        "42": 2.5,
+        "43": 3.5,
+        "44": 5.5,
+        "45": 3.0,
+        "46": 3.5
+      }
+    }
+  },
+  "per_seed": {
+    "classic": {
+      "42": {
+        "model": "classic",
+        "timesteps": 57344,
+        "wall_s": 8.62,
+        "sps": 6653.4,
+        "train_ret_mean20": 3.0,
+        "eval_unseen_mean": 1.0,
+        "eval_unseen_std": 3.08,
+        "eval_unseen_ci95": [
+          -0.35,
+          2.35
+        ],
+        "eval_eps": 20
+      },
+      "43": {
+        "model": "classic",
+        "timesteps": 57344,
+        "wall_s": 10.1,
+        "sps": 5676.7,
+        "train_ret_mean20": 4.0,
+        "eval_unseen_mean": 4.0,
+        "eval_unseen_std": 5.03,
+        "eval_unseen_ci95": [
+          1.8,
+          6.2
+        ],
+        "eval_eps": 20
+      },
+      "44": {
+        "model": "classic",
+        "timesteps": 57344,
+        "wall_s": 10.12,
+        "sps": 5664.0,
+        "train_ret_mean20": 4.0,
+        "eval_unseen_mean": 4.0,
+        "eval_unseen_std": 5.03,
+        "eval_unseen_ci95": [
+          1.8,
+          6.2
+        ],
+        "eval_eps": 20
+      },
+      "45": {
+        "model": "classic",
+        "timesteps": 57344,
+        "wall_s": 10.47,
+        "sps": 5477.2,
+        "train_ret_mean20": 6.5,
+        "eval_unseen_mean": 3.0,
+        "eval_unseen_std": 4.7,
+        "eval_unseen_ci95": [
+          0.94,
+          5.06
+        ],
+        "eval_eps": 20
+      },
+      "46": {
+        "model": "classic",
+        "timesteps": 57344,
+        "wall_s": 10.34,
+        "sps": 5545.5,
+        "train_ret_mean20": 5.0,
+        "eval_unseen_mean": 4.0,
+        "eval_unseen_std": 5.03,
+        "eval_unseen_ci95": [
+          1.8,
+          6.2
+        ],
+        "eval_eps": 20
+      }
+    },
+    "recurrent_lstm": {
+      "42": {
+        "model": "recurrent_lstm",
+        "timesteps": 57344,
+        "wall_s": 15.89,
+        "sps": 3609.1,
+        "train_ret_mean20": 2.0,
+        "eval_unseen_mean": 2.5,
+        "eval_unseen_std": 4.44,
+        "eval_unseen_ci95": [
+          0.55,
+          4.45
+        ],
+        "eval_eps": 20
+      },
+      "43": {
+        "model": "recurrent_lstm",
+        "timesteps": 57344,
+        "wall_s": 15.72,
+        "sps": 3648.4,
+        "train_ret_mean20": 4.5,
+        "eval_unseen_mean": 5.0,
+        "eval_unseen_std": 5.13,
+        "eval_unseen_ci95": [
+          2.75,
+          7.25
+        ],
+        "eval_eps": 20
+      },
+      "44": {
+        "model": "recurrent_lstm",
+        "timesteps": 57344,
+        "wall_s": 14.27,
+        "sps": 4017.4,
+        "train_ret_mean20": 5.0,
+        "eval_unseen_mean": 4.0,
+        "eval_unseen_std": 5.03,
+        "eval_unseen_ci95": [
+          1.8,
+          6.2
+        ],
+        "eval_eps": 20
+      },
+      "45": {
+        "model": "recurrent_lstm",
+        "timesteps": 57344,
+        "wall_s": 13.82,
+        "sps": 4150.2,
+        "train_ret_mean20": 5.5,
+        "eval_unseen_mean": 3.0,
+        "eval_unseen_std": 4.7,
+        "eval_unseen_ci95": [
+          0.94,
+          5.06
+        ],
+        "eval_eps": 20
+      },
+      "46": {
+        "model": "recurrent_lstm",
+        "timesteps": 57344,
+        "wall_s": 13.94,
+        "sps": 4115.0,
+        "train_ret_mean20": 4.0,
+        "eval_unseen_mean": 5.0,
+        "eval_unseen_std": 5.13,
+        "eval_unseen_ci95": [
+          2.75,
+          7.25
+        ],
+        "eval_eps": 20
+      }
+    },
+    "regularized_recurrent_lstm": {
+      "42": {
+        "model": "regularized_recurrent_lstm",
+        "timesteps": 57344,
+        "wall_s": 13.78,
+        "sps": 4161.7,
+        "train_ret_mean20": 4.0,
+        "eval_unseen_mean": 3.0,
+        "eval_unseen_std": 4.7,
+        "eval_unseen_ci95": [
+          0.94,
+          5.06
+        ],
+        "eval_eps": 20
+      },
+      "43": {
+        "model": "regularized_recurrent_lstm",
+        "timesteps": 57344,
+        "wall_s": 13.68,
+        "sps": 4192.4,
+        "train_ret_mean20": 4.5,
+        "eval_unseen_mean": 4.5,
+        "eval_unseen_std": 5.1,
+        "eval_unseen_ci95": [
+          2.26,
+          6.74
+        ],
+        "eval_eps": 20
+      },
+      "44": {
+        "model": "regularized_recurrent_lstm",
+        "timesteps": 57344,
+        "wall_s": 13.97,
+        "sps": 4105.5,
+        "train_ret_mean20": 3.0,
+        "eval_unseen_mean": 3.0,
+        "eval_unseen_std": 4.7,
+        "eval_unseen_ci95": [
+          0.94,
+          5.06
+        ],
+        "eval_eps": 20
+      },
+      "45": {
+        "model": "regularized_recurrent_lstm",
+        "timesteps": 57344,
+        "wall_s": 13.57,
+        "sps": 4224.6,
+        "train_ret_mean20": 6.0,
+        "eval_unseen_mean": 2.0,
+        "eval_unseen_std": 4.1,
+        "eval_unseen_ci95": [
+          0.2,
+          3.8
+        ],
+        "eval_eps": 20
+      },
+      "46": {
+        "model": "regularized_recurrent_lstm",
+        "timesteps": 57344,
+        "wall_s": 13.47,
+        "sps": 4258.7,
+        "train_ret_mean20": 4.5,
+        "eval_unseen_mean": 3.5,
+        "eval_unseen_std": 4.89,
+        "eval_unseen_ci95": [
+          1.36,
+          5.64
+        ],
+        "eval_eps": 20
+      }
+    },
+    "recurrent_s5": {
+      "42": {
+        "model": "recurrent_s5",
+        "timesteps": 57344,
+        "wall_s": 13.59,
+        "sps": 4220.5,
+        "train_ret_mean20": 3.65,
+        "eval_unseen_mean": 2.5,
+        "eval_unseen_std": 4.44,
+        "eval_unseen_ci95": [
+          0.55,
+          4.45
+        ],
+        "eval_eps": 20
+      },
+      "43": {
+        "model": "recurrent_s5",
+        "timesteps": 57344,
+        "wall_s": 13.91,
+        "sps": 4122.0,
+        "train_ret_mean20": 3.0,
+        "eval_unseen_mean": 3.5,
+        "eval_unseen_std": 4.89,
+        "eval_unseen_ci95": [
+          1.36,
+          5.64
+        ],
+        "eval_eps": 20
+      },
+      "44": {
+        "model": "recurrent_s5",
+        "timesteps": 57344,
+        "wall_s": 14.35,
+        "sps": 3997.2,
+        "train_ret_mean20": 4.0,
+        "eval_unseen_mean": 5.5,
+        "eval_unseen_std": 5.1,
+        "eval_unseen_ci95": [
+          3.26,
+          7.74
+        ],
+        "eval_eps": 20
+      },
+      "45": {
+        "model": "recurrent_s5",
+        "timesteps": 57344,
+        "wall_s": 16.07,
+        "sps": 3567.6,
+        "train_ret_mean20": 4.5,
+        "eval_unseen_mean": 3.0,
+        "eval_unseen_std": 4.7,
+        "eval_unseen_ci95": [
+          0.94,
+          5.06
+        ],
+        "eval_eps": 20
+      },
+      "46": {
+        "model": "recurrent_s5",
+        "timesteps": 57344,
+        "wall_s": 16.21,
+        "sps": 3538.2,
+        "train_ret_mean20": 4.5,
+        "eval_unseen_mean": 3.5,
+        "eval_unseen_std": 4.89,
+        "eval_unseen_ci95": [
+          1.36,
+          5.64
+        ],
+        "eval_eps": 20
+      }
+    }
+  }
+}

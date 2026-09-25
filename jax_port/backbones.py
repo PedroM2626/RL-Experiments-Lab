@@ -1,17 +1,17 @@
-"""Zoo de backbones Flax — paridade com ``models/`` do estudo (mede-se SPS por arq).
+"""Flax backbones zoo — parity with ``models/`` from the study (measuring SPS per architecture).
 
-Todos recebem NHWC float32 [0,1] e devolvem 512D (convecao do zoo; o
-estudo usa FC 512 em todos os extratores). Referencias:
+All models take NHWC float32 [0, 1] and output 512D (zoo convention; the
+study uses FC 512 across all extractors). References:
   classic      <- ``models/sb3_extractors.py:8`` ClassicCNNExtractor
   cbam         <- ``models/cnn_attention.py:82`` Channel+Spatial, reduction 16
   spatial      <- ``models/cnn_attention.py:6`` SpatialAttention + residual
   impala       <- ``models/combined_extractors.py`` ImpalaCNNExtractor
-  impoola      <- idem ImpoolaCNNExtractor (GAP + gargalo 64D)
-  resnet18     <- idem ResNet18Extractor (padrao, sem afinamento)
+  impoola      <- idem ImpoolaCNNExtractor (GAP + 64D bottleneck)
+  resnet18     <- idem ResNet18Extractor (standard, unpruned)
   vit          <- idem ViTExtractor (patches 8x8 -> 64, Transformer x4)
-  mlp          <- ``models/`` via ``ProcgenVectorWrapper`` (vetor 256D);
+  mlp          <- ``models/`` via ``ProcgenVectorWrapper`` (256D vector);
                   backbone MLP [64,64] tanh (default SB3 MlpPolicy) + FC512
-                  para unificar os heads (documentado em train.py).
+                  to unify policy heads (documented in train.py).
 """
 
 import flax.linen as nn
@@ -48,7 +48,7 @@ class _SpatialAttention(nn.Module):
         m = jnp.concatenate([x.mean(axis=-1, keepdims=True),
                              x.max(axis=-1, keepdims=True)], axis=-1)
         w = nn.sigmoid(nn.Conv(1, (7, 7), padding="SAME")(m))
-        return x * w + x  # residual: estabiliza o spatial puro (estudo)
+        return x * w + x  # residual: stabilizes pure spatial (study)
 
 
 class CBAMCnn(nn.Module):
@@ -103,7 +103,7 @@ class ImpoolaCNN(nn.Module):
         for d in (16, 32, 32):
             x = _ImpalaBlock(d)(x)
         x = x.mean(axis=(1, 2))  # GAP
-        x = nn.relu(nn.Dense(64)(x))  # gargalo 64D (estudo: colapso aqui)
+        x = nn.relu(nn.Dense(64)(x))  # 64D bottleneck (study: collapse point)
         return nn.relu(nn.Dense(512)(x))
 
 
@@ -179,8 +179,8 @@ class ViTTiny(nn.Module):
 
 
 class MlpBackbone(nn.Module):
-    """Backbone do modo vetor (obs 256D). MLP [64,64] tanh = default SB3
-    MlpPolicy; FC512 final unifica os heads com o resto do zoo."""
+    """Vector mode backbone (256D obs). MLP [64,64] tanh = SB3 default
+    MlpPolicy; final FC512 unifies policy heads with the rest of the zoo."""
 
     @nn.compact
     def __call__(self, x):
@@ -190,9 +190,9 @@ class MlpBackbone(nn.Module):
 
 
 class LSTMAttention(nn.Module):
-    """Replica fiel de ``LSTMAttentionExtractor`` (stateless!): CNN + pool
-    4x4 -> repete a feature 4x (sequencia fake) -> BiLSTM 256 -> MHA 4
-    heads -> media -> FC512. Sem carry entre steps (estudo)."""
+    """Faithful replica of ``LSTMAttentionExtractor`` (stateless!): CNN + pool
+    4x4 -> repeat feature 4x (pseudo-sequence) -> BiLSTM 256 -> MHA 4
+    heads -> mean -> FC512. No carry between steps (study)."""
     hidden: int = 256
     heads: int = 4
 
@@ -201,7 +201,7 @@ class LSTMAttention(nn.Module):
         x = nn.relu(nn.Conv(32, (8, 8), strides=(4, 4), padding="VALID")(x))
         x = nn.relu(nn.Conv(64, (4, 4), strides=(2, 2), padding="VALID")(x))
         x = nn.relu(nn.Conv(64, (3, 3), strides=(1, 1), padding="VALID")(x))
-        # 4x4x64 exatos com VALID -> AdaptiveAvgPool2d(4) e no-op:
+        # Exact 4x4x64 with VALID -> AdaptiveAvgPool2d(4) is a no-op:
         f = x.reshape((x.shape[0], -1))  # 1024D
         seq = jnp.repeat(f[:, None, :], 4, axis=1)  # B x 4 x 1024
         cell_f, cell_b = nn.LSTMCell(self.hidden), nn.LSTMCell(self.hidden)
@@ -241,11 +241,11 @@ class VAEBackbone(nn.Module):
 
 
 class GATPatch(nn.Module):
-    """EXTENSAO alem do estudo (como SPR): grafo sobre patches 8x8.
+    """EXTENSION beyond study (like SPR): graph over 8x8 patches.
 
-    64 nos (patch 8x8x3 -> embed 128 + pos), vizinhanca grade
-    4-conectada + self, 2x GAT (4 heads x 32D) com residual + LayerNorm,
-    mean-pool global -> FC512. Atencao densa mascarada (64x64 barato).
+    64 nodes (patch 8x8x3 -> embed 128 + pos), 4-connected grid
+    neighborhood + self, 2x GAT (4 heads x 32D) with residual + LayerNorm,
+    global mean-pool -> FC512. Dense masked attention (cheap 64x64).
     """
     patch: int = 8
     dim: int = 128
@@ -263,7 +263,7 @@ class GATPatch(nn.Module):
         pos = self.param("pos_emb", nn.initializers.normal(0.02),
                          (1, n, self.dim))
         h0 = h0 + pos
-        # mascara de vizinhanca (grade 4-conectada + self), estatica
+        # Neighborhood mask (4-connected grid + self), static
         idx = jnp.arange(n)
         r, c_ = idx // g, idx % g
         man = jnp.abs(r[:, None] - r[None, :]) + jnp.abs(c_[:, None] - c_[None, :])
@@ -313,10 +313,10 @@ BACKBONES = {
     "mlp": MlpBackbone,
     "lstm_attention": LSTMAttention,
     "vae": VAEBackbone,
-    # EXTENSAO (fora do estudo, como SPR): GAT sobre patches.
+    # EXTENSION (beyond study, like SPR): GAT over patches.
     "gat": GATPatch,
-    # Gemeos de treino (achado documentado): AE/Recon forward == classic;
-    # contrastive == classic + noise (usar com --augment noise).
+    # Training twins (documented finding): AE/Recon forward == classic;
+    # contrastive == classic + noise (use with --augment noise).
     "ae": ClassicCNN,
     "recon": ClassicCNN,
     "contrastive": ClassicCNN,

@@ -27,9 +27,9 @@ OUT_DEFAULT = os.path.join(BASE, "analysis_full.json")
 SUMMARY_DEFAULT = os.path.join(BASE, "cells_summary.json")
 
 RANKING_SUITES = ("main", "exploration", "algo", "hrl", "hard", "pilot", "spr",
-                  "gnn", "aux", "temporal", "temporal_hard")
+                  "gnn", "aux", "temporal", "temporal_hard", "dreamer")
 AUC_SUITES = ("main", "exploration", "algo", "hrl", "budget", "hard", "pilot",
-              "spr", "gnn", "aux", "temporal", "temporal_hard")
+              "spr", "gnn", "aux", "temporal", "temporal_hard", "dreamer")
 
 
 class Loader:
@@ -187,6 +187,8 @@ def build_report(loader):
         if suite == "main":
             continue
         gg = group(loader.cells_for(suite))
+        if not gg:
+            continue
         games = sorted(set(game for _, game in gg))
         rep[suite] = {game: rank_cells(
             {cfg: vals for (cfg, gm), vals in gg.items() if gm == game})

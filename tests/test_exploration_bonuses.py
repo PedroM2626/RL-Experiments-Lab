@@ -142,3 +142,20 @@ def test_beta_scales_the_bonus():
     assert all(v > 0 for v in scale_low)
     ratios = [h / lo for lo, h in zip(scale_low, scale_high)]
     assert all(abs(ratio - 10.0) < 1e-3 for ratio in ratios), ratios
+
+
+@pytest.mark.parametrize("cls", [ICMWrapper, RNDWrapper, NGUWrapper])
+def test_bonus_normalization_scales_and_clips(cls):
+    env = cls(DummyEnv(), beta=1.0, normalize=True, clip=2.0)
+    env.reset()
+    rewards = []
+    for _ in range(25):
+        _, r, term, trunc, _ = env.step(1)
+        rewards.append(r)
+        if term or trunc:
+            env.reset()
+    st = env.stats()
+    assert st["normalized"] is True
+    # Base reward is 1.0; intrinsic bonus clipped to <= 2.0 with beta=1.0 means reward <= 3.0 + eps
+    assert all(1.0 <= r <= 3.0001 for r in rewards)
+    assert any(r > 1.0 for r in rewards)
