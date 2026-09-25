@@ -44,7 +44,7 @@ def test_dream_reconstructs_the_input_resolution(cls):
     model = cls(space, features_dim=512)
     out = model.dream(torch.rand(2, 3, 64, 64))
     assert out.shape == (2, 3, 64, 64), f"{cls.__name__} decoded to {tuple(out.shape)}"
-    assert float(out.min()) >= 0.0 and float(out.max()) <= 1.0
+    assert float(out.detach().min()) >= 0.0 and float(out.detach().max()) <= 1.0
 
 
 @pytest.mark.parametrize("cls", [VAEExtractor, AEExtractor, ReconExtractor])
