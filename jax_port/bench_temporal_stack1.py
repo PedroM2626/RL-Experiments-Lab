@@ -1,11 +1,11 @@
-"""Benchmark Pareado Temporal em Stack=1 (Starpilot, 100k steps, seed 42).
+"""Paired Temporal Benchmark in Stack=1 (Starpilot, 100k steps, seed 42).
 
-Compara:
-1. ClassicCNN (NatureCNN feedforward, sem memoria, stack=1)
-2. RecurrentLSTM (ClassicCNN + LSTMCell com carry inter-passos no rollout e reset no done)
-3. RecurrentS5 (ClassicCNN + 2x S5 step layers com carry inter-passos no rollout e reset no done)
+Compares:
+1. ClassicCNN (NatureCNN feedforward, stateless, stack=1)
+2. RecurrentLSTM (ClassicCNN + LSTMCell with inter-step carry across rollouts and reset on done)
+3. RecurrentS5 (ClassicCNN + 2x S5 step layers with inter-step carry across rollouts and reset on done)
 
-Todos pareados sob os mesmos hiperparametros PPO do estudo:
+All paired under the identical PPO hyperparameters of the study:
 lr=3e-4, gamma=0.99, lambda=0.95, clip=0.2, epochs=3, num_envs=64, rollout=128, minibatch=1024.
 """
 
@@ -223,8 +223,8 @@ def run_arm(model_name, args, seed=42):
     wall_s = time.perf_counter() - t0
     final_sps = done_steps / wall_s
 
-    # Avaliacao em niveis unseen
-    print(f"Avaliando {model_name} em niveis unseen ({args.eval_eps} eps)...", flush=True)
+    # Evaluation on unseen levels
+    print(f"Evaluating {model_name} on unseen levels ({args.eval_eps} eps)...", flush=True)
     ev_env = ProcgenGym3Env(
         num=args.eval_envs,
         env_name=args.game,
@@ -281,7 +281,7 @@ def run_arm(model_name, args, seed=42):
         "eval_unseen_ci95": [round(ci95[0], 2), round(ci95[1], 2)],
         "eval_eps": len(eval_scores),
     }
-    print(f"Resultado {model_name}: eval_unseen={result['eval_unseen_mean']} CI95={result['eval_unseen_ci95']} SPS={result['sps']}\n")
+    print(f"Result {model_name}: eval_unseen={result['eval_unseen_mean']} CI95={result['eval_unseen_ci95']} SPS={result['sps']}\n")
     return result
 
 

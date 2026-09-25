@@ -172,7 +172,7 @@ def evaluate_dreamer(wparams_w, astate, args, device, num_levels, seed,
     return {"mean": round(float(np.mean(sel)), 3), "eps": len(sel)}
 
 
-def main():
+def build_parser():
     ap = argparse.ArgumentParser()
     ap.add_argument("--game", default="coinrun")
     ap.add_argument("--frames", type=int, default=1000000)
@@ -187,8 +187,12 @@ def main():
     ap.add_argument("--kl-rep", type=float, default=0.1)
     ap.add_argument("--out", default="jax_port/dreamer_run.json")
     ap.add_argument("--out-dir", default="jax_port/dreams")
-    args = ap.parse_args()
-    os.makedirs(args.out_dir, exist_ok=True)
+    return ap
+
+
+def train(args):
+    out_dir = getattr(args, "out_dir", "jax_port/dreams")
+    os.makedirs(out_dir, exist_ok=True)
     jax.config.update("jax_compilation_cache_dir",
                       os.environ.get("JAX_PORT_CACHE", "/tmp/jax_port_cache"))
     rng = np.random.default_rng(args.seed)
@@ -450,6 +454,11 @@ def main():
         json.dump(out, fh, indent=2)
     print(json.dumps({k: v for k, v in out.items() if k != "curve"},
                      indent=2))
+    return out
+
+
+def main():
+    return train(build_parser().parse_args())
 
 
 if __name__ == "__main__":

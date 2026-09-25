@@ -601,131 +601,147 @@
   },
   "heist_icm_seed42": {
     "stoch_unseen": 0.4,
-    "det_unseen": 0.0,
+    "det_unseen": 0.4,
     "stoch_train": 1.333,
     "gen_gap": 0.933,
     "n_unseen": 100,
-    "n_train": 15
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
   },
   "heist_icm_seed43": {
-    "stoch_unseen": 0.6,
-    "det_unseen": 0.1,
+    "stoch_unseen": 0.7,
+    "det_unseen": 0.3,
     "stoch_train": 0.667,
-    "gen_gap": 0.067,
+    "gen_gap": -0.033,
     "n_unseen": 100,
-    "n_train": 15
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
   },
   "heist_icm_seed44": {
-    "stoch_unseen": 0.3,
-    "det_unseen": 0.0,
+    "stoch_unseen": 0.8,
+    "det_unseen": 0.3,
     "stoch_train": 0.0,
-    "gen_gap": -0.3,
+    "gen_gap": -0.8,
     "n_unseen": 100,
-    "n_train": 15
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
   },
   "heist_icm_seed45": {
-    "stoch_unseen": 0.9,
+    "stoch_unseen": 0.7,
     "det_unseen": 0.0,
     "stoch_train": 0.0,
-    "gen_gap": -0.9,
+    "gen_gap": -0.7,
     "n_unseen": 100,
-    "n_train": 15
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
   },
   "heist_icm_seed46": {
+    "stoch_unseen": 0.4,
+    "det_unseen": 0.0,
+    "stoch_train": 0.0,
+    "gen_gap": -0.4,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "heist_ngu_seed42": {
+    "stoch_unseen": 0.3,
+    "det_unseen": 0.0,
+    "stoch_train": 1.333,
+    "gen_gap": 1.033,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "heist_ngu_seed43": {
+    "stoch_unseen": 0.4,
+    "det_unseen": 0.0,
+    "stoch_train": 0.0,
+    "gen_gap": -0.4,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "heist_ngu_seed44": {
+    "stoch_unseen": 1.1,
+    "det_unseen": 0.0,
+    "stoch_train": 0.667,
+    "gen_gap": -0.433,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "heist_ngu_seed45": {
     "stoch_unseen": 1.4,
-    "det_unseen": 0.2,
+    "det_unseen": 0.0,
     "stoch_train": 0.667,
     "gen_gap": -0.733,
     "n_unseen": 100,
-    "n_train": 15
-  },
-  "heist_ngu_seed42": {
-    "stoch_unseen": 0.1,
-    "det_unseen": 0.0,
-    "stoch_train": 0.0,
-    "gen_gap": -0.1,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "heist_ngu_seed43": {
-    "stoch_unseen": 0.7,
-    "det_unseen": 0.1,
-    "stoch_train": 0.667,
-    "gen_gap": -0.033,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "heist_ngu_seed44": {
-    "stoch_unseen": 1.3,
-    "det_unseen": 0.0,
-    "stoch_train": 0.667,
-    "gen_gap": -0.633,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "heist_ngu_seed45": {
-    "stoch_unseen": 0.8,
-    "det_unseen": 0.0,
-    "stoch_train": 0.667,
-    "gen_gap": -0.133,
-    "n_unseen": 100,
-    "n_train": 15
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
   },
   "heist_ngu_seed46": {
-    "stoch_unseen": 0.7,
-    "det_unseen": 0.0,
-    "stoch_train": 0.667,
-    "gen_gap": -0.033,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "heist_ppo_seed42": {
-    "stoch_unseen": 0.1,
+    "stoch_unseen": 0.8,
     "det_unseen": 0.0,
     "stoch_train": 0.0,
-    "gen_gap": -0.1,
+    "gen_gap": -0.8,
     "n_unseen": 100,
-    "n_train": 15
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "heist_ppo_seed42": {
+    "stoch_unseen": 0.4,
+    "det_unseen": 0.0,
+    "stoch_train": 2.667,
+    "gen_gap": 2.267,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
   },
   "heist_ppo_seed43": {
     "stoch_unseen": 0.7,
-    "det_unseen": 0.1,
+    "det_unseen": 0.0,
     "stoch_train": 0.667,
     "gen_gap": -0.033,
     "n_unseen": 100,
-    "n_train": 15
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
   },
   "heist_ppo_seed44": {
-    "stoch_unseen": 1.3,
-    "det_unseen": 0.0,
-    "stoch_train": 0.667,
-    "gen_gap": -0.633,
+    "stoch_unseen": 0.7,
+    "det_unseen": 0.4,
+    "stoch_train": 0.0,
+    "gen_gap": -0.7,
     "n_unseen": 100,
-    "n_train": 15
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
   },
   "heist_ppo_seed45": {
-    "stoch_unseen": 0.8,
+    "stoch_unseen": 1.3,
     "det_unseen": 0.0,
-    "stoch_train": 0.667,
-    "gen_gap": -0.133,
+    "stoch_train": 1.333,
+    "gen_gap": 0.033,
     "n_unseen": 100,
-    "n_train": 15
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
   },
   "heist_ppo_seed46": {
-    "stoch_unseen": 0.7,
-    "det_unseen": 0.0,
-    "stoch_train": 0.667,
-    "gen_gap": -0.033,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "heist_rnd_seed42": {
-    "stoch_unseen": 0.1,
+    "stoch_unseen": 0.5,
     "det_unseen": 0.0,
     "stoch_train": 0.0,
-    "gen_gap": -0.1,
+    "gen_gap": -0.5,
     "n_unseen": 100,
-    "n_train": 15
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "heist_rnd_seed42": {
+    "stoch_unseen": 0.9,
+    "det_unseen": 0.4,
+    "stoch_train": 2.0,
+    "gen_gap": 1.1,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
   },
   "heist_rnd_seed43": {
     "stoch_unseen": 0.7,
@@ -733,191 +749,215 @@
     "stoch_train": 0.667,
     "gen_gap": -0.033,
     "n_unseen": 100,
-    "n_train": 15
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
   },
   "heist_rnd_seed44": {
-    "stoch_unseen": 1.3,
+    "stoch_unseen": 2.4,
     "det_unseen": 0.0,
+    "stoch_train": 0.667,
+    "gen_gap": -1.733,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "heist_rnd_seed45": {
+    "stoch_unseen": 0.3,
+    "det_unseen": 0.0,
+    "stoch_train": 0.667,
+    "gen_gap": 0.367,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "heist_rnd_seed46": {
+    "stoch_unseen": 0.9,
+    "det_unseen": 0.0,
+    "stoch_train": 0.667,
+    "gen_gap": -0.233,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "maze_icm_seed42": {
+    "stoch_unseen": 3.2,
+    "det_unseen": 1.1,
+    "stoch_train": 6.0,
+    "gen_gap": 2.8,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "maze_icm_seed43": {
+    "stoch_unseen": 1.8,
+    "det_unseen": 0.0,
+    "stoch_train": 1.333,
+    "gen_gap": -0.467,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "maze_icm_seed44": {
+    "stoch_unseen": 3.2,
+    "det_unseen": 0.9,
+    "stoch_train": 5.333,
+    "gen_gap": 2.133,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "maze_icm_seed45": {
+    "stoch_unseen": 1.3,
+    "det_unseen": 1.4,
     "stoch_train": 0.667,
     "gen_gap": -0.633,
     "n_unseen": 100,
-    "n_train": 15
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
   },
-  "heist_rnd_seed45": {
-    "stoch_unseen": 0.8,
-    "det_unseen": 0.0,
-    "stoch_train": 0.667,
-    "gen_gap": -0.133,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "heist_rnd_seed46": {
-    "stoch_unseen": 0.7,
-    "det_unseen": 0.0,
-    "stoch_train": 0.667,
-    "gen_gap": -0.033,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "maze_icm_seed42": {
-    "stoch_unseen": 0.8,
+  "maze_icm_seed46": {
+    "stoch_unseen": 2.3,
     "det_unseen": 0.0,
     "stoch_train": 2.667,
-    "gen_gap": 1.867,
+    "gen_gap": 0.367,
     "n_unseen": 100,
-    "n_train": 15
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
   },
-  "maze_icm_seed43": {
-    "stoch_unseen": 3.2,
+  "maze_ngu_seed42": {
+    "stoch_unseen": 2.1,
+    "det_unseen": 1.1,
+    "stoch_train": 4.667,
+    "gen_gap": 2.567,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "maze_ngu_seed43": {
+    "stoch_unseen": 2.6,
+    "det_unseen": 0.0,
+    "stoch_train": 2.667,
+    "gen_gap": 0.067,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "maze_ngu_seed44": {
+    "stoch_unseen": 2.8,
+    "det_unseen": 0.9,
+    "stoch_train": 3.333,
+    "gen_gap": 0.533,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "maze_ngu_seed45": {
+    "stoch_unseen": 2.9,
     "det_unseen": 0.8,
-    "stoch_train": 2.667,
-    "gen_gap": -0.533,
+    "stoch_train": 4.0,
+    "gen_gap": 1.1,
     "n_unseen": 100,
-    "n_train": 15
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
   },
-  "maze_icm_seed44": {
+  "maze_ngu_seed46": {
+    "stoch_unseen": 3.4,
+    "det_unseen": 0.0,
+    "stoch_train": 4.0,
+    "gen_gap": 0.6,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "maze_ppo_seed42": {
+    "stoch_unseen": 2.9,
+    "det_unseen": 1.1,
+    "stoch_train": 6.0,
+    "gen_gap": 3.1,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "maze_ppo_seed43": {
+    "stoch_unseen": 1.9,
+    "det_unseen": 0.0,
+    "stoch_train": 0.667,
+    "gen_gap": -1.233,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "maze_ppo_seed44": {
+    "stoch_unseen": 2.5,
+    "det_unseen": 0.0,
+    "stoch_train": 4.667,
+    "gen_gap": 2.167,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "maze_ppo_seed45": {
+    "stoch_unseen": 3.9,
+    "det_unseen": 0.0,
+    "stoch_train": 4.0,
+    "gen_gap": 0.1,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "maze_ppo_seed46": {
+    "stoch_unseen": 1.7,
+    "det_unseen": 0.0,
+    "stoch_train": 2.667,
+    "gen_gap": 0.967,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "maze_rnd_seed42": {
+    "stoch_unseen": 1.5,
+    "det_unseen": 0.0,
+    "stoch_train": 3.333,
+    "gen_gap": 1.833,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "maze_rnd_seed43": {
+    "stoch_unseen": 4.2,
+    "det_unseen": 0.8,
+    "stoch_train": 3.333,
+    "gen_gap": -0.867,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "maze_rnd_seed44": {
+    "stoch_unseen": 1.2,
+    "det_unseen": 0.0,
+    "stoch_train": 2.0,
+    "gen_gap": 0.8,
+    "n_unseen": 100,
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
+  },
+  "maze_rnd_seed45": {
     "stoch_unseen": 2.8,
     "det_unseen": 0.0,
     "stoch_train": 4.0,
     "gen_gap": 1.2,
     "n_unseen": 100,
-    "n_train": 15
-  },
-  "maze_icm_seed45": {
-    "stoch_unseen": 3.3,
-    "det_unseen": 0.0,
-    "stoch_train": 4.0,
-    "gen_gap": 0.7,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "maze_icm_seed46": {
-    "stoch_unseen": 3.7,
-    "det_unseen": 0.6,
-    "stoch_train": 2.667,
-    "gen_gap": -1.033,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "maze_ngu_seed42": {
-    "stoch_unseen": 2.3,
-    "det_unseen": 0.0,
-    "stoch_train": 4.667,
-    "gen_gap": 2.367,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "maze_ngu_seed43": {
-    "stoch_unseen": 2.5,
-    "det_unseen": 0.9,
-    "stoch_train": 1.333,
-    "gen_gap": -1.167,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "maze_ngu_seed44": {
-    "stoch_unseen": 1.7,
-    "det_unseen": 0.0,
-    "stoch_train": 2.667,
-    "gen_gap": 0.967,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "maze_ngu_seed45": {
-    "stoch_unseen": 3.8,
-    "det_unseen": 0.8,
-    "stoch_train": 4.0,
-    "gen_gap": 0.2,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "maze_ngu_seed46": {
-    "stoch_unseen": 3.7,
-    "det_unseen": 0.0,
-    "stoch_train": 4.0,
-    "gen_gap": 0.3,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "maze_ppo_seed42": {
-    "stoch_unseen": 2.3,
-    "det_unseen": 0.0,
-    "stoch_train": 4.667,
-    "gen_gap": 2.367,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "maze_ppo_seed43": {
-    "stoch_unseen": 2.5,
-    "det_unseen": 0.9,
-    "stoch_train": 1.333,
-    "gen_gap": -1.167,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "maze_ppo_seed44": {
-    "stoch_unseen": 1.7,
-    "det_unseen": 0.0,
-    "stoch_train": 2.667,
-    "gen_gap": 0.967,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "maze_ppo_seed45": {
-    "stoch_unseen": 3.8,
-    "det_unseen": 0.8,
-    "stoch_train": 4.0,
-    "gen_gap": 0.2,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "maze_ppo_seed46": {
-    "stoch_unseen": 3.7,
-    "det_unseen": 0.0,
-    "stoch_train": 4.0,
-    "gen_gap": 0.3,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "maze_rnd_seed42": {
-    "stoch_unseen": 2.3,
-    "det_unseen": 0.0,
-    "stoch_train": 4.667,
-    "gen_gap": 2.367,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "maze_rnd_seed43": {
-    "stoch_unseen": 2.5,
-    "det_unseen": 0.9,
-    "stoch_train": 1.333,
-    "gen_gap": -1.167,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "maze_rnd_seed44": {
-    "stoch_unseen": 1.7,
-    "det_unseen": 0.0,
-    "stoch_train": 2.667,
-    "gen_gap": 0.967,
-    "n_unseen": 100,
-    "n_train": 15
-  },
-  "maze_rnd_seed45": {
-    "stoch_unseen": 3.8,
-    "det_unseen": 0.8,
-    "stoch_train": 4.0,
-    "gen_gap": 0.2,
-    "n_unseen": 100,
-    "n_train": 15
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
   },
   "maze_rnd_seed46": {
-    "stoch_unseen": 3.7,
-    "det_unseen": 0.0,
-    "stoch_train": 4.0,
-    "gen_gap": 0.3,
+    "stoch_unseen": 3.0,
+    "det_unseen": 1.2,
+    "stoch_train": 2.667,
+    "gen_gap": -0.333,
     "n_unseen": 100,
-    "n_train": 15
+    "n_train": 15,
+    "remeasured": "23/09/2026, see results/exploration_remeasure.json"
   },
   "bossfight_aug_color_seed42": {
     "stoch_unseen": 0.5,

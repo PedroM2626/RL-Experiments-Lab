@@ -197,7 +197,6 @@ def cells(args):
             for cfg in TEMPORAL_CONFIGS:
                 for game in (args.games or ["heist", "bossfight"]):
                     for s in args.seeds:
-                        for t in args.timesteps:
                             out.append({"suite": suite, "cfg": cfg,
                                         "kind": "ppo", "game": game,
                                         "seed": s, "timesteps": t,
@@ -205,6 +204,13 @@ def cells(args):
                                         "augment": "none", "explore": "none",
                                         "stack": 4,
                                         "distribution": "hard"})
+        elif suite == "dreamer":
+            for game in (args.games or ["coinrun", "bossfight"]):
+                for s in args.seeds:
+                    for t in args.timesteps:
+                        out.append({"suite": suite, "cfg": "dreamer",
+                                    "kind": "dreamer", "game": game,
+                                    "seed": s, "timesteps": t})
     return out
 
 
@@ -258,6 +264,14 @@ def run_cell(cell, args):
             lr=cell.get("lr", 1e-4), num_envs=32, eval_eps=ee[0],
             eval_det_eps=ee[1], eval_train_eps=ee[2], eval_envs=8, out=path)
         return D.train(ns)
+    if cell["kind"] == "dreamer":
+        from jax_port import train_dreamer as DRM
+        ns = types.SimpleNamespace(
+            game=cell["game"], frames=cell["timesteps"], seed=cell["seed"],
+            num_envs=args.num_envs, eval_eps=ee[0], eval_det_eps=ee[1],
+            eval_envs=8, reward_mode="symlog", ent_coef=3e-4, kl_dyn=0.5, kl_rep=0.1,
+            out=path, out_dir=os.path.join(args.out_dir, "dreams"))
+        return DRM.train(ns)
     algo = cell["kind"]  # ppo | a2c
     ns = types.SimpleNamespace(
         game=cell["game"], algo=algo, extractor=cell["extractor"],

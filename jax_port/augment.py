@@ -1,10 +1,10 @@
-"""Augments do estudo, fieis a ``compare_augment_contrastive.py`` + base noise.
+"""Study augmentations, faithful to ``compare_augment_contrastive.py`` + base noise.
 
-Aplicados por forward com p=0.5, em float [0,1] (estudo):
-  crop  : pad 4 replicate -> crop 64x64 randomico (1 offset por call)
+Applied per forward pass with p=0.5, on float [0, 1] (matching study):
+  crop  : pad 4 replicate -> random 64x64 crop (1 offset per call)
   color : x * Uniform(0.8, 1.2), clip
-  noise : x + N(0, 0.01), clip (forward base do ContrastiveExtractor)
-  none  : identidade (caminho sem overhead: train.py nem chama)
+  noise : x + N(0, 0.01), clip (base forward of ContrastiveExtractor)
+  none  : identity (zero-overhead path: train.py bypasses)
 """
 
 import jax
@@ -39,5 +39,5 @@ def make_augment(kind, p=0.5):
 
 
 def requantize(x_f):
-    """float [0,1] -> uint8 (reuso do caminho uint8, erro max 1/255)."""
+    """float [0,1] -> uint8 (reuse of uint8 path, max error 1/255)."""
     return jnp.clip(jnp.rint(x_f * 255.0), 0, 255).astype(jnp.uint8)

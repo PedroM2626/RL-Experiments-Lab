@@ -29,12 +29,38 @@ def to_chw_float(obs):
     return torch.from_numpy(np.ascontiguousarray(obs)).unsqueeze(0).float() / 255.0
 
 
-class _IntrinsicWrapper(gymn.Wrapper):
-    """Bookkeeping shared by all bonus wrappers."""
+class RunningMeanStd:
+    """Welford-like running mean and variance estimator for bonus normalization (Burda et al., 2018)."""
 
-    def __init__(self, env, beta=0.01):
+    def __init__(self, epsilon: float = 1e-4, shape=()):
+        self.mean = np.zeros(shape, "float64")
+        self.var = np.ones(shape, "float64")
+        self.count = epsilon
+
+    def update(self, x: np.ndarray) -> None:
+        batch_mean = np.mean(x, axis=0)
+        batch_var = np.var(x, axis=0)
+        batch_count = x.shape[0] if len(x.shape) > 0 else 1
+        delta = batch_mean - self.mean
+        tot_count = self.count + batch_count
+        new_mean = self.mean + delta * batch_count / tot_count
+        m_a = self.var * self.count
+        m_b = batch_var * batch_count
+        m2 = m_a + m_b + np.square(delta) * self.count * batch_count / tot_count
+        self.mean = new_mean
+        self.var = m2 / tot_count
+        self.count = tot_count
+
+
+class _IntrinsicWrapper(gymn.Wrapper):
+    """Bookkeeping and optional running variance normalization shared by all bonus wrappers."""
+
+    def __init__(self, env, beta=0.01, normalize=False, clip=5.0):
         super().__init__(env)
         self.beta = beta
+        self.normalize = normalize
+        self.clip = clip
+        self.rms = RunningMeanStd() if normalize else None
         self.n_steps = 0
         self.n_bonus = 0
         self.intrinsic_sum = 0.0
@@ -42,13 +68,21 @@ class _IntrinsicWrapper(gymn.Wrapper):
     def _bonus(self, obs):
         raise NotImplementedError
 
+    def _scale_bonus(self, intrinsic: float) -> float:
+        if self.normalize:
+            self.rms.update(np.array([intrinsic]))
+            std = float(np.sqrt(max(1e-8, float(self.rms.var))))
+            return float(np.clip(intrinsic / std, 0.0, self.clip))
+        return intrinsic
+
     def step(self, action):
         obs, reward, terminated, truncated, info = self.env.step(action)
         self.n_steps += 1
         intrinsic = float(self._bonus(obs))
         self.n_bonus += 1
         self.intrinsic_sum += intrinsic
-        return obs, reward + self.beta * intrinsic, terminated, truncated, info
+        scaled_intrinsic = self._scale_bonus(intrinsic)
+        return obs, reward + self.beta * scaled_intrinsic, terminated, truncated, info
 
     def stats(self):
         return {
@@ -57,6 +91,7 @@ class _IntrinsicWrapper(gymn.Wrapper):
             "bonus_applied": self.n_bonus,
             "bonus_ratio": self.n_bonus / max(1, self.n_steps),
             "intrinsic_mean": self.intrinsic_sum / max(1, self.n_bonus),
+            "normalized": self.normalize,
         }
 
 
@@ -69,8 +104,8 @@ class ICMWrapper(_IntrinsicWrapper):
     documents the same quirk.
     """
 
-    def __init__(self, env, beta=0.01, n_actions=15):
-        super().__init__(env, beta)
+    def __init__(self, env, beta=0.01, n_actions=15, **kwargs):
+        super().__init__(env, beta, **kwargs)
         self.n_actions = n_actions
         self.phi = nn.Sequential(
             nn.Conv2d(3, 32, 8, stride=4), nn.ReLU(),
@@ -108,7 +143,8 @@ class ICMWrapper(_IntrinsicWrapper):
         self.prev_phi = phi_next.detach()
         self.n_bonus += 1
         self.intrinsic_sum += intrinsic
-        return obs, reward + self.beta * intrinsic, terminated, truncated, info
+        scaled_intrinsic = self._scale_bonus(intrinsic)
+        return obs, reward + self.beta * scaled_intrinsic, terminated, truncated, info
 
     def _bonus(self, obs):  # pragma: no cover - ICM overrides step for its state machine
         raise NotImplementedError
@@ -124,8 +160,8 @@ class RNDWrapper(_IntrinsicWrapper):
     geometry changes what the arm is, so README section 3.6 must be re-measured.
     """
 
-    def __init__(self, env, beta=0.01, hidden_dim=512):
-        super().__init__(env, beta)
+    def __init__(self, env, beta=0.01, hidden_dim=512, **kwargs):
+        super().__init__(env, beta, **kwargs)
         self.hidden_dim = hidden_dim
         self.target = self._build_net()
         self.predictor = self._build_net()
@@ -156,8 +192,8 @@ class RNDWrapper(_IntrinsicWrapper):
 class NGUWrapper(RNDWrapper):
     """RND novelty scaled by an episodic-memory term (nearest-neighbour distance in phi)."""
 
-    def __init__(self, env, beta=0.01, memory_size=1000, knn=100, sample=5):
-        super().__init__(env, beta)
+    def __init__(self, env, beta=0.01, memory_size=1000, knn=100, sample=5, **kwargs):
+        super().__init__(env, beta, **kwargs)
         self.memory = collections.deque(maxlen=memory_size)
         self.knn = knn
         self.sample = sample

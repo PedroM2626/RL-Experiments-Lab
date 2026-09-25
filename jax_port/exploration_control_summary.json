@@ -1,0 +1,174 @@
+{
+  "_provenance": {
+    "produced_by": "jax_port/exploration_control_report.py",
+    "control_cells_dir": "jax_port/results_grade/exploration_control/exploration",
+    "published_reference": "jax_port/cells_summary.json (suite 'exploration')",
+    "control_definition": "same network, same online update, beta=0 so the bonus is computed but never added to the reward",
+    "every_control_cell_injected_nothing": true,
+    "bonus_mean_by_kind": {
+      "icm": 0.00153019,
+      "ngu": 0.00161197,
+      "rnd": 0.00195567
+    },
+    "rejected_cells": [],
+    "caveat": "n=5 seeds per group; these are point comparisons, not significance tests - see README section 3.8"
+  },
+  "groups": {
+    "maze_icm": {
+      "game": "maze",
+      "arm": "icm",
+      "ppo": {
+        "mean": 5.1,
+        "se": 0.356,
+        "n_seeds": 5,
+        "source": "published cells_summary.json"
+      },
+      "arm_beta_0.01": {
+        "mean": 4.96,
+        "se": 0.266,
+        "n_seeds": 5,
+        "source": "published cells_summary.json"
+      },
+      "arm_beta_0": {
+        "mean": 6.6,
+        "se": 1.208,
+        "n_seeds": 5,
+        "source": "control run"
+      },
+      "drift_floor": 1.5,
+      "published_effect": -0.14,
+      "effect_over_drift": 0.09,
+      "attributable_to_mechanism": false
+    },
+    "maze_rnd": {
+      "game": "maze",
+      "arm": "rnd",
+      "ppo": {
+        "mean": 5.1,
+        "se": 0.356,
+        "n_seeds": 5,
+        "source": "published cells_summary.json"
+      },
+      "arm_beta_0.01": {
+        "mean": 4.92,
+        "se": 0.049,
+        "n_seeds": 5,
+        "source": "published cells_summary.json"
+      },
+      "arm_beta_0": {
+        "mean": 6.4,
+        "se": 0.927,
+        "n_seeds": 5,
+        "source": "control run"
+      },
+      "drift_floor": 1.3,
+      "published_effect": -0.18,
+      "effect_over_drift": 0.14,
+      "attributable_to_mechanism": false
+    },
+    "maze_ngu": {
+      "game": "maze",
+      "arm": "ngu",
+      "ppo": {
+        "mean": 5.1,
+        "se": 0.356,
+        "n_seeds": 5,
+        "source": "published cells_summary.json"
+      },
+      "arm_beta_0.01": {
+        "mean": 4.52,
+        "se": 0.201,
+        "n_seeds": 5,
+        "source": "published cells_summary.json"
+      },
+      "arm_beta_0": {
+        "mean": 7.6,
+        "se": 0.927,
+        "n_seeds": 5,
+        "source": "control run"
+      },
+      "drift_floor": 2.5,
+      "published_effect": -0.58,
+      "effect_over_drift": 0.23,
+      "attributable_to_mechanism": false
+    },
+    "heist_icm": {
+      "game": "heist",
+      "arm": "icm",
+      "ppo": {
+        "mean": 2.58,
+        "se": 0.162,
+        "n_seeds": 5,
+        "source": "published cells_summary.json"
+      },
+      "arm_beta_0.01": {
+        "mean": 2.4,
+        "se": 0.176,
+        "n_seeds": 5,
+        "source": "published cells_summary.json"
+      },
+      "arm_beta_0": {
+        "mean": 2.8,
+        "se": 0.2,
+        "n_seeds": 5,
+        "source": "control run"
+      },
+      "drift_floor": 0.22,
+      "published_effect": -0.18,
+      "effect_over_drift": 0.82,
+      "attributable_to_mechanism": false
+    },
+    "heist_rnd": {
+      "game": "heist",
+      "arm": "rnd",
+      "ppo": {
+        "mean": 2.58,
+        "se": 0.162,
+        "n_seeds": 5,
+        "source": "published cells_summary.json"
+      },
+      "arm_beta_0.01": {
+        "mean": 2.4,
+        "se": 0.089,
+        "n_seeds": 5,
+        "source": "published cells_summary.json"
+      },
+      "arm_beta_0": {
+        "mean": 2.2,
+        "se": 0.2,
+        "n_seeds": 5,
+        "source": "control run"
+      },
+      "drift_floor": 0.38,
+      "published_effect": -0.18,
+      "effect_over_drift": 0.47,
+      "attributable_to_mechanism": false
+    },
+    "heist_ngu": {
+      "game": "heist",
+      "arm": "ngu",
+      "ppo": {
+        "mean": 2.58,
+        "se": 0.162,
+        "n_seeds": 5,
+        "source": "published cells_summary.json"
+      },
+      "arm_beta_0.01": {
+        "mean": 2.44,
+        "se": 0.117,
+        "n_seeds": 5,
+        "source": "published cells_summary.json"
+      },
+      "arm_beta_0": {
+        "mean": 2.4,
+        "se": 0.4,
+        "n_seeds": 5,
+        "source": "control run"
+      },
+      "drift_floor": 0.18,
+      "published_effect": -0.14,
+      "effect_over_drift": 0.78,
+      "attributable_to_mechanism": false
+    }
+  }
+}

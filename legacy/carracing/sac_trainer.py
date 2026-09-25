@@ -196,7 +196,7 @@ class SACTrainer:
     
     def update_alpha(self, state):
         """
-        Atualiza o coeficiente de entropia alpha
+        Updates the entropy coefficient alpha
         """
         state = torch.FloatTensor(state).to(self.device) / 255.0
         
@@ -205,7 +205,7 @@ class SACTrainer:
             if log_prob.dim() > 1 and log_prob.shape[-1] != 1:
                 log_prob = log_prob.sum(dim=-1, keepdim=True)
         
-        # Alpha loss corrigido: SAC original usa -(log_alpha * (log_prob + target_entropy))
+        # Corrected alpha loss: original SAC uses -(log_alpha * (log_prob + target_entropy))
         alpha_loss = -(self.log_alpha * (log_prob + self.target_entropy).detach()).mean()
         
         self.alpha_optimizer.zero_grad()
@@ -218,7 +218,7 @@ class SACTrainer:
     
     def soft_update_target(self):
         """
-        Atualiza suavemente o target network
+        Soft updates the target network
         """
         for target_param, param in zip(self.critic_target.parameters(), self.critic.parameters()):
             target_param.data.copy_(
@@ -227,24 +227,24 @@ class SACTrainer:
     
     def train_step(self):
         """
-        Executa um passo de treinamento
+        Executes a single training step
         """
         if len(self.replay_buffer) < self.batch_size:
             return None
         
-        # Sample do replay buffer
+        # Sample from replay buffer
         state, action, reward, next_state, done = self.replay_buffer.sample(self.batch_size)
         
-        # Atualizar critic
+        # Update critic
         critic_loss = self.update_critic(state, action, reward, next_state, done)
         
-        # Atualizar actor
+        # Update actor
         actor_loss = self.update_actor(state)
         
-        # Atualizar alpha
+        # Update alpha
         alpha_loss = self.update_alpha(state)
         
-        # Atualizar target network
+        # Update target network
         if self.step_count % self.target_update_frequency == 0:
             self.soft_update_target()
         
@@ -257,9 +257,9 @@ class SACTrainer:
     
     def train(self, num_steps, eval_frequency=5000, save_frequency=10000):
         """
-        Loop principal de treinamento
+        Main training loop
         """
-        # Inicializar schedulers agora que conhecemos num_steps
+        # Initialize schedulers now that num_steps is known
         if self.actor_scheduler is None:
             self.actor_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
                 self.actor_optimizer, T_max=num_steps, eta_min=3e-6
@@ -273,9 +273,9 @@ class SACTrainer:
         episode_reward = 0
         episode_length = 0
         
-        print(f"Iniciando treinamento por {num_steps} steps...")
+        print(f"Starting training for {num_steps} steps...")
         print(f"Device: {self.device}")
-        print(f"Alpha inicial: {self.alpha:.4f}")
+        print(f"Initial alpha: {self.alpha:.4f}")
         print(f"Target entropy: {self.target_entropy:.4f}")
         
         start_time = time.time()
