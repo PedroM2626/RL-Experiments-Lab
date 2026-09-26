@@ -1,0 +1,2016 @@
+{
+  "_provenance": {
+    "produced_by": "symbolic_regression.py",
+    "data_source": "jax_port/cells_summary.json",
+    "rows_used": 825,
+    "budget_support": {
+      "distinct_budgets": [
+        57344,
+        100000,
+        106496,
+        253952,
+        507904
+      ],
+      "cells_at_the_modal_budget": 625,
+      "share_at_modal_budget": 0.758,
+      "note": "the grid was a configuration sweep, not a budget sweep: most cells share one budget, so P1 measures how much return varies *across configurations* at a near-constant budget, and any P1 slope on log10N is fitted over a narrow span rather than tested over decades"
+    },
+    "rows_excluded": "hrl cells (logged without a budget) and the marl suite (win-rate keyed, different measurement)",
+    "engine": "gplearn 0.4.2, scikit-learn 1.5.2",
+    "cv": "GroupKFold by seed - a seed never appears in both fit and test",
+    "leakage_guard": "gen_gap is never a feature; it is train_minus_unseen and would contain the target",
+    "search": {
+      "population": 1000,
+      "generations": 40,
+      "parsimony": 0.005,
+      "random_state": 0,
+      "function_set": [
+        "add",
+        "sub",
+        "mul",
+        "div",
+        "log",
+        "sqrt",
+        "abs",
+        "neg",
+        "bpow"
+      ],
+      "guards": "div returns 1 unless |x2|>1e-10; log is log(|x|+1e-12); sqrt is sqrt(|x|); bpow clips its exponent to [-3,3]. gplearn rejects unary functions that are not closed over negatives, so every partial function here is protected by construction."
+    },
+    "bootstraps": 2000
+  },
+  "rows": 825,
+  "P1_pooled": {
+    "rows": 825,
+    "games": [
+      "bossfight",
+      "coinrun",
+      "dodgeball",
+      "heist",
+      "jumper",
+      "maze",
+      "starpilot"
+    ],
+    "models": {
+      "null_mean[protocol]": {
+        "r2": -0.0003,
+        "mae": 1.268,
+        "rmse": 1.5332,
+        "features": "protocol",
+        "n": 825
+      },
+      "linear_in_logN[protocol]": {
+        "r2": 0.3035,
+        "mae": 1.0023,
+        "rmse": 1.2794,
+        "features": "protocol",
+        "n": 825
+      },
+      "quadratic_in_logN[protocol]": {
+        "r2": 0.311,
+        "mae": 0.9979,
+        "rmse": 1.2725,
+        "features": "protocol",
+        "n": 825
+      },
+      "random_forest[protocol]": {
+        "r2": 0.4434,
+        "mae": 0.9023,
+        "rmse": 1.1437,
+        "features": "protocol",
+        "n": 825
+      },
+      "symbolic[protocol]": {
+        "r2": 0.2773,
+        "mae": 0.9982,
+        "rmse": 1.3032,
+        "features": "protocol",
+        "n": 825,
+        "expression": "add(add(memory, add(memory, 0.103)), div(memory, neg(hard)))",
+        "latex": "2 memory + 0.103 - \\frac{memory}{hard}",
+        "program_length": 10,
+        "program_depth": 3
+      },
+      "null_mean[protocol+game]": {
+        "r2": -0.0003,
+        "mae": 1.268,
+        "rmse": 1.5332,
+        "features": "protocol+game",
+        "n": 825
+      },
+      "linear_in_logN[protocol+game]": {
+        "r2": 0.8869,
+        "mae": 0.3432,
+        "rmse": 0.5155,
+        "features": "protocol+game",
+        "n": 825
+      },
+      "quadratic_in_logN[protocol+game]": {
+        "r2": 0.8957,
+        "mae": 0.3067,
+        "rmse": 0.4952,
+        "features": "protocol+game",
+        "n": 825
+      },
+      "random_forest[protocol+game]": {
+        "r2": 0.9121,
+        "mae": 0.2802,
+        "rmse": 0.4546,
+        "features": "protocol+game",
+        "n": 825
+      },
+      "symbolic[protocol+game]": {
+        "r2": 0.7381,
+        "mae": 0.5032,
+        "rmse": 0.7845,
+        "features": "protocol+game",
+        "n": 825,
+        "expression": "sqrt(add(sqrt(log(game_bossfight)), mul(game_maze, log(game_bossfight))))",
+        "latex": "\\sqrt{game_{maze} \\log{\\left(game_{bossfight} \\right)} + \\sqrt{\\log{\\left(game_{bossfight} \\right)}}}",
+        "program_length": 9,
+        "program_depth": 4
+      }
+    },
+    "comparisons": {
+      "P_symbolic_beats_linear_same_features": {
+        "protocol": 0.0215,
+        "protocol+game": 0.0
+      },
+      "P_symbolic_plus_game_beats_random_forest_plus_game": 0.0,
+      "note": "probability from a paired bootstrap of the squared error over the same rows; 0.5 means the two laws are indistinguishable on these measurements"
+    }
+  },
+  "P1_per_game": {
+    "bossfight": {
+      "rows": 235,
+      "budgets": [
+        100000,
+        106496,
+        507904
+      ],
+      "linear_in_logN": {
+        "r2": 0.0316,
+        "mae": 0.0645,
+        "rmse": 0.0869,
+        "slope_per_decade": 0.0792,
+        "intercept": -0.3503
+      },
+      "symbolic": {
+        "r2": -0.0993,
+        "mae": 0.0571,
+        "rmse": 0.0926,
+        "expression": "0.008",
+        "latex": "0.008",
+        "program_length": 1,
+        "program_depth": 0,
+        "features": [
+          "log10N",
+          "hard",
+          "memory"
+        ]
+      },
+      "P_symbolic_beats_linear": 0.017
+    },
+    "coinrun": {
+      "skipped": "20 rows over 1 budgets"
+    },
+    "dodgeball": {
+      "rows": 160,
+      "budgets": [
+        100000,
+        106496,
+        253952,
+        507904
+      ],
+      "linear_in_logN": {
+        "r2": -0.0405,
+        "mae": 0.2577,
+        "rmse": 0.3485,
+        "slope_per_decade": 0.1214,
+        "intercept": 0.5129
+      },
+      "symbolic": {
+        "r2": -0.0525,
+        "mae": 0.2606,
+        "rmse": 0.3506,
+        "expression": "div(0.929, 0.801)",
+        "latex": "1.15980024968789",
+        "program_length": 3,
+        "program_depth": 1,
+        "features": [
+          "log10N",
+          "hard",
+          "memory"
+        ]
+      },
+      "P_symbolic_beats_linear": 0.178
+    },
+    "heist": {
+      "rows": 120,
+      "budgets": [
+        106496,
+        507904
+      ],
+      "linear_in_logN": {
+        "r2": 0.2548,
+        "mae": 0.4684,
+        "rmse": 0.5882,
+        "slope_per_decade": -1.137,
+        "intercept": 8.1777
+      },
+      "symbolic": {
+        "r2": 0.2977,
+        "mae": 0.4369,
+        "rmse": 0.571,
+        "expression": "add(sub(log(log10N), hard), abs(-0.952))",
+        "latex": "- hard + \\log{\\left(log10N \\right)} + 0.952",
+        "program_length": 7,
+        "program_depth": 3,
+        "features": [
+          "log10N",
+          "hard",
+          "memory"
+        ]
+      },
+      "P_symbolic_beats_linear": 0.973
+    },
+    "jumper": {
+      "skipped": "50 rows over 1 budgets"
+    },
+    "maze": {
+      "skipped": "70 rows over 1 budgets"
+    },
+    "starpilot": {
+      "rows": 170,
+      "budgets": [
+        100000,
+        106496,
+        253952,
+        507904
+      ],
+      "linear_in_logN": {
+        "r2": 0.1043,
+        "mae": 0.3894,
+        "rmse": 0.5407,
+        "slope_per_decade": 1.1551,
+        "intercept": -3.5299
+      },
+      "symbolic": {
+        "r2": 0.058,
+        "mae": 0.3729,
+        "rmse": 0.5545,
+        "expression": "mul(sqrt(0.230), log10N)",
+        "latex": "0.479583152331272 log10N",
+        "program_length": 4,
+        "program_depth": 2,
+        "features": [
+          "log10N",
+          "hard",
+          "memory"
+        ]
+      },
+      "P_symbolic_beats_linear": 0.1325
+    }
+  },
+  "P2_hidden_family_identification": {
+    "design": "within one (game, suite, budget) stratum the protocol is identical for every configuration, so the observable left is the measured return. The hidden parameter is the architecture family; recovery is scored against the 1/F chance level. 'ref_k' averages k seeds to build each family's reference profile, 'measured_j' averages j held-out seeds into the query.",
+    "strata": {
+      "bossfight|hard|106496": {
+        "families": 6,
+        "seeds": 5,
+        "chance_level": 0.1667,
+        "accuracy": {
+          "ref_1_measured_1": {
+            "nearest_centroid": {
+              "accuracy": 0.1583,
+              "hits": 19,
+              "n": 120,
+              "ci95_wilson": [
+                0.1038,
+                0.2341
+              ],
+              "above_chance": false
+            },
+            "gaussian_nb": {
+              "accuracy": 0.175,
+              "hits": 21,
+              "n": 120,
+              "ci95_wilson": [
+                0.1174,
+                0.2528
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.2,
+              "hits": 24,
+              "n": 120,
+              "ci95_wilson": [
+                0.1382,
+                0.2804
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1667,
+              "hits": 20,
+              "n": 120,
+              "ci95_wilson": [
+                0.1106,
+                0.2435
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_2_measured_1": {
+            "nearest_centroid": {
+              "accuracy": 0.1778,
+              "hits": 32,
+              "n": 180,
+              "ci95_wilson": [
+                0.1288,
+                0.2402
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1722,
+              "hits": 31,
+              "n": 180,
+              "ci95_wilson": [
+                0.1241,
+                0.2341
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.1889,
+              "hits": 34,
+              "n": 180,
+              "ci95_wilson": [
+                0.1384,
+                0.2523
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1667,
+              "hits": 30,
+              "n": 180,
+              "ci95_wilson": [
+                0.1193,
+                0.228
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_3_measured_1": {
+            "nearest_centroid": {
+              "accuracy": 0.2,
+              "hits": 24,
+              "n": 120,
+              "ci95_wilson": [
+                0.1382,
+                0.2804
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.2,
+              "hits": 24,
+              "n": 120,
+              "ci95_wilson": [
+                0.1382,
+                0.2804
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.2083,
+              "hits": 25,
+              "n": 120,
+              "ci95_wilson": [
+                0.1453,
+                0.2895
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1667,
+              "hits": 20,
+              "n": 120,
+              "ci95_wilson": [
+                0.1106,
+                0.2435
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_4_measured_1": {
+            "nearest_centroid": {
+              "accuracy": 0.2,
+              "hits": 6,
+              "n": 30,
+              "ci95_wilson": [
+                0.095,
+                0.3731
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.2,
+              "hits": 6,
+              "n": 30,
+              "ci95_wilson": [
+                0.095,
+                0.3731
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.2,
+              "hits": 6,
+              "n": 30,
+              "ci95_wilson": [
+                0.095,
+                0.3731
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1667,
+              "hits": 5,
+              "n": 30,
+              "ci95_wilson": [
+                0.0734,
+                0.3356
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_1_measured_2": {
+            "nearest_centroid": {
+              "accuracy": 0.1889,
+              "hits": 34,
+              "n": 180,
+              "ci95_wilson": [
+                0.1384,
+                0.2523
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1833,
+              "hits": 33,
+              "n": 180,
+              "ci95_wilson": [
+                0.1336,
+                0.2463
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.25,
+              "hits": 45,
+              "n": 180,
+              "ci95_wilson": [
+                0.1924,
+                0.318
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1667,
+              "hits": 30,
+              "n": 180,
+              "ci95_wilson": [
+                0.1193,
+                0.228
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_2_measured_2": {
+            "nearest_centroid": {
+              "accuracy": 0.15,
+              "hits": 27,
+              "n": 180,
+              "ci95_wilson": [
+                0.1052,
+                0.2094
+              ],
+              "above_chance": false
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1611,
+              "hits": 29,
+              "n": 180,
+              "ci95_wilson": [
+                0.1146,
+                0.2218
+              ],
+              "above_chance": false
+            },
+            "random_forest": {
+              "accuracy": 0.1944,
+              "hits": 35,
+              "n": 180,
+              "ci95_wilson": [
+                0.1433,
+                0.2584
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1667,
+              "hits": 30,
+              "n": 180,
+              "ci95_wilson": [
+                0.1193,
+                0.228
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_3_measured_2": {
+            "nearest_centroid": {
+              "accuracy": 0.1833,
+              "hits": 11,
+              "n": 60,
+              "ci95_wilson": [
+                0.1056,
+                0.2992
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.2,
+              "hits": 12,
+              "n": 60,
+              "ci95_wilson": [
+                0.1183,
+                0.3178
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.2333,
+              "hits": 14,
+              "n": 60,
+              "ci95_wilson": [
+                0.1444,
+                0.3544
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1667,
+              "hits": 10,
+              "n": 60,
+              "ci95_wilson": [
+                0.0931,
+                0.2803
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_1_measured_3": {
+            "nearest_centroid": {
+              "accuracy": 0.1917,
+              "hits": 23,
+              "n": 120,
+              "ci95_wilson": [
+                0.1312,
+                0.2712
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1917,
+              "hits": 23,
+              "n": 120,
+              "ci95_wilson": [
+                0.1312,
+                0.2712
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.2833,
+              "hits": 34,
+              "n": 120,
+              "ci95_wilson": [
+                0.2104,
+                0.3697
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1667,
+              "hits": 20,
+              "n": 120,
+              "ci95_wilson": [
+                0.1106,
+                0.2435
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_2_measured_3": {
+            "nearest_centroid": {
+              "accuracy": 0.2167,
+              "hits": 13,
+              "n": 60,
+              "ci95_wilson": [
+                0.1312,
+                0.3362
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.2167,
+              "hits": 13,
+              "n": 60,
+              "ci95_wilson": [
+                0.1312,
+                0.3362
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.2167,
+              "hits": 13,
+              "n": 60,
+              "ci95_wilson": [
+                0.1312,
+                0.3362
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1667,
+              "hits": 10,
+              "n": 60,
+              "ci95_wilson": [
+                0.0931,
+                0.2803
+              ],
+              "above_chance": false
+            }
+          }
+        }
+      },
+      "bossfight|main|106496": {
+        "families": 9,
+        "seeds": 5,
+        "chance_level": 0.1111,
+        "accuracy": {
+          "ref_1_measured_1": {
+            "nearest_centroid": {
+              "accuracy": 0.0944,
+              "hits": 17,
+              "n": 180,
+              "ci95_wilson": [
+                0.0598,
+                0.146
+              ],
+              "above_chance": false
+            },
+            "gaussian_nb": {
+              "accuracy": 0.0833,
+              "hits": 15,
+              "n": 180,
+              "ci95_wilson": [
+                0.0511,
+                0.1329
+              ],
+              "above_chance": false
+            },
+            "random_forest": {
+              "accuracy": 0.1556,
+              "hits": 28,
+              "n": 180,
+              "ci95_wilson": [
+                0.1099,
+                0.2156
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 20,
+              "n": 180,
+              "ci95_wilson": [
+                0.0731,
+                0.1654
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_2_measured_1": {
+            "nearest_centroid": {
+              "accuracy": 0.1889,
+              "hits": 51,
+              "n": 270,
+              "ci95_wilson": [
+                0.1467,
+                0.2398
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1889,
+              "hits": 51,
+              "n": 270,
+              "ci95_wilson": [
+                0.1467,
+                0.2398
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.1852,
+              "hits": 50,
+              "n": 270,
+              "ci95_wilson": [
+                0.1434,
+                0.2358
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 30,
+              "n": 270,
+              "ci95_wilson": [
+                0.0789,
+                0.1542
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_3_measured_1": {
+            "nearest_centroid": {
+              "accuracy": 0.1944,
+              "hits": 35,
+              "n": 180,
+              "ci95_wilson": [
+                0.1433,
+                0.2584
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1944,
+              "hits": 35,
+              "n": 180,
+              "ci95_wilson": [
+                0.1433,
+                0.2584
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.2056,
+              "hits": 37,
+              "n": 180,
+              "ci95_wilson": [
+                0.153,
+                0.2704
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 20,
+              "n": 180,
+              "ci95_wilson": [
+                0.0731,
+                0.1654
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_4_measured_1": {
+            "nearest_centroid": {
+              "accuracy": 0.2222,
+              "hits": 10,
+              "n": 45,
+              "ci95_wilson": [
+                0.1254,
+                0.3627
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.2222,
+              "hits": 10,
+              "n": 45,
+              "ci95_wilson": [
+                0.1254,
+                0.3627
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.2222,
+              "hits": 10,
+              "n": 45,
+              "ci95_wilson": [
+                0.1254,
+                0.3627
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 5,
+              "n": 45,
+              "ci95_wilson": [
+                0.0484,
+                0.235
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_1_measured_2": {
+            "nearest_centroid": {
+              "accuracy": 0.0963,
+              "hits": 26,
+              "n": 270,
+              "ci95_wilson": [
+                0.0666,
+                0.1374
+              ],
+              "above_chance": false
+            },
+            "gaussian_nb": {
+              "accuracy": 0.0926,
+              "hits": 25,
+              "n": 270,
+              "ci95_wilson": [
+                0.0635,
+                0.1331
+              ],
+              "above_chance": false
+            },
+            "random_forest": {
+              "accuracy": 0.163,
+              "hits": 44,
+              "n": 270,
+              "ci95_wilson": [
+                0.1237,
+                0.2117
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 30,
+              "n": 270,
+              "ci95_wilson": [
+                0.0789,
+                0.1542
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_2_measured_2": {
+            "nearest_centroid": {
+              "accuracy": 0.1593,
+              "hits": 43,
+              "n": 270,
+              "ci95_wilson": [
+                0.1204,
+                0.2076
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1519,
+              "hits": 41,
+              "n": 270,
+              "ci95_wilson": [
+                0.1139,
+                0.1995
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.1556,
+              "hits": 42,
+              "n": 270,
+              "ci95_wilson": [
+                0.1172,
+                0.2036
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 30,
+              "n": 270,
+              "ci95_wilson": [
+                0.0789,
+                0.1542
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_3_measured_2": {
+            "nearest_centroid": {
+              "accuracy": 0.1889,
+              "hits": 17,
+              "n": 90,
+              "ci95_wilson": [
+                0.1214,
+                0.2818
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1889,
+              "hits": 17,
+              "n": 90,
+              "ci95_wilson": [
+                0.1214,
+                0.2818
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.2111,
+              "hits": 19,
+              "n": 90,
+              "ci95_wilson": [
+                0.1395,
+                0.3063
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 10,
+              "n": 90,
+              "ci95_wilson": [
+                0.0615,
+                0.1926
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_1_measured_3": {
+            "nearest_centroid": {
+              "accuracy": 0.1111,
+              "hits": 20,
+              "n": 180,
+              "ci95_wilson": [
+                0.0731,
+                0.1654
+              ],
+              "above_chance": false
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1056,
+              "hits": 19,
+              "n": 180,
+              "ci95_wilson": [
+                0.0686,
+                0.159
+              ],
+              "above_chance": false
+            },
+            "random_forest": {
+              "accuracy": 0.1722,
+              "hits": 31,
+              "n": 180,
+              "ci95_wilson": [
+                0.1241,
+                0.2341
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 20,
+              "n": 180,
+              "ci95_wilson": [
+                0.0731,
+                0.1654
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_2_measured_3": {
+            "nearest_centroid": {
+              "accuracy": 0.1667,
+              "hits": 15,
+              "n": 90,
+              "ci95_wilson": [
+                0.1037,
+                0.2569
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1667,
+              "hits": 15,
+              "n": 90,
+              "ci95_wilson": [
+                0.1037,
+                0.2569
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.1444,
+              "hits": 13,
+              "n": 90,
+              "ci95_wilson": [
+                0.0864,
+                0.2316
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 10,
+              "n": 90,
+              "ci95_wilson": [
+                0.0615,
+                0.1926
+              ],
+              "above_chance": false
+            }
+          }
+        }
+      },
+      "dodgeball|main|106496": {
+        "families": 9,
+        "seeds": 5,
+        "chance_level": 0.1111,
+        "accuracy": {
+          "ref_1_measured_1": {
+            "nearest_centroid": {
+              "accuracy": 0.1333,
+              "hits": 24,
+              "n": 180,
+              "ci95_wilson": [
+                0.0913,
+                0.1907
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1444,
+              "hits": 26,
+              "n": 180,
+              "ci95_wilson": [
+                0.1005,
+                0.2032
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.1444,
+              "hits": 26,
+              "n": 180,
+              "ci95_wilson": [
+                0.1005,
+                0.2032
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 20,
+              "n": 180,
+              "ci95_wilson": [
+                0.0731,
+                0.1654
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_2_measured_1": {
+            "nearest_centroid": {
+              "accuracy": 0.1556,
+              "hits": 42,
+              "n": 270,
+              "ci95_wilson": [
+                0.1172,
+                0.2036
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1556,
+              "hits": 42,
+              "n": 270,
+              "ci95_wilson": [
+                0.1172,
+                0.2036
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.1481,
+              "hits": 40,
+              "n": 270,
+              "ci95_wilson": [
+                0.1107,
+                0.1954
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 30,
+              "n": 270,
+              "ci95_wilson": [
+                0.0789,
+                0.1542
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_3_measured_1": {
+            "nearest_centroid": {
+              "accuracy": 0.1778,
+              "hits": 32,
+              "n": 180,
+              "ci95_wilson": [
+                0.1288,
+                0.2402
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1778,
+              "hits": 32,
+              "n": 180,
+              "ci95_wilson": [
+                0.1288,
+                0.2402
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.1722,
+              "hits": 31,
+              "n": 180,
+              "ci95_wilson": [
+                0.1241,
+                0.2341
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 20,
+              "n": 180,
+              "ci95_wilson": [
+                0.0731,
+                0.1654
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_4_measured_1": {
+            "nearest_centroid": {
+              "accuracy": 0.2889,
+              "hits": 13,
+              "n": 45,
+              "ci95_wilson": [
+                0.1773,
+                0.4337
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.2889,
+              "hits": 13,
+              "n": 45,
+              "ci95_wilson": [
+                0.1773,
+                0.4337
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.2889,
+              "hits": 13,
+              "n": 45,
+              "ci95_wilson": [
+                0.1773,
+                0.4337
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 5,
+              "n": 45,
+              "ci95_wilson": [
+                0.0484,
+                0.235
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_1_measured_2": {
+            "nearest_centroid": {
+              "accuracy": 0.1926,
+              "hits": 52,
+              "n": 270,
+              "ci95_wilson": [
+                0.15,
+                0.2438
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1926,
+              "hits": 52,
+              "n": 270,
+              "ci95_wilson": [
+                0.15,
+                0.2438
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.1926,
+              "hits": 52,
+              "n": 270,
+              "ci95_wilson": [
+                0.15,
+                0.2438
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 30,
+              "n": 270,
+              "ci95_wilson": [
+                0.0789,
+                0.1542
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_2_measured_2": {
+            "nearest_centroid": {
+              "accuracy": 0.1444,
+              "hits": 39,
+              "n": 270,
+              "ci95_wilson": [
+                0.1075,
+                0.1914
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1444,
+              "hits": 39,
+              "n": 270,
+              "ci95_wilson": [
+                0.1075,
+                0.1914
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.1481,
+              "hits": 40,
+              "n": 270,
+              "ci95_wilson": [
+                0.1107,
+                0.1954
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 30,
+              "n": 270,
+              "ci95_wilson": [
+                0.0789,
+                0.1542
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_3_measured_2": {
+            "nearest_centroid": {
+              "accuracy": 0.2,
+              "hits": 18,
+              "n": 90,
+              "ci95_wilson": [
+                0.1304,
+                0.2941
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1889,
+              "hits": 17,
+              "n": 90,
+              "ci95_wilson": [
+                0.1214,
+                0.2818
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.1889,
+              "hits": 17,
+              "n": 90,
+              "ci95_wilson": [
+                0.1214,
+                0.2818
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 10,
+              "n": 90,
+              "ci95_wilson": [
+                0.0615,
+                0.1926
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_1_measured_3": {
+            "nearest_centroid": {
+              "accuracy": 0.1889,
+              "hits": 34,
+              "n": 180,
+              "ci95_wilson": [
+                0.1384,
+                0.2523
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1944,
+              "hits": 35,
+              "n": 180,
+              "ci95_wilson": [
+                0.1433,
+                0.2584
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.1944,
+              "hits": 35,
+              "n": 180,
+              "ci95_wilson": [
+                0.1433,
+                0.2584
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 20,
+              "n": 180,
+              "ci95_wilson": [
+                0.0731,
+                0.1654
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_2_measured_3": {
+            "nearest_centroid": {
+              "accuracy": 0.2222,
+              "hits": 20,
+              "n": 90,
+              "ci95_wilson": [
+                0.1487,
+                0.3185
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.2222,
+              "hits": 20,
+              "n": 90,
+              "ci95_wilson": [
+                0.1487,
+                0.3185
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.2111,
+              "hits": 19,
+              "n": 90,
+              "ci95_wilson": [
+                0.1395,
+                0.3063
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 10,
+              "n": 90,
+              "ci95_wilson": [
+                0.0615,
+                0.1926
+              ],
+              "above_chance": false
+            }
+          }
+        }
+      },
+      "starpilot|main|106496": {
+        "families": 9,
+        "seeds": 5,
+        "chance_level": 0.1111,
+        "accuracy": {
+          "ref_1_measured_1": {
+            "nearest_centroid": {
+              "accuracy": 0.1278,
+              "hits": 23,
+              "n": 180,
+              "ci95_wilson": [
+                0.0867,
+                0.1844
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1333,
+              "hits": 24,
+              "n": 180,
+              "ci95_wilson": [
+                0.0913,
+                0.1907
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.1333,
+              "hits": 24,
+              "n": 180,
+              "ci95_wilson": [
+                0.0913,
+                0.1907
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 20,
+              "n": 180,
+              "ci95_wilson": [
+                0.0731,
+                0.1654
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_2_measured_1": {
+            "nearest_centroid": {
+              "accuracy": 0.1481,
+              "hits": 40,
+              "n": 270,
+              "ci95_wilson": [
+                0.1107,
+                0.1954
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1444,
+              "hits": 39,
+              "n": 270,
+              "ci95_wilson": [
+                0.1075,
+                0.1914
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.1481,
+              "hits": 40,
+              "n": 270,
+              "ci95_wilson": [
+                0.1107,
+                0.1954
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 30,
+              "n": 270,
+              "ci95_wilson": [
+                0.0789,
+                0.1542
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_3_measured_1": {
+            "nearest_centroid": {
+              "accuracy": 0.1833,
+              "hits": 33,
+              "n": 180,
+              "ci95_wilson": [
+                0.1336,
+                0.2463
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1833,
+              "hits": 33,
+              "n": 180,
+              "ci95_wilson": [
+                0.1336,
+                0.2463
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.1889,
+              "hits": 34,
+              "n": 180,
+              "ci95_wilson": [
+                0.1384,
+                0.2523
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 20,
+              "n": 180,
+              "ci95_wilson": [
+                0.0731,
+                0.1654
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_4_measured_1": {
+            "nearest_centroid": {
+              "accuracy": 0.2,
+              "hits": 9,
+              "n": 45,
+              "ci95_wilson": [
+                0.109,
+                0.3382
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.2,
+              "hits": 9,
+              "n": 45,
+              "ci95_wilson": [
+                0.109,
+                0.3382
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.2,
+              "hits": 9,
+              "n": 45,
+              "ci95_wilson": [
+                0.109,
+                0.3382
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 5,
+              "n": 45,
+              "ci95_wilson": [
+                0.0484,
+                0.235
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_1_measured_2": {
+            "nearest_centroid": {
+              "accuracy": 0.1111,
+              "hits": 30,
+              "n": 270,
+              "ci95_wilson": [
+                0.0789,
+                0.1542
+              ],
+              "above_chance": false
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1148,
+              "hits": 31,
+              "n": 270,
+              "ci95_wilson": [
+                0.0821,
+                0.1584
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.1111,
+              "hits": 30,
+              "n": 270,
+              "ci95_wilson": [
+                0.0789,
+                0.1542
+              ],
+              "above_chance": false
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 30,
+              "n": 270,
+              "ci95_wilson": [
+                0.0789,
+                0.1542
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_2_measured_2": {
+            "nearest_centroid": {
+              "accuracy": 0.1259,
+              "hits": 34,
+              "n": 270,
+              "ci95_wilson": [
+                0.0915,
+                0.1708
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1259,
+              "hits": 34,
+              "n": 270,
+              "ci95_wilson": [
+                0.0915,
+                0.1708
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.1259,
+              "hits": 34,
+              "n": 270,
+              "ci95_wilson": [
+                0.0915,
+                0.1708
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 30,
+              "n": 270,
+              "ci95_wilson": [
+                0.0789,
+                0.1542
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_3_measured_2": {
+            "nearest_centroid": {
+              "accuracy": 0.1778,
+              "hits": 16,
+              "n": 90,
+              "ci95_wilson": [
+                0.1125,
+                0.2694
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1667,
+              "hits": 15,
+              "n": 90,
+              "ci95_wilson": [
+                0.1037,
+                0.2569
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.1667,
+              "hits": 15,
+              "n": 90,
+              "ci95_wilson": [
+                0.1037,
+                0.2569
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 10,
+              "n": 90,
+              "ci95_wilson": [
+                0.0615,
+                0.1926
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_1_measured_3": {
+            "nearest_centroid": {
+              "accuracy": 0.1222,
+              "hits": 22,
+              "n": 180,
+              "ci95_wilson": [
+                0.0821,
+                0.1781
+              ],
+              "above_chance": true
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1222,
+              "hits": 22,
+              "n": 180,
+              "ci95_wilson": [
+                0.0821,
+                0.1781
+              ],
+              "above_chance": true
+            },
+            "random_forest": {
+              "accuracy": 0.1222,
+              "hits": 22,
+              "n": 180,
+              "ci95_wilson": [
+                0.0821,
+                0.1781
+              ],
+              "above_chance": true
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 20,
+              "n": 180,
+              "ci95_wilson": [
+                0.0731,
+                0.1654
+              ],
+              "above_chance": false
+            }
+          },
+          "ref_2_measured_3": {
+            "nearest_centroid": {
+              "accuracy": 0.1,
+              "hits": 9,
+              "n": 90,
+              "ci95_wilson": [
+                0.0535,
+                0.1792
+              ],
+              "above_chance": false
+            },
+            "gaussian_nb": {
+              "accuracy": 0.1,
+              "hits": 9,
+              "n": 90,
+              "ci95_wilson": [
+                0.0535,
+                0.1792
+              ],
+              "above_chance": false
+            },
+            "random_forest": {
+              "accuracy": 0.0889,
+              "hits": 8,
+              "n": 90,
+              "ci95_wilson": [
+                0.0457,
+                0.1657
+              ],
+              "above_chance": false
+            },
+            "lowest_mean_heuristic": {
+              "accuracy": 0.1111,
+              "hits": 10,
+              "n": 90,
+              "ci95_wilson": [
+                0.0615,
+                0.1926
+              ],
+              "above_chance": false
+            }
+          }
+        }
+      }
+    },
+    "pooled_across_strata": {
+      "k_1_j_1": {
+        "nearest_centroid_accuracy": 0.133,
+        "n_predictions": 2640,
+        "ci95_wilson": [
+          0.1205,
+          0.1464
+        ]
+      },
+      "k_1_j_2": {
+        "nearest_centroid_accuracy": 0.1449,
+        "n_predictions": 3960,
+        "ci95_wilson": [
+          0.1343,
+          0.1563
+        ]
+      },
+      "k_1_j_3": {
+        "nearest_centroid_accuracy": 0.1515,
+        "n_predictions": 2640,
+        "ci95_wilson": [
+          0.1383,
+          0.1657
+        ]
+      },
+      "k_2_j_1": {
+        "nearest_centroid_accuracy": 0.1545,
+        "n_predictions": 3960,
+        "ci95_wilson": [
+          0.1436,
+          0.1661
+        ]
+      },
+      "k_2_j_2": {
+        "nearest_centroid_accuracy": 0.1407,
+        "n_predictions": 3960,
+        "ci95_wilson": [
+          0.1302,
+          0.1518
+        ]
+      },
+      "k_2_j_3": {
+        "nearest_centroid_accuracy": 0.1568,
+        "n_predictions": 1320,
+        "ci95_wilson": [
+          0.1382,
+          0.1774
+        ]
+      },
+      "k_3_j_1": {
+        "nearest_centroid_accuracy": 0.1723,
+        "n_predictions": 2640,
+        "ci95_wilson": [
+          0.1584,
+          0.1872
+        ]
+      },
+      "k_3_j_2": {
+        "nearest_centroid_accuracy": 0.1727,
+        "n_predictions": 1320,
+        "ci95_wilson": [
+          0.1533,
+          0.1941
+        ]
+      },
+      "k_4_j_1": {
+        "nearest_centroid_accuracy": 0.203,
+        "n_predictions": 660,
+        "ci95_wilson": [
+          0.1741,
+          0.2354
+        ]
+      }
+    },
+    "caveat": "the (reference, measurement) splits of one stratum reuse seeds, so the predictions are not independent draws; the Wilson interval is therefore optimistic and is reported as a spread indicator, not as a confirmatory test"
+  },
+  "P3_budget_inversion": {
+    "bossfight": {
+      "target_return": 0.49,
+      "budget_implied_by_the_law": 41301266431,
+      "budget_of_the_cell_that_achieved_it": 507904,
+      "ratio_implied_over_actual": 81317.073,
+      "budgets_available": [
+        100000,
+        106496,
+        507904
+      ],
+      "implied_within_measured_support": false,
+      "measured_budget_span": 5.08,
+      "identifiable": false
+    },
+    "coinrun": {
+      "skipped": "needs >=3 distinct budgets"
+    },
+    "dodgeball": {
+      "target_return": 1.98,
+      "budget_implied_by_the_law": 1203205443903,
+      "budget_of_the_cell_that_achieved_it": 253952,
+      "ratio_implied_over_actual": 4737924.663,
+      "budgets_available": [
+        100000,
+        106496,
+        253952,
+        507904
+      ],
+      "implied_within_measured_support": false,
+      "measured_budget_span": 5.08,
+      "identifiable": false
+    },
+    "heist": {
+      "skipped": "needs >=3 distinct budgets"
+    },
+    "jumper": {
+      "skipped": "needs >=3 distinct budgets"
+    },
+    "maze": {
+      "skipped": "needs >=3 distinct budgets"
+    },
+    "starpilot": {
+      "target_return": 3.7,
+      "budget_implied_by_the_law": 1816622,
+      "budget_of_the_cell_that_achieved_it": 507904,
+      "ratio_implied_over_actual": 3.577,
+      "budgets_available": [
+        100000,
+        106496,
+        253952,
+        507904
+      ],
+      "implied_within_measured_support": false,
+      "measured_budget_span": 5.08,
+      "identifiable": false
+    }
+  },
+  "pareto_program_size_vs_error": [
+    {
+      "parsimony": 0.0,
+      "program_length": 862,
+      "program_depth": 67,
+      "r2": 0.2764,
+      "mae": 0.9767,
+      "rmse": 1.304
+    },
+    {
+      "parsimony": 0.001,
+      "program_length": 14,
+      "program_depth": 6,
+      "r2": 0.2689,
+      "mae": 0.9814,
+      "rmse": 1.3108
+    },
+    {
+      "parsimony": 0.005,
+      "program_length": 10,
+      "program_depth": 3,
+      "r2": 0.2773,
+      "mae": 0.9982,
+      "rmse": 1.3032
+    },
+    {
+      "parsimony": 0.01,
+      "program_length": 10,
+      "program_depth": 3,
+      "r2": 0.2457,
+      "mae": 1.0047,
+      "rmse": 1.3314
+    },
+    {
+      "parsimony": 0.02,
+      "program_length": 8,
+      "program_depth": 3,
+      "r2": 0.2625,
+      "mae": 1.0371,
+      "rmse": 1.3165
+    },
+    {
+      "parsimony": 0.05,
+      "program_length": 4,
+      "program_depth": 2,
+      "r2": -0.1072,
+      "mae": 1.2585,
+      "rmse": 1.6131
+    },
+    {
+      "parsimony": 0.1,
+      "program_length": 4,
+      "program_depth": 2,
+      "r2": -0.2213,
+      "mae": 1.2674,
+      "rmse": 1.6942
+    }
+  ],
+  "figures": [
+    "C:\\Users\\Acer\\Downloads\\MLE\\results\\symbolic_regression_pareto.png",
+    "C:\\Users\\Acer\\Downloads\\MLE\\results\\symbolic_regression_scaling.png",
+    "C:\\Users\\Acer\\Downloads\\MLE\\results\\symbolic_regression_identifiability.png"
+  ]
+}
