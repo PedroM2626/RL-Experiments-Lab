@@ -40,12 +40,17 @@ PROVENANCE = {
     "new_archs_bossfight.png": ("compare_new_archs.py", "logs_new_archs/*/new_archs_<game>_plot.png", "pruned logs"),
     "new_archs_starpilot.png": ("compare_new_archs.py", "logs_new_archs/*/new_archs_<game>_plot.png", "pruned logs"),
     "new_archs_dodgeball.png": ("compare_new_archs.py", "logs_new_archs/*/new_archs_<game>_plot.png", "pruned logs"),
-    "maze_heist_maze_plot.png": ("compare_maze_heist.py", "logs_maze_heist/*/maze_heist_<game>_plot.png", "pruned logs"),
-    "maze_heist_heist_plot.png": ("compare_maze_heist.py", "logs_maze_heist/*/maze_heist_<game>_plot.png", "pruned logs"),
+    "maze_heist_maze_plot.png": ("compare_maze_heist.py", "logs_maze_heist/*/maze_heist_maze_plot.png",
+                                 "results/exploration_remeasure.json"),
+    "maze_heist_heist_plot.png": ("compare_maze_heist.py", "logs_maze_heist/*/maze_heist_heist_plot.png",
+                                  "results/exploration_remeasure.json"),
     "global_16.png": ("compare_combined.py", "logs_combined/*/combined_<game>_plot.png", "pruned logs"),
     "rliable_profile.png": ("run_rliable_eval.py", "results/rliable_profile.png",
                             "results/eval100_results.json + results/random_baselines.json"),
 }
+
+DEFAULT_FOOTNOTE = ("dots = per-seed values; error bars are sample std (ddof=1), so they are "
+                    "slightly wider than the population std quoted in README section 7")
 
 # Per-seed groups that results/legacy_records.json still carries, in README order.
 REBUILDABLE = {
@@ -65,7 +70,29 @@ def load_legacy():
         return json.load(f)["per_seed"]
 
 
-def rebuild(name, title, ylabel, keys, per_seed):
+def load_exploration():
+    """Per-seed 10-eps returns of the re-measured maze/heist arms, keyed by config."""
+    path = os.path.join(RESULTS, "exploration_remeasure.json")
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as f:
+        j = json.load(f)
+    return {k: [c["mean_reward_10eps"] for c in v["cells"]]
+            for k, v in j.get("per_seed", {}).items()}
+
+
+# Which figure shows which configs, in README order.
+EXPLORATION_KEYS = {
+    "maze_heist_maze_plot.png": ["maze_ppo", "maze_icm", "maze_rnd", "maze_ngu"],
+    "maze_heist_heist_plot.png": ["heist_ppo", "heist_icm", "heist_rnd", "heist_ngu"],
+}
+EXPLORATION_TITLES = {
+    "maze_heist_maze_plot.png": "Procgen Maze - 100000 steps - PPO vs ICM/RND/NGU",
+    "maze_heist_heist_plot.png": "Procgen Heist - 100000 steps - PPO vs ICM/RND/NGU",
+}
+
+
+def rebuild(name, title, ylabel, keys, per_seed, footnote=None):
     vals = [per_seed[k] for k in keys]
     labels = [k.split("_", 1)[1].replace("_", " ").title() for k in keys]
     means = [float(np.mean(v)) for v in vals]
@@ -82,9 +109,7 @@ def rebuild(name, title, ylabel, keys, per_seed):
     ax.set_ylabel(ylabel)
     ax.set_title(title)
     ax.tick_params(axis="x", rotation=25)
-    ax.text(0.01, -0.16, "dots = per-seed values from results/legacy_records.json (raw logs "
-                         "pruned); error bars are sample std (ddof=1), so they are slightly "
-                         "wider than the population std quoted in README section 7",
+    ax.text(0.01, -0.16, footnote or DEFAULT_FOOTNOTE,
             transform=ax.transAxes, fontsize=7, color="0.4")
     fig.tight_layout()
     out = os.path.join(RESULTS, name)
@@ -134,6 +159,18 @@ def main():
             rebuilt += 1
         else:
             print(f"skipped  {name}  (legacy_records.json lacks some of {keys})")
+
+    expl = load_exploration()
+    for name, keys in EXPLORATION_KEYS.items():
+        if all(k in expl for k in keys):
+            print(f"rebuilt  {name}  <- results/exploration_remeasure.json")
+            rebuild(name, EXPLORATION_TITLES[name], "Mean reward (10 eps)", keys, expl,
+                    footnote="dots = per-seed values from results/exploration_remeasure.json "
+                             "(24/09/2026 re-measurement, intrinsic bonus verified to have "
+                             "fired on every step of every arm); error bars are sample std")
+            rebuilt += 1
+        else:
+            print(f"skipped  {name}  (exploration_remeasure.json lacks some of {keys})")
 
     print(f"\n{len(PROVENANCE) - rebuilt} figures below need their benchmark re-run; "
           f"they are drawn from the git-ignored logs_* directories:")
