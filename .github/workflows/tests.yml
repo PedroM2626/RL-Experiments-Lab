@@ -22,7 +22,8 @@ jobs:
           # requirements.txt is replaced by the same version from the CPU index.
           python -m pip install --index-url https://download.pytorch.org/whl/cpu "torch==2.5.1"
           python -m pip install "numpy==1.26.4" "gym==0.26.2" "gymnasium==1.3.0" \
-            "stable-baselines3==2.9.0" "opencv-python-headless" "matplotlib==3.10.9" "pytest==9.1.1"
+            "stable-baselines3==2.9.0" "opencv-python-headless" "matplotlib==3.10.9" \
+            "scikit-learn==1.5.2" "gplearn==0.4.2" "pytest==9.1.1"
       - name: Compile every module (syntax gate)
         run: python -m compileall -q . -x "\\.git|__pycache__|legacy"
       - name: Figure provenance check

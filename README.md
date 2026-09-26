@@ -9,7 +9,7 @@
 1. **The evaluation protocol dictates conclusions — and `10` episodes are insufficient.** Each protocol upgrade (`10→30→100 eps`, unseen levels with `seed+1000`, dual stochastic+deterministic evaluation) reshuffled rankings: the global leader dropped (`spatial 1.54 → 1.35`), `ICM` lost its lead in `maze`/`heist` observed at `30 eps` (spurious variance), and `vit` collapsed in `dodgeball`. An enduring lesson: in `Procgen`, rankings evaluated with `<100` episodes are unreliable (sections 3.10–3.12).
 2. **There is no absolute winner — there is a consistent leader: `mlp_vector`.** Under the definitive protocol, the global top-5 is statistically indistinguishable (`mlp_vector 1.43` ≈ `resnet18 1.34` ≈ `spatial 1.28` ≈ `lstm_attention 1.26` ≈ `aug_crop 1.25`), but only `mlp_vector` (MLP over `16×16` grayscale, `256D`) remained at the top across **all** protocols (`1.25@10 → 1.36@30 → 1.43@100`) and wins in `starpilot`. Per-game winners: `aug_crop` (`bossfight`), `mlp_vector` (`starpilot`), `resnet18` (`dodgeball`) (section 3.12).
 3. **World Models and exploration: contextual conclusions, not universal.** WMs underperform only in `bossfight` (`<0.5`); in `starpilot`/`dodgeball` they match standard CNNs — the initial "WM is weak" claim was an artifact dominated by a single environment. Curiosity methods (`ICM`/`RND`/`NGU`) tie with standard `PPO` in `maze`/`heist` (re-measured across 40 runs on 24/09/2026); intrinsic bonuses without running-variance normalization inject $\sim 10^{-7}$ reward per step, insufficient to meaningfully alter policy optimization against sparse extrinsic rewards (sections 3.6, 3.12).
-4. **At this budget, architecture matters less than rigorous evaluation — and more budget does not resolve differences.** Budget scaling (`100k→250k→500k`) reveals **stagnant** learning curves for the top two configurations in their respective games: a `5×` budget neither created nor eliminated an advantage, and the generalization gap remained `≈0` (no memorization up to `500k`). With `5 seeds`, differences across configurations are on the order of noise: the study reports **trends with confidence intervals**, not definitive champions (sections 3.8, 3.13).
+4. **At this budget, architecture matters less than rigorous evaluation — and more budget does not resolve differences.** Budget scaling (`100k→250k→500k`) reveals **stagnant** learning curves for the top two configurations in their respective games: a `5×` budget neither created nor eliminated an advantage, and the generalization gap remained `≈0` (no memorization up to `500k`). With `5 seeds`, differences across configurations are on the order of noise: the study reports **trends with confidence intervals**, not definitive champions (sections 3.8, 3.13). Section 21 quantifies the same two facts from the opposite direction: symbolic regression recovers a within-game slope of only $+0.08$ to $+0.12$ return per decade of budget in `bossfight`/`dodgeball`, and the measured return identifies the generating architecture family at 0.133 accuracy against a chance level of 0.111–0.167.
 5. **In HRL, the primary driver is temporal abstraction — and learned skills only win when timing matters.** In `jumper`, action-repeat (`skip4`) yields `4×` the return of flat RL, and hierarchy with fixed skills adds nothing further; in `plunder`, only hierarchy with **learned skills** wins (`4.16` vs `3.53`, `+18%`) and yields a deterministically exploitable policy (`det 2.70` vs `≤1.32`). Whether "hierarchy helps" is strictly game-dependent (section 11.1).
 
 ---
@@ -330,6 +330,7 @@ All generated visual artifacts and figures are versioned under `results/`.
 |---|---|---|---|
 | `coinrun_50k_cnn_vs_mlp.png` (4.1), `bossfight_100k_world_models.png` (4.2) | `report_figures.py` | `results/legacy_records.json` (per-seed values of the pruned runs) | ✅ `py -3.10 report_figures.py` |
 | `rliable_profile.png` (4.9) | `run_rliable_eval.py` | `results/eval100_results.json` + `results/random_baselines.json` | ✅ `py -3.10 run_rliable_eval.py` |
+| `symbolic_regression_*.png` (21.3–21.5) | `symbolic_regression.py` | `jax_port/cells_summary.json` → `results/symbolic_regression.json` | ✅ `py -3.10 symbolic_regression.py` |
 | `suite_*` (4.3), `bossfight_hard_100k.png` (4.4), `new_archs_*` (4.5), `maze_heist_*` (4.6), `global_16.png` (4.7) | `compare_suite.py`, `compare_bossfight_hard.py`, `compare_new_archs.py`, `compare_maze_heist.py`, `compare_combined.py` | their `logs_*/<run>/` directories, which are git-ignored and were pruned | ❌ needs the benchmark re-run (commands in section 5); the files below are the originals from those runs |
 
 `py -3.10 report_figures.py --check` fails if this README embeds a figure that is not in the repository, or one with no recorded producer in the table above. It runs as a step in `.github/workflows/tests.yml` and is asserted again in `tests/test_report_figures.py`, so a figure can no longer drift away from its data silently. Regenerating 4.1/4.2 in place reproduces the same means and per-seed values; the error bars are sample standard deviations (`ddof=1`, matching section 3.8) and therefore slightly wider than the population standard deviations quoted in section 7.
@@ -394,6 +395,7 @@ py -3.10 -u re_eval_100.py --device cuda  # Definitive protocol: 100 eps across 
 py -3.10 eval100_analysis.py  # Comparative analysis 30 vs 100 -> results/eval100_analysis.json
 py -3.10 random_baselines.py --episodes 50  # Empirical random anchors on unseen levels -> results/random_baselines.json (section 18.1)
 py -3.10 run_rliable_eval.py  # IQM / trimmed mean / stratified bootstrap CIs / profiles -> results/rliable_scorecard.json + rliable_profile.png (section 3.14)
+py -3.10 symbolic_regression.py  # system identification over the 825 committed port cells -> results/symbolic_regression.json + 3 figures (section 21)
 py -3.10 report_figures.py  # Rebuilds figures 4.1/4.2 from results/legacy_records.json; prints which of the other 11 need a re-run
 py -3.10 -m pytest tests -q  # 84 tests: extractors, SB3 integration, bonuses, world models, aggregation, provenance
 py -3.10 probe_actions.py  # Action space probing (basis for HRL skills)
@@ -1081,6 +1083,7 @@ The repository contains automated unit tests across both PyTorch and JAX backend
 - **Intrinsic Reward Tests (`tests/test_exploration_bonuses.py`):** every bonus wrapper must add a bonus on every step, accept HWC and CHW observations, raise on a malformed observation instead of degrading to plain PPO, keep the RND target frozen, and scale linearly with `beta`.
 - **Grid Analysis Tests (`tests/test_grid_analysis.py`):** `jax_port/cells_summary.json` must still regenerate the published `analysis_full.json` (every cell, ranking and metric), which is what makes the committed summary an adequate stand-in for the git-ignored raw grid logs.
 - **Figure Provenance Tests (`tests/test_report_figures.py`):** the set of figures embedded in this README must equal the `PROVENANCE` map, each entry must name a script that still exists and a real data source, and the figures claimed rebuildable must have their per-seed arrays present (5 seeds each) in `results/legacy_records.json`.
+- **Symbolic Regression Tests (`tests/test_symbolic_regression.py`):** eleven cases guarding section 21. The important one is not about search quality but about validity: it perturbs every measured return and asserts the feature matrix is bit-identical afterwards, which is what proves `gen_gap` (train − unseen) never leaked into the inputs. Also covered: an unmapped configuration raises instead of being silently dropped, Wilson intervals behave and widen with fewer trials, the complexity-vs-error and inversion helpers, and **a real gplearn fit** — the guard that would have caught the `scikit-learn` 1.7 incompatibility at CI time rather than twenty minutes into a study run.
 
 - **JAX Port Test Suite (`python -m jax_port.tests.run_tests`)** — six registered modules, each SKIP-ponly on a missing optional dependency:
   - `test_stats`: Student-t CI, Cohen's d, AUC normalization and the top-1-vs-top-2 CI-overlap predicate (both the separated and the indistinguishable case).
@@ -1098,4 +1101,170 @@ The early Phase 1 exploratory codebase developed prior to the project's transiti
 - `legacy/carracing/sac_trainer.py`: Custom continuous Soft Actor-Critic (SAC) implementation with Box action space.
 - `legacy/carracing/compare_architectures.py`: Training harness benchmarking Classic CNN vs CBAM CNN on `CarRacing-v2` / `CarRacing-v3`.
 - `legacy/carracing/README.md`: Architectural motivation and historical context for the transition to Procgen.
+
+---
+
+## 21. Symbolic Regression as System Identification of the Benchmark (`symbolic_regression.py`)
+
+Sections 3 and 15 report **what was measured**. This section asks the inverse question: is there a short closed-form law over the protocol variables that reproduces those measurements, and can it be used backwards — to recover the hidden configuration from an observed return, or to infer the budget a target return implies?
+
+That is a system-identification problem in the standard sense: the data are outputs $R_{i,j}$ of an unknown generator $f(\text{protocol}) + \varepsilon$ observed at configurations $i$ and seeds $j$, and the object of interest is $f$ itself rather than a prediction. The engine is **gplearn 0.4.2** genetic symbolic regression; the inputs are the **825 executed cells** already committed in `jax_port/cells_summary.json`. Nothing in this section is simulated — every row is a measurement the grid produced (§15.4).
+
+### 21.1. Data, Support and Leakage Controls
+
+| Control | Value |
+|---|---|
+| Rows | 825 cells (of 865 non-MARL; the 40 `hrl` cells are excluded because they were logged without a budget) |
+| Games with budget variation | `bossfight` (235), `starpilot` (170), `dodgeball` (160), `heist` (120) |
+| Games without any budget variation | `coinrun` (20), `maze` (70), `jumper` (50) — excluded from every scaling fit |
+| Distinct budgets measured | 57 344 / 100 000 / 106 496 / 253 952 / 507 904 |
+| Cells at the modal budget (106 496) | 625 / 825 = **75.8 %** |
+| Widest within-game budget span | 5.08× |
+
+Two controls are enforced in code rather than asserted in prose:
+
+1. **No target leakage.** `gen_gap` is `train − unseen` and therefore contains the target; it is never a feature. `tests/test_symbolic_regression.py::test_design_matrix_never_reads_the_measured_return` asserts this directly by perturbing every `ret` value and requiring the feature matrix to be bit-identical afterwards.
+2. **Grouped cross-validation.** All metrics come from `GroupKFold` **by seed**, so seed 42 never appears in both the fit and the test split of the same configuration. Unshuffled CV over rows would have leaked seed-level repetition into every score.
+
+The support figure bounds the interpretation of everything that follows: this was a **configuration sweep, not a budget sweep**. Any slope on $\log_{10} N$ reported here is a local gradient fitted over a narrow span, not a scaling exponent tested across decades.
+
+### 21.2. Search Configuration
+
+Population 1000, 40 generations, tournament size 20, crossover 0.7, subtree/hoist/point mutation 0.1/0.01/0.1, mean-absolute-error fitness, parsimony coefficient 0.005, constant range $[-1, 1]$, `random_state = 0`. Function set: `add, sub, mul, div, log, sqrt, abs, neg, bpow`, with every partial function protected (`div` returns 1 unless $|x_2| > 10^{-10}$; `log` is $\log(|x| + 10^{-12})$; `sqrt` is $\sqrt{|x|}$; `bpow` clips its exponent to $[-3, 3]$) — gplearn rejects unary functions that are not closed over the negatives its own search produces.
+
+Baselines are evaluated on the **same two feature sets** as the symbolic fit, because a symbolic model given fewer inputs than its competitors cannot lose informatively:
+
+- `protocol` = $[\log_{10} N,\ \text{hard},\ \text{memory}]$
+- `protocol+game` = `protocol` + one indicator per game (7 levels)
+
+### 21.3. P1 — Recovering the Forward Law
+
+Cross-validated $R^2$ and MAE over the 825 pooled cells:
+
+| Model | Features | CV $R^2$ | CV MAE | Program |
+|---|---|---:|---:|---|
+| mean-only null | — | −0.0003 | 1.268 | — |
+| linear in $\log_{10}N$ | protocol | 0.3035 | 1.002 | — |
+| quadratic in $\log_{10}N$ | protocol | 0.3110 | 0.998 | — |
+| random forest (300 trees) | protocol | 0.4434 | 0.902 | — |
+| **symbolic** | protocol | **0.2773** | 0.998 | 10 nodes / depth 3 |
+| mean-only null | — | −0.0003 | 1.268 | — |
+| linear in $\log_{10}N$ | protocol+game | 0.8869 | 0.343 | — |
+| quadratic in $\log_{10}N$ | protocol+game | 0.8957 | 0.307 | — |
+| random forest | protocol+game | **0.9121** | 0.280 | — |
+| **symbolic** | protocol+game | **0.7381** | 0.503 | 9 nodes / depth 4 |
+
+Paired bootstrap over 2000 resamples of the squared error, $P(\text{symbolic} \succ \text{linear})$: **0.0215** on `protocol` and **0.0000** on `protocol+game`. Under identical features, identical folds and identical targets, symbolic regression does **not** beat the linear-in-log law that scaling analysis assumes by default — it is beaten by it.
+
+The recovered pooled law over `protocol` is
+
+$$\hat{R} = 2\,\text{memory} + 0.103 - \frac{\text{memory}}{\text{hard}}$$
+
+and the result worth stating plainly is what is **absent**: the search had $\log_{10} N$ available in every tournament and discarded it. The surviving terms are the memory-backbone indicator and its interaction with difficulty — memory backbones carry about $+2$ return in `easy`, and that advantage is cancelled when `hard` is set. This is a *description of the measured grid*, not a scaling law.
+
+Given the game indicators as well, the search returns
+
+$$\hat{R} = \sqrt{\;\text{game\_maze}\cdot\log(\text{game\_bossfight}) + \sqrt{\log(\text{game\_bossfight})}\;}$$
+
+which is a 9-node way of saying something weaker than it looks: with one-hot game inputs the tree mostly partitions on game, and the two games it names are the two whose returns sit furthest from the pooled mean. Neither expression is offered as a law to extrapolate with — 21.6 is where the cost of trying is measured.
+
+![Pareto front of the search](results/symbolic_regression_pareto.png)
+
+The complexity–accuracy front (parsimony sweep) shows the same thing from the other side:
+
+| Parsimony | Nodes | Depth | CV $R^2$ |
+|---:|---:|---:|---:|
+| 0 (none) | 862 | 67 | 0.2764 |
+| 0.001 | 14 | 6 | 0.2689 |
+| **0.005** | **10** | **3** | **0.2773** |
+| 0.01 | 10 | 3 | 0.2457 |
+| 0.02 | 8 | 3 | 0.2625 |
+| 0.05 | 4 | 2 | −0.1072 |
+| 0.1 | 4 | 2 | −0.2213 |
+
+A 10-node program is as accurate as an 862-node one, and below 8 nodes the fit becomes worse than the mean-only null. There is no accuracy to be bought with complexity here, which is the signature of a search over data whose variance is not a smooth function of the supplied inputs.
+
+### 21.4. P1 per Game — the Plateau, Measured
+
+Fitting return against $\log_{10}$ budget within each game gives the quantitative version of section 3.13's "curves plateau" statement. The slope is **return per decade of environment steps**:
+
+| Game | Cells | Budgets measured | Slope (return/decade) | CV $R^2$ linear | CV $R^2$ symbolic | $P(\text{sym} \succ \text{lin})$ |
+|---|---:|---|---:|---:|---:|---:|
+| `bossfight` | 235 | 100 k, 106 k, 508 k | **+0.079** | 0.0316 | −0.0993 | 0.017 |
+| `dodgeball` | 160 | 100 k … 508 k | **+0.121** | −0.0405 | −0.0525 | 0.178 |
+| `starpilot` | 170 | 100 k … 508 k | **+1.155** | 0.1043 | 0.0580 | 0.133 |
+| `heist` | 120 | 106 k, 508 k | **−1.137** | 0.2548 | 0.2977 | **0.973** |
+| `coinrun`, `maze`, `jumper` | 20 / 70 / 50 | single budget | not estimable | — | — | — |
+
+Three readings follow. In `bossfight` and `dodgeball` the slope is indistinguishable from flat, and the symbolic search returned a **constant** in both ($0.008$ and $0.929/0.801$ respectively) — it found no budget dependence whatsoever, and the negative CV $R^2$ says even that constant generalises poorly across seeds. `starpilot` is the only game with a substantial positive slope ($+1.155$ per decade), recovered symbolically as $\hat{R} = 0.480 \log_{10} N$. `heist` has a **negative** slope — the higher-budget cells score lower — and is the single case where the symbolic fit beats the linear one ($P = 0.973$), returning $-0.952 + \log(\log_{10}N) - \text{hard}$; with two budgets and a descending mean this is best read as the 106 k cells being the better of two configurations rather than as a budget effect.
+
+![Measured scaling across budgets](results/symbolic_regression_scaling.png)
+
+### 21.5. P2 — the Inverse Problem: Is the Architecture Identifiable from its Return?
+
+The hidden parameter is now the **configuration family** that generated a cell. Within one stratum $(\text{game}, \text{suite}, \text{budget})$ the protocol is identical for every cell, so the only observable left is the measured return. The reference profile of each family is built by averaging $k$ seeds; the query is a return averaged over $j$ held-out seeds. Recovery is scored against the $1/F$ chance level.
+
+| Stratum | Families $F$ | Chance $1/F$ | Accuracy at $k{=}1$ | Accuracy at $k{=}4$ | Wilson 95 % CI ($k{=}4$) |
+|---|---:|---:|---:|---:|---|
+| `bossfight` / `hard` | 6 | 0.167 | 0.158 | 0.200 | [0.095, 0.373] |
+| `bossfight` / `main` | 9 | 0.111 | 0.094 | 0.222 | [0.125, 0.363] |
+| `dodgeball` / `main` | 9 | 0.111 | 0.133 | **0.289** | [0.177, 0.434] |
+| `starpilot` / `main` | 9 | 0.111 | 0.128 | 0.200 | [0.109, 0.338] |
+
+Pooled across strata, as a function of how many seeds the reference averages ($k$) and how many the measurement averages ($j$):
+
+| Reference seeds $k$ | $j{=}1$ | $j{=}2$ | $j{=}3$ |
+|---:|---:|---:|---:|
+| 1 | 0.133 | 0.145 | 0.152 |
+| 2 | 0.155 | 0.141 | 0.157 |
+| 3 | 0.172 | 0.173 | — |
+| 4 | **0.203** | — | — |
+
+![Identifiability of the hidden family](results/symbolic_regression_identifiability.png)
+
+**A single measured return barely identifies the architecture that produced it.** At $k{=}1, j{=}1$ — the situation of anyone reading one benchmark number — accuracy is 0.133 against a chance level of 0.111–0.167. The best cell of the grid, $k{=}4, j{=}1$ at 0.203, still overlaps chance for the $F{=}6$ stratum. Accuracy improves monotonically in $k$ (cleaner reference profiles) and only weakly in $j$ (a less noisy query), which locates the loss precisely: **the between-family differences at this budget are smaller than the between-seed noise within a family.**
+
+This is the identifiability counterpart of section 3.8's "no top-1 vs top-2 difference is statistically significant with 5 seeds", and it is the stronger statement: it is not that the ranking cannot be *tested* at $n{=}5$, but that the generating configuration cannot be *recovered* from a single run at all. The degenerate "always predict the lowest-mean family" heuristic scores a constant 0.111 / 0.167 — exactly $1/F$ — confirming the chance floor is computed correctly.
+
+*Caveat, stated rather than hidden:* the $(\text{reference}, \text{measurement})$ splits within a stratum reuse seeds, so the $n \le 3960$ predictions are not independent draws and the Wilson intervals are optimistic. They are reported as a spread indicator, not as a confirmatory test.
+
+### 21.6. P3 — Inverting the Law for Budget
+
+Solving the fitted within-game line for the budget a target return implies, and comparing against the cell that actually achieved it:
+
+| Game | Target return | Budget implied by the law | Budget of the cell that achieved it | Ratio | Inside measured support? |
+|---|---:|---:|---:|---:|---|
+| `starpilot` | 3.70 | 1 816 622 | 507 904 | 3.58× | no |
+| `bossfight` | 0.49 | 41 301 266 431 | 507 904 | 81 317× | no |
+| `dodgeball` | 1.98 | 1 203 205 443 903 | 253 952 | 4 737 925× | no |
+
+**No inversion lands inside the budget span that was actually measured**, so under the support criterion zero of the three estimable games is budget-identifiable. The best returns in `bossfight` and `dodgeball` are not high-budget returns, and a monotone line fitted to budget cannot reach them without extrapolating by five to six orders of magnitude. Those numbers are reported to make the extrapolation visible, not as predictions: a law fitted over a 5× span has no authority at $10^{12}$ steps.
+
+This is the same conclusion as section 3.13's budget-scaling experiment — a 5× budget "neither created nor eliminated an advantage" — reached from the opposite direction: not by running more steps, but by asking what the fitted line implies.
+
+### 21.7. Threats to Validity
+
+1. **Support.** 75.8 % of cells sit at one budget and the widest within-game span is 5.08×. Every slope on $\log_{10} N$ here is a local gradient of a curve measured over less than one decade. A genuine scaling study needs decades of budget, which section 3.13 began and this section does not extend.
+2. **Game identity is not a discovery.** $R^2$ rising from 0.30 to 0.89 when game indicators are added says that `maze` returns and `bossfight` returns live on different scales. That is expected, and its only use is as a control: it bounds how much the *protocol* variables can explain once scale is absorbed.
+3. **Family granularity is a modelling choice.** `FAMILY_OF` maps the **40 configurations** present in the 825 rows onto **15 families** (`cbam`/`spatial` → `cnn_attention`, `impala`/`impoola`/`resnet18` → `cnn_deep`, `curl`/`cpc`/`acl`/`contrastive` → `contrastive`, …); the dictionary carries 44 entries, of which a few belong to suites not analysed here. An unmapped configuration raises rather than being dropped, so the mapping cannot silently drift as suites grow. Coarser grouping raises the identifiability ceiling in P2 — with $F = 15$ overall but $F = 9$ inside the largest stratum — and the mapping is declared in the script, not inferred.
+4. **Search stochasticity.** gplearn is seeded (`random_state = 0`) and the study was executed twice from the same committed inputs: every metric of P1 (pooled and per game), P2 and the Pareto sweep reproduced **identically** — the only differences between the two artefacts were cosmetic (feature labels and one rendered equation). The numbers above are therefore from a reproducible run, not a lucky draw. Re-running with a *different* seed is expected to explore another part of the same plateau rather than find a better law, and the Pareto sweep of 21.3 is the evidence for that claim: 862 nodes buy nothing over 10.
+5. **Version drift between stacks.** The 825 cells were produced by the JAX port; port-vs-SB3 parity is documented in section 15. This section describes the port's grid, and the SB3 study's tables in sections 3 and 7 are deliberately not mixed into it.
+
+### 21.8. Artifacts and Reproduction
+
+| Artifact | Content |
+|---|---|
+| `symbolic_regression.py` | producer: loads the committed cells, runs P1/P2/P3 and the Pareto sweep, draws the three figures |
+| `results/symbolic_regression.json` | every number in this section, with `_provenance` (engine versions, search settings, budget support, leakage guard) |
+| `results/symbolic_regression_pareto.png` | nodes vs CV $R^2$, with the linear-in-$\log_{10}N$ reference line |
+| `results/symbolic_regression_scaling.png` | measured return vs budget per game, with the fitted per-decade slope |
+| `results/symbolic_regression_identifiability.png` | P2 recovery accuracy vs reference seeds, with the $1/F$ chance line |
+| `tests/test_symbolic_regression.py` | 11 tests: the no-leakage assertion, family-map completeness, Wilson interval behaviour, and a real gplearn fit that fails CI if the gplearn/scikit-learn interface drifts again |
+
+```
+py -3.10 symbolic_regression.py            # full study (search: 1000 x 40)
+py -3.10 symbolic_regression.py --quick    # small search, for a fast local check
+```
+
+Dependencies are pinned in `requirements.txt`: `gplearn==0.4.2` with `scikit-learn==1.5.2`. The cap is not cosmetic — gplearn 0.4.2 calls an estimator helper that scikit-learn removed in 1.6, so with a current sklearn `SymbolicRegressor.fit` raises `AttributeError` instead of searching. That failure is caught by the CI test above rather than mid-study.
 

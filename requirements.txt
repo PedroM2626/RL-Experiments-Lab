@@ -23,4 +23,10 @@ imageio-ffmpeg==0.3.0
 pytest==9.1.1
 # sb3-contrib used in Value vs Policy benchmark (QR-DQN, Section 12 in README):
 sb3-contrib==2.9.0
+# symbolic regression / system identification (symbolic_regression.py, README section 21).
+# scikit-learn is capped at <1.6 because gplearn 0.4.2 calls the estimator helper
+# _validate_data, which sklearn removed from its internal API in 1.6: with 1.7 installed
+# SymbolicRegressor.fit raises AttributeError instead of searching.
+gplearn==0.4.2
+scikit-learn==1.5.2
 

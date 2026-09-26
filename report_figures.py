@@ -45,6 +45,13 @@ PROVENANCE = {
     "maze_heist_heist_plot.png": ("compare_maze_heist.py", "logs_maze_heist/*/maze_heist_heist_plot.png",
                                   "results/exploration_remeasure.json"),
     "global_16.png": ("compare_combined.py", "logs_combined/*/combined_<game>_plot.png", "pruned logs"),
+    "symbolic_regression_pareto.png": ("symbolic_regression.py", "results/symbolic_regression_pareto.png",
+                                       "results/symbolic_regression.json"),
+    "symbolic_regression_scaling.png": ("symbolic_regression.py", "results/symbolic_regression_scaling.png",
+                                        "results/symbolic_regression.json"),
+    "symbolic_regression_identifiability.png": ("symbolic_regression.py",
+                                                "results/symbolic_regression_identifiability.png",
+                                                "results/symbolic_regression.json"),
     "rliable_profile.png": ("run_rliable_eval.py", "results/rliable_profile.png",
                             "results/eval100_results.json + results/random_baselines.json"),
 }
