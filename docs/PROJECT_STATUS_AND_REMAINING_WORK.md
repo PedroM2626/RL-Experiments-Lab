@@ -32,7 +32,7 @@ The following scientific, algorithmic, and infrastructural deficiencies identifi
 | **MARL Correctness** | Sequential Replay Buffer | Ensured trajectory continuity per environment (prevented parallel env interleaving) and masked terminal states ($1-d$). | Verified in `7e89aee` & `452b72a` |
 | **Reproducibility** | Machine-Specific Path Removal | Parameterized hardcoded absolute paths (`/mnt/c/...`, `/root/...`) across all execution scripts. | Verified in `f18351c` |
 | **Reproducibility** | Grid Non-Destructive Analysis | Prevented `jax_port/analyze_grade.py` from destroying `analysis_full.json` when raw directories are missing. | Verified in `e63c533` |
-| **Figure Provenance** | 13 Embedded Figures Tracking | Created `report_figures.py` to explicitly map each figure to its underlying data generator or provenance record. | Verified in `7ae9f27` (`--check` PASS) |
+| **Figure Provenance** | 13 Embedded Figures Tracking | Created `report_figures.py` to explicitly map each figure to its underlying data generator or provenance record. | Verified in `7ae9f27` (`--check` PASS; 16 embedded as of 27/09/2026) |
 | **Testing** | False-Green Test Removal | Removed `DummyPytest` shim in `tests/test_pytorch_extractors.py`; fully wired SB3 policy checks. | Verified in `99bf46d` |
 | **Testing** | JAX-Port Test Suite Wiring | Resolved orphaned tests (`test_temporal.py`, `test_marl.py`, `test_smoke.py`). 28/28 tests passing in WSL environment; 101/101 tests passing in Windows PyTorch environment. | Verified in `40429b0` |
 | **CI / Infrastructure** | Automated GitHub Actions | Added `.github/workflows/ci.yml` running both PyTorch and JAX test suites on every push. Added `LICENSE` (MIT). | Verified in `5a42ded` & `afc6e9c` |
@@ -87,8 +87,9 @@ graph TD
 
 ### Tier 2: Experimental Executions (GPU Ready) — ✅ 100% COMPLETED (24/09/2026)
 
-1. **MARL SMAX Re-Measurement (`jax_port/marl_ql_remeasure.sh`) — ✅ COMPLETED (24/09/2026)**:
+1. **MARL SMAX Re-Measurement (`jax_port/marl_ql_remeasure.sh`) — ✅ COMPLETED (24/09/2026), extended 27/09/2026**:
    - **Workload Completed:** All 9 cells on map `3m` executed across `vdn` (1M), `qmix` (1M), and `qmix-recurrent` (10M) for seeds 42–44 under the corrected Bellman target and buffer code.
+   - **Correction (27/09/2026):** "all 9 Q-learning cells" was wrong — the published grid has **12** invalidated cells. The `qmix-recurrent` 10M positive control on map `2s3z` (3 seeds, README §15.4.4) ran on 09/09 under the same three defects and was not covered by the `3m` sweep. It has since been re-measured (`MAPS=2s3z RUN_FLAT=0` → `jax_port/marl_remeasure_2s3z_summary.json`): 0.000 eval win-rate on all three seeds, every cell reaching its full 10M budget, so the verdict holds on both maps.
    - **Findings:** Persisted in `jax_port/marl_remeasure_summary.json` and updated in `README.md` §15.4.4. Confirmed that eval win-rate remains 0.000 across all 9 cells, establishing that symmetric 3v3 coordination failure in SMAX without domain-specific dense shaping is a genuine dynamic of cooperative off-policy Q-learning, not an artifact of code bugs.
 2. **JAX-Port Exploration $\beta=0$ Control Sweep (30 Cells) — ✅ COMPLETED (24/09/2026)**:
    - **Workload Completed:** All 30 cells (3 arms $\times$ 2 games $\times$ 5 seeds at 100k steps with `--explore-beta 0.0`) executed via `run_grade.py`.
@@ -105,9 +106,10 @@ graph TD
    - Expanded single-seed exploratory evaluation to a 5-seed benchmark ($n=5$, seeds 42–46) across 4 architectures (`classic`, `recurrent_lstm`, `regularized_recurrent_lstm`, `recurrent_s5`) on `caveflyer` with `stack=1` (20 runs total).
    - Results persisted in `results/caveflyer_multiseed_bench.json` and documented in `README.md` §15.4.8.
    - Findings: `recurrent_lstm` achieved $3.90 \pm 1.14$ (95% CI $[2.48, 5.32]$) vs `classic` $3.20 \pm 1.30$ (95% CI $[1.58, 4.82]$), establishing a positive directional effect size ($d = +0.57$). S5 SSM achieved $3.60 \pm 1.14$ ($d = +0.33$). Demonstrates that single-seed point estimates (+60%) exaggerated advantages, though recurrent memory maintains genuine directional benefit in occluded POMDP environments.
-3. **Integration of World Model / Dreamer into JAX Grid — ✅ COMPLETED**:
+3. **Integration of World Model / Dreamer into JAX Grid — ✅ COMPLETED (first exercised 27/09/2026)**:
    - Refactored `jax_port/train_dreamer.py` to expose `train(args)` returning structured cell metrics.
-   - Integrated the `dreamer` suite into `jax_port/run_grade.py` and `jax_port/analyze_grade.py`.
+   - Integrated the `dreamer` suite into `run_grade.py` and `analyze_grade.py`.
+   - **Correction (27/09/2026):** the integration was unreachable — `dreamer` had never been added to `run_grade.py`'s `--suite` argparse `choices`, so `--suite dreamer` exited with `invalid choice` and the branch had executed **zero** cells (`results_grade/dreamer/` did not exist). The published Dreamer rows come from `train_dreamer.py` invoked directly, which is what let a dead branch read as integrated. Fixed and smoked end-to-end through the grid path (CPU, `coinrun` seed 42, 20k frames): the cell is written and `analyze_grade.py`'s `Loader` parses it. The artifact is parked in `results_grade/dreamer_smoke/` on purpose — `dreamer` is in `RANKING_SUITES`, so a 20k-frame plumbing cell left in the graded directory would fold into `cells_summary.json` and everything downstream of it.
 
 ---
 
@@ -132,7 +134,7 @@ graph TD
 ## 4. Final Verification Summary
 
 All identified tasks across all 4 tiers from `Sugestões_para_o_projeto_2026-09-24_11-22.md` and repository audit are **100% executed, verified, and documented**:
-- **PyTorch/SB3 Unit Tests:** 110/110 passing (`pytest tests -q`).
+- **PyTorch/SB3 Unit Tests:** 129/129 passing (`pytest tests`, re-measured 27/09/2026 — the count grew with the exploration-bonus and merge-guard tests added on 25/09 and 27/09).
 - **JAX/Flax Unit Tests:** 28/28 passing (`jax_port/tests/run_tests.py`).
-- **Figure Integrity:** 13/13 passing (`python report_figures.py --check`).
-- **All Experimental Workloads:** 40-cell Maze/Heist re-eval, 9-cell MARL SMAX re-measurement, 30-cell Exploration $\beta=0$ control sweep, 20-run Caveflyer multi-seed POMDP benchmark, and 100k-step Offline RL benchmark on Bossfight are fully computed and saved to `results/`.
+- **Figure Integrity:** `python report_figures.py --check` passes with 16 embedded figures mapped (re-measured 27/09/2026; the maze/heist panels became rebuildable on 26/09).
+- **All Experimental Workloads:** 40-cell Maze/Heist re-eval, 12-cell MARL SMAX re-measurement (9 on `3m` 24/09 + 3 on `2s3z` 27/09), 30-cell Exploration $\beta=0$ control sweep, 20-run Caveflyer multi-seed POMDP benchmark, and 100k-step Offline RL benchmark on Bossfight are fully computed and saved to `results/`.
