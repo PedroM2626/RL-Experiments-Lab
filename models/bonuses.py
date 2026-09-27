@@ -29,51 +29,65 @@ def to_chw_float(obs):
     return torch.from_numpy(np.ascontiguousarray(obs)).unsqueeze(0).float() / 255.0
 
 
-class RunningMeanStd:
-    """Welford-like running mean and variance estimator for bonus normalization (Burda et al., 2018)."""
+class RollingBonusMean:
+    """Trailing-window mean of the intrinsic error, used as the divisor of the bonus.
 
-    def __init__(self, epsilon: float = 1e-4, shape=()):
-        self.mean = np.zeros(shape, "float64")
-        self.var = np.ones(shape, "float64")
-        self.count = epsilon
+    The window is the point. A cumulative estimator (the Welford `RunningMeanStd` this class
+    replaced) is wrong for a quantity that decays by design: as the RND/ICM predictor learns,
+    each new error sits below the all-time mean, so a cumulative baseline is always too high.
+    """
 
-    def update(self, x: np.ndarray) -> None:
-        batch_mean = np.mean(x, axis=0)
-        batch_var = np.var(x, axis=0)
-        batch_count = x.shape[0] if len(x.shape) > 0 else 1
-        delta = batch_mean - self.mean
-        tot_count = self.count + batch_count
-        new_mean = self.mean + delta * batch_count / tot_count
-        m_a = self.var * self.count
-        m_b = batch_var * batch_count
-        m2 = m_a + m_b + np.square(delta) * self.count * batch_count / tot_count
-        self.mean = new_mean
-        self.var = m2 / tot_count
-        self.count = tot_count
+    def __init__(self, window: int = 1000):
+        self.window = window
+        self.buf = collections.deque(maxlen=window)
+
+    def update(self, x: float) -> float:
+        """Record one sample and return the trailing mean of the window including it."""
+        self.buf.append(x)
+        return float(np.mean(self.buf))
 
 
 class _IntrinsicWrapper(gymn.Wrapper):
-    """Bookkeeping and optional running variance normalization shared by all bonus wrappers."""
+    """Bookkeeping and optional bonus normalization shared by all bonus wrappers."""
 
     def __init__(self, env, beta=0.01, normalize=False, clip=5.0):
         super().__init__(env)
         self.beta = beta
         self.normalize = normalize
         self.clip = clip
-        self.rms = RunningMeanStd() if normalize else None
+        self.rolling = RollingBonusMean() if normalize else None
         self.n_steps = 0
         self.n_bonus = 0
         self.intrinsic_sum = 0.0
+        self.injected_sum = 0.0
+        self.injected_max = 0.0
 
     def _bonus(self, obs):
         raise NotImplementedError
 
     def _scale_bonus(self, intrinsic: float) -> float:
+        """Divisive reward normalization: scale the error to O(1) against its own recent level.
+
+        Two other forms were measured and rejected on this suite. Dividing by the running
+        STD alone leaves the arm inert — the error is heavy-tailed, so the std is set by rare
+        spikes: on a 2k-step `heist` smoke at beta=0.01 that still injected 5.3e-5 per step
+        for `ngu` and 1.1e-4 for `icm` against a 0/1 extrinsic reward. Subtracting the mean
+        (the textbook z-score, floored at 0) is worse than inert on a decaying series: the
+        current error is the window minimum almost everywhere, so the bonus clipped to 0.0 on
+        every step of a 400-step probe. Dividing by the trailing MEAN keeps the term positive,
+        monotone in the error, and O(1) whatever the level the predictor has converged to,
+        which is what makes the arm's injected magnitude comparable to beta.
+        """
         if self.normalize:
-            self.rms.update(np.array([intrinsic]))
-            std = float(np.sqrt(max(1e-8, float(self.rms.var))))
-            return float(np.clip(intrinsic / std, 0.0, self.clip))
+            mean = self.rolling.update(intrinsic)
+            return float(np.clip(intrinsic / max(mean, 1e-12), 0.0, self.clip))
         return intrinsic
+
+    def _record(self, scaled_intrinsic: float) -> float:
+        injected = self.beta * scaled_intrinsic
+        self.injected_sum += injected
+        self.injected_max = max(self.injected_max, injected)
+        return injected
 
     def step(self, action):
         obs, reward, terminated, truncated, info = self.env.step(action)
@@ -81,17 +95,31 @@ class _IntrinsicWrapper(gymn.Wrapper):
         intrinsic = float(self._bonus(obs))
         self.n_bonus += 1
         self.intrinsic_sum += intrinsic
-        scaled_intrinsic = self._scale_bonus(intrinsic)
-        return obs, reward + self.beta * scaled_intrinsic, terminated, truncated, info
+        return (obs, reward + self._record(self._scale_bonus(intrinsic)),
+                terminated, truncated, info)
 
     def stats(self):
+        """Bookkeeping that lets a null result be read as null-by-scale rather than null-by-bug.
+
+        `effective_bonus` is the mean reward increment the policy actually sees and
+        `effective_max` the largest single-step one, which matters because the raw prediction
+        error is heavy-tailed: a small mean with a large max is a sparse signal, a small mean
+        with a small max is an inert one. Compare either against the game's own 0/1 extrinsic
+        reward. `bonus_applied` alone only proves the mechanism ran, which is what the
+        23/09/2026 defect was missing.
+        """
         return {
             "wrapper": type(self).__name__,
             "steps": self.n_steps,
             "bonus_applied": self.n_bonus,
             "bonus_ratio": self.n_bonus / max(1, self.n_steps),
             "intrinsic_mean": self.intrinsic_sum / max(1, self.n_bonus),
+            "effective_bonus": self.injected_sum / max(1, self.n_steps),
+            "effective_max": self.injected_max,
             "normalized": self.normalize,
+            "norm_window": self.rolling.window if self.rolling else None,
+            "clip": self.clip if self.normalize else None,
+            "beta": self.beta,
         }
 
 
@@ -143,8 +171,8 @@ class ICMWrapper(_IntrinsicWrapper):
         self.prev_phi = phi_next.detach()
         self.n_bonus += 1
         self.intrinsic_sum += intrinsic
-        scaled_intrinsic = self._scale_bonus(intrinsic)
-        return obs, reward + self.beta * scaled_intrinsic, terminated, truncated, info
+        return (obs, reward + self._record(self._scale_bonus(intrinsic)),
+                terminated, truncated, info)
 
     def _bonus(self, obs):  # pragma: no cover - ICM overrides step for its state machine
         raise NotImplementedError

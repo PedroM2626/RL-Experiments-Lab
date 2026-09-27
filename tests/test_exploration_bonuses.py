@@ -159,3 +159,31 @@ def test_bonus_normalization_scales_and_clips(cls):
     # Base reward is 1.0; intrinsic bonus clipped to <= 2.0 with beta=1.0 means reward <= 3.0 + eps
     assert all(1.0 <= r <= 3.0001 for r in rewards)
     assert any(r > 1.0 for r in rewards)
+    assert st["effective_max"] <= st["beta"] * 2.0 + 1e-9, st
+    # What the running MEAN subtraction is for: dividing by the running std alone kept the
+    # typical scaled value far below 1, because the prediction error is heavy-tailed and the
+    # std is set by rare spikes (measured: ngu injected 5.3e-5/step at beta=0.01, still inert).
+    # Standardising makes the scaled term O(1), so it must dominate the raw MSE it replaced.
+    assert st["effective_bonus"] > 10 * st["beta"] * st["intrinsic_mean"], st
+
+
+@pytest.mark.parametrize("cls", [ICMWrapper, RNDWrapper, NGUWrapper])
+def test_unnormalized_cell_injects_exactly_beta_times_the_raw_error(cls):
+    """The baseline compare_maze_heist.py's guard compares against.
+
+    Without normalization the per-step increment is exactly beta * intrinsic, which on this
+    suite measured ~1e-7 against a 0/1 extrinsic reward -- the null-by-scale of README 3.6.
+    Pinning the identity is what keeps that reading quantitative: if the guard ever compares
+    against a different quantity, the 10x rule silently stops meaning anything.
+    """
+    torch.manual_seed(0)
+    env = cls(DummyEnv(), beta=0.01)
+    env.reset()
+    for _ in range(30):
+        _, r, term, trunc, _ = env.step(1)
+        if term or trunc:
+            env.reset()
+    st = env.stats()
+    assert st["normalized"] is False and st["norm_window"] is None, st
+    assert st["effective_bonus"] == pytest.approx(st["beta"] * st["intrinsic_mean"], rel=1e-9)
+    assert st["effective_max"] > 0

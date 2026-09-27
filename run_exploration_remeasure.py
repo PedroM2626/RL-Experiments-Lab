@@ -1,4 +1,4 @@
-"""Run the section 3.6 exploration re-measurement (roadmap item 7) as four parallel groups.
+"""Run the section 3.6 exploration re-measurement (roadmap item 7) as parallel groups.
 
 compare_maze_heist.py takes ~17 min per model on this machine, so the 40-model grid serialises
 to ~11h; splitting it by game and arm pair brings it inside ~3h without touching the protocol,
@@ -11,6 +11,12 @@ Windows drops when this script exits, so the user's power plan is never modified
 Usage:
     py -3.10 run_exploration_remeasure.py                 # full grid
     py -3.10 run_exploration_remeasure.py --status        # what is measured so far
+    py -3.10 run_exploration_remeasure.py --normalized    # scaled-bonus arms, own log dir
+
+--normalized is not a re-run of the published grid: it flips the arm definition (bonus divided
+by its running std instead of a raw MSE), so it trains into logs_maze_heist_norm and leaves
+logs_maze_heist alone. Its ppo control is the frozen 24/09 control rather than a 10th arm,
+because the control has no bonus to rescale.
 """
 import argparse
 import ctypes
@@ -22,11 +28,16 @@ import sys
 import time
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-LOGS = os.path.join(BASE, "logs_maze_heist")
-RUNLOGS = os.path.join(LOGS, "run_logs")
-GROUPS = [(game, arms) for game in ("maze", "heist") for arms in (("ppo", "icm"), ("rnd", "ngu"))]
+LOGS_NORM = os.path.join(BASE, "logs_maze_heist_norm")
+ARMS_NORM = ("icm", "rnd", "ngu")
 ES_CONTINUOUS = 0x80000000
 ES_SYSTEM_REQUIRED = 0x00000001
+
+
+def groups_for(arms):
+    """Pair the arms up so each game runs in two processes, as the published grid did."""
+    chunks = [tuple(arms[i:i + 2]) for i in range(0, len(arms), 2)]
+    return [(game, chunk) for game in ("maze", "heist") for chunk in chunks]
 
 
 def set_keep_awake(on):
@@ -36,11 +47,11 @@ def set_keep_awake(on):
     ctypes.windll.kernel32.SetThreadExecutionState(flags)
 
 
-def cells_measured():
+def cells_measured(logs):
     """Every comparison_results.json written by any group, keyed by config."""
     out = {}
-    for path in glob.glob(os.path.join(LOGS, "maze_heist_*", "comparison_results.json")):
-        if os.path.abspath(os.path.dirname(path)) == os.path.abspath(RUNLOGS):
+    for path in glob.glob(os.path.join(logs, "maze_heist_*", "comparison_results.json")):
+        if os.path.abspath(os.path.dirname(path)) == os.path.abspath(os.path.join(logs, "run_logs")):
             continue
         with open(path, encoding="utf-8") as f:
             j = json.load(f)
@@ -53,11 +64,11 @@ def cells_measured():
     return out
 
 
-def status():
-    cells = cells_measured()
+def status(logs, arms):
+    cells = cells_measured(logs)
     print(f"{'config':16s} {'seeds':>5s}  bonus-verified  mean")
     for game in ("maze", "heist"):
-        for arm in ("ppo", "icm", "rnd", "ngu"):
+        for arm in arms:
             k = f"{game}_{arm}"
             got = cells.get(k, {})
             bonus = [c for c in got.values() if (c.get("bonus") or {}).get("bonus_applied")]
@@ -73,20 +84,29 @@ def main():
     parser.add_argument("--status", action="store_true", help="report progress and exit")
     parser.add_argument("--timesteps", type=int, default=100000)
     parser.add_argument("--seeds", type=int, nargs="+", default=[42, 43, 44, 45, 46])
+    parser.add_argument("--normalized", action="store_true",
+                        help="train the scaled-bonus arms into logs_maze_heist_norm instead of "
+                             "re-running the published unnormalized grid")
     args = parser.parse_args()
-    os.makedirs(RUNLOGS, exist_ok=True)
+    arms = list(ARMS_NORM) if args.normalized else ["ppo", "icm", "rnd", "ngu"]
+    logs = LOGS_NORM if args.normalized else os.path.join(BASE, "logs_maze_heist")
+    runlogs = os.path.join(logs, "run_logs")
+    os.makedirs(runlogs, exist_ok=True)
     if args.status:
-        status()
+        status(logs, arms)
         return
 
     env = dict(os.environ, OMP_NUM_THREADS="1", MKL_NUM_THREADS="1")
     procs = []
-    for game, arms in GROUPS:
-        tag = f"{game}_{'_'.join(arms)}"
-        log = open(os.path.join(RUNLOGS, f"{tag}.log"), "w", encoding="utf-8")
-        cmd = [sys.executable, "-u", "compare_maze_heist.py", "--games", game, "--arms", *arms,
+    total = len(arms) * 2 * len(args.seeds)
+    for game, group_arms in groups_for(arms):
+        tag = f"{game}_{'_'.join(group_arms)}"
+        log = open(os.path.join(runlogs, f"{tag}.log"), "w", encoding="utf-8")
+        cmd = [sys.executable, "-u", "compare_maze_heist.py", "--games", game, "--arms", *group_arms,
                "--seeds", *[str(s) for s in args.seeds], "--timesteps", str(args.timesteps),
-               "--log_dir", LOGS, "--device", "cuda"]
+               "--log_dir", logs, "--device", "cuda"]
+        if args.normalized:
+            cmd.append("--normalize")
         procs.append((tag, subprocess.Popen(cmd, cwd=BASE, stdout=log, stderr=subprocess.STDOUT, env=env), log))
         print(f"launched {tag}: {' '.join(cmd[2:])}")
 
@@ -95,17 +115,17 @@ def main():
     try:
         while any(p.poll() is None for _t, p, _l in procs):
             time.sleep(60)
-            n = sum(len(v) for v in cells_measured().values())
+            n = sum(len(v) for v in cells_measured(logs).values())
             el = (time.time() - t0) / 3600
             rate = n / el if el > 0 else 0
-            print(f"[{el:5.2f}h] {n}/40 cells measured, {rate:5.2f} cells/h", flush=True)
+            print(f"[{el:5.2f}h] {n}/{total} cells measured, {rate:5.2f} cells/h", flush=True)
     finally:
         set_keep_awake(False)
     for tag, p, log in procs:
         log.close()
         print(f"{tag}: exit {p.returncode}")
     print("\n=== final ===")
-    status()
+    status(arms)
 
 
 if __name__ == "__main__":

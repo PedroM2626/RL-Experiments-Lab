@@ -30,6 +30,10 @@ def main():
     parser.add_argument('--n_unseen', type=int, default=100)
     parser.add_argument('--n_train', type=int, default=15)
     parser.add_argument('--out', type=str, default='results/eval100_results.json')
+    parser.add_argument('--zips_glob', type=str, nargs='*', default=None,
+                        help='override which checkpoints are scored, so a benchmark trained into '
+                             'its own log dir can be evaluated into its own results file without '
+                             'touching the frozen 275-model scorecard')
     args = parser.parse_args()
     base = os.path.dirname(os.path.abspath(__file__))
     out_path = os.path.join(base, args.out)
@@ -38,9 +42,11 @@ def main():
     if os.path.exists(out_path):
         with open(out_path) as f: results = json.load(f)  # resume
 
-    zips = sorted(glob.glob(os.path.join(base, 'logs_new_archs', 'new_archs_*', '*.zip'))) + \
+    zips = (sorted(z for g in args.zips_glob for z in glob.glob(os.path.join(base, g)))
+            if args.zips_glob else
+            sorted(glob.glob(os.path.join(base, 'logs_new_archs', 'new_archs_*', '*.zip'))) + \
            sorted(glob.glob(os.path.join(base, 'logs_maze_heist', 'maze_heist_*', '*.zip'))) + \
-           sorted(glob.glob(os.path.join(base, 'logs_suite_retrain', 'suite_retrain_zips', '*.zip')))
+           sorted(glob.glob(os.path.join(base, 'logs_suite_retrain', 'suite_retrain_zips', '*.zip'))))
     print(f"{len(zips)} models, device={args.device}, n_unseen={args.n_unseen} (stoch+det), n_train={args.n_train}")
 
     for i, z in enumerate(zips):
