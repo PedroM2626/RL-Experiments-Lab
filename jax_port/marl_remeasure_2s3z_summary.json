@@ -1,0 +1,77 @@
+{
+  "_provenance": {
+    "produced_by": "jax_port/marl_remeasure_report.py",
+    "cells_dir": "jax_port/results_grade/marl_remeasure_2s3z",
+    "published_reference": "jax_port/cells_summary.json",
+    "code_state": "after the 21/09/2026 fixes: MARLSequentialBuffer per-environment contiguity, terminal mask in the bootstrap, QMIX mixer target scaled by r + gamma*(1-d)*Q_tot",
+    "hyperparameters": "train_ql defaults (lr 1e-4, 32 envs, tau=0.0 hard target copy every 500 steps) \u2014 identical to marl_10m_run.sh",
+    "min_budget_ratio": 0.95,
+    "skipped": [],
+    "budget_notes": [],
+    "n_cells": 3
+  },
+  "cells": [
+    {
+      "algo": "qmix-recurrent",
+      "map": "2s3z",
+      "seed": 42,
+      "timesteps": 10000000,
+      "target_timesteps": 10000000,
+      "sps": 943.2,
+      "wall_s": 10601.8,
+      "winrate": 0.0,
+      "eval_episodes": 32,
+      "mean_return": 0.0,
+      "winrate_train": 0.0,
+      "source": "qmix-recurrent__2s3z__seed42__10000000.json",
+      "published_winrate": 0.0,
+      "budget_reached": true,
+      "usable": true,
+      "delta_vs_published": 0.0
+    },
+    {
+      "algo": "qmix-recurrent",
+      "map": "2s3z",
+      "seed": 43,
+      "timesteps": 10000000,
+      "target_timesteps": 10000000,
+      "sps": 1348.4,
+      "wall_s": 7416.0,
+      "winrate": 0.0,
+      "eval_episodes": 32,
+      "mean_return": 0.0,
+      "winrate_train": 0.0,
+      "source": "qmix-recurrent__2s3z__seed43__10000000.json",
+      "published_winrate": 0.0,
+      "budget_reached": true,
+      "usable": true,
+      "delta_vs_published": 0.0
+    },
+    {
+      "algo": "qmix-recurrent",
+      "map": "2s3z",
+      "seed": 44,
+      "timesteps": 10000000,
+      "target_timesteps": 10000000,
+      "sps": 1439.3,
+      "wall_s": 6947.6,
+      "winrate": 0.0,
+      "eval_episodes": 32,
+      "mean_return": 0.12,
+      "winrate_train": 0.0,
+      "source": "qmix-recurrent__2s3z__seed44__10000000.json",
+      "published_winrate": 0.0,
+      "budget_reached": true,
+      "usable": true,
+      "delta_vs_published": 0.0
+    }
+  ],
+  "by_group": {
+    "qmix-recurrent__2s3z__10M": {
+      "n": 3,
+      "excluded": 0,
+      "winrate_mean": 0.0,
+      "published_winrate_mean": 0.0
+    }
+  }
+}
