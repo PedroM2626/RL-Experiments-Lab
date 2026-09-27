@@ -82,7 +82,12 @@ def verify_bonus_fired(cells):
             continue
         for seed, c in per_seed.items():
             b = c.get("bonus") or {}
-            if not b.get("bonus_applied"):
+            if b.get("normalized"):
+                # README 3.6/3.12 are by definition the unnormalized arms; a scaled-bonus cell
+                # is a different arm, so folding one in would swap what the table claims
+                bad.append(f"{k} seed {seed}: trained with --normalize, i.e. the scaled-bonus "
+                           f"arm — summarize it with summarize_exploration_normalized.py")
+            elif not b.get("bonus_applied"):
                 bad.append(f"{k} seed {seed}: no intrinsic bonus recorded")
             elif b.get("bonus_applied") / max(1, b.get("steps", 1)) < 0.9:
                 bad.append(f"{k} seed {seed}: bonus applied on only "
