@@ -18,7 +18,10 @@
 # (no --tau, train_ql's own lr default), so the corrected code is the only difference against
 # the published cells.
 #
-# Run from inside WSL. Overrides: REPO, PY, MAPS, SEEDS, TIMESTEPS_FLAT, TIMESTEPS_REC, OUT.
+# Run from inside WSL. Overrides: REPO, PY, MAPS, SEEDS, TIMESTEPS_FLAT, TIMESTEPS_REC, OUT,
+# RUN_FLAT, RUN_REC. A map whose flat cells were never published (2s3z, where only
+# qmix-recurrent 10M is in the grid) sets RUN_FLAT=0 so the re-measurement costs the three
+# 10M cells it actually replaces and does not invent six unpublished 1M cells next to it.
 set -u
 BASE="${REPO:-$(cd "$(dirname "$0")/.." && pwd)}"
 PY="${PY:-/root/procgen-jax/bin/python}"
@@ -27,7 +30,10 @@ MAPS="${MAPS:-3m}"
 SEEDS="${SEEDS:-42 43 44}"
 TIMESTEPS_FLAT="${TIMESTEPS_FLAT:-1000000}"
 TIMESTEPS_REC="${TIMESTEPS_REC:-10000000}"
+RUN_FLAT="${RUN_FLAT:-1}"
+RUN_REC="${RUN_REC:-1}"
 OUT="${OUT:-$BASE/jax_port/results_grade/marl_remeasure}"
+SUMMARY="${SUMMARY:-$BASE/jax_port/marl_remeasure_summary.json}"
 LOG="$OUT/marl_remeasure.log"
 mkdir -p "$OUT"
 
@@ -47,14 +53,17 @@ run_cell() { # $1=algo $2=recurrent|flat $3=timesteps $4=map $5=seed
     || echo "=== FAILED $tag $map seed $seed (see $LOG) ===" >> "$LOG"
 }
 
-echo "=== QMIX/VDN re-measure start $(date) maps=[$MAPS] seeds=[$SEEDS] flat=$TIMESTEPS_FLAT rec=$TIMESTEPS_REC ===" >> "$LOG"
+echo "=== QMIX/VDN re-measure start $(date) maps=[$MAPS] seeds=[$SEEDS] flat=$TIMESTEPS_FLAT rec=$TIMESTEPS_REC run_flat=$RUN_FLAT run_rec=$RUN_REC ===" >> "$LOG"
 for map in $MAPS; do
   for seed in $SEEDS; do
-    run_cell vdn  flat      "$TIMESTEPS_FLAT" "$map" "$seed"
-    run_cell qmix flat      "$TIMESTEPS_FLAT" "$map" "$seed"
-    run_cell qmix recurrent "$TIMESTEPS_REC"  "$map" "$seed"
+    if [ "$RUN_FLAT" = "1" ]; then
+      run_cell vdn  flat "$TIMESTEPS_FLAT" "$map" "$seed"
+      run_cell qmix flat "$TIMESTEPS_FLAT" "$map" "$seed"
+    fi
+    [ "$RUN_REC" = "1" ] || continue
+    run_cell qmix recurrent "$TIMESTEPS_REC" "$map" "$seed"
   done
 done
 echo "=== QMIX/VDN re-measure done $(date) ===" >> "$LOG"
 $PY -m jax_port.marl_remeasure_report --cells_dir "$OUT" \
-    --out "$BASE/jax_port/marl_remeasure_summary.json" 2>&1 | tee -a "$LOG"
+    --out "$SUMMARY" 2>&1 | tee -a "$LOG"
