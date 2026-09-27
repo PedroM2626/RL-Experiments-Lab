@@ -110,9 +110,12 @@ def main():
         got = sorted((c for (k, _s), c in cells.items() if k == config), key=lambda c: c["seed"])
         if not got:
             continue
+        # one config can span run directories (the pilot's seeds plus a later --seeds 44 45 46
+        # invocation), so provenance is per cell as well as per config
         per_seed[config] = {
-            "source_run": got[-1]["source_run"],
-            "cells": [{"seed": c["seed"], "mean_reward_10eps": c["mean_reward"],
+            "source_runs": sorted({c["source_run"] for c in got}),
+            "cells": [{"seed": c["seed"], "source_run": c["source_run"],
+                       "mean_reward_10eps": c["mean_reward"],
                        "std_reward_10eps": c.get("std_reward"), "bonus": c.get("bonus")}
                       for c in got],
         }
