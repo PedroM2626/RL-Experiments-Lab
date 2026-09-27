@@ -293,7 +293,7 @@ def main():
                     default=["main"],
                     choices=["main", "exploration", "algo", "hrl", "budget",
                              "hard", "pilot", "spr", "gnn", "aux", "marl",
-                             "temporal", "temporal_hard"])
+                             "temporal", "temporal_hard", "dreamer"])
     ap.add_argument("--games", nargs="*", default=None)
     ap.add_argument("--maps", nargs="*", default=None,
                     help="SMAX maps for marl suite (default: 3m)")
