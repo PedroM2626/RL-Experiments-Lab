@@ -119,5 +119,28 @@ def test_fully_verified_grid_passes():
     verify_bonus_fired(cells)
 
 
+def _scaled_cell(**bonus):
+    base = {"steps": 100000, "bonus_applied": 100000}
+    base.update(bonus)
+    return {"maze_rnd": {42: {"mean_reward": 2.0, "bonus": base}}}
+
+
+def test_scaled_bonus_cell_is_refused_by_the_unnormalized_tables():
+    """README 3.6/3.12 are the *unnormalized* arms by definition.
+
+    A cell trained with --normalize is a different arm, not a better measurement of the same
+    one, so the merge that writes those tables must refuse it even when its bonus
+    bookkeeping is impeccable.
+    """
+    with pytest.raises(SystemExit) as exc:
+        verify_bonus_fired(_scaled_cell(normalized=True))
+    assert exc.value.code == 1
+
+
+def test_same_cell_passes_when_it_is_actually_the_unnormalized_arm():
+    """The guard keys on the normalization flag, not on the field merely being present."""
+    verify_bonus_fired(_scaled_cell(normalized=False))
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-q"]))
