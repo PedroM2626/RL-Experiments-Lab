@@ -7,6 +7,9 @@ The grid is ~7h, so comparison_results.json is rewritten after every seed and --
 reuses an existing run directory: an interrupted sweep keeps its completed cells instead
 of losing everything, and each cell records the bonus bookkeeping that proves the arm
 explored (the 23/09/2026 defect was exactly a run that looked fine and had no bonus).
+--normalize switches the three bonus arms to the running-std scaled bonus of
+models/bonuses.py. That is a different arm definition rather than a repair, so it writes
+its own *_norm_* run directory and its own results file.
 """
 import os, json, argparse, time
 from datetime import datetime
@@ -22,10 +25,10 @@ from models.bonuses import ICMWrapper, RNDWrapper, NGUWrapper
 WRAPPERS = {'icm': ICMWrapper, 'rnd': RNDWrapper, 'ngu': NGUWrapper}
 
 
-def train_one(game, wrapper, timesteps, seed, log_dir, device, eval_eps, run_name):
+def train_one(game, wrapper, timesteps, seed, log_dir, device, eval_eps, run_name, normalize=False):
     def make_env():
         env=make_procgen_env(game, num_levels=200, distribution_mode='easy', seed=seed, vector=False)
-        if wrapper: env=WRAPPERS[wrapper](env)
+        if wrapper: env=WRAPPERS[wrapper](env, normalize=normalize)
         return Monitor(env)
     vec=DummyVecEnv([make_env])
     eval_env=DummyVecEnv([lambda: Monitor(make_procgen_env(game, num_levels=0, distribution_mode='easy', seed=seed+1000, vector=False))])
@@ -40,11 +43,20 @@ def train_one(game, wrapper, timesteps, seed, log_dir, device, eval_eps, run_nam
     if wrapper:
         # env_method reaches the innermost wrapper through Monitor's attribute proxying
         st = vec.env_method('stats')[0]
-        print(f"[{game}_{wrapper}] intrinsic bonus applied on {st['bonus_applied']}/{st['steps']} "
-              f"steps, mean={st['intrinsic_mean']:.5f}")
+        print(f"[{game}_{wrapper}] intrinsic bonus applied on {st['bonus_applied']}/{st['steps']} steps, "
+              f"raw mean={st['intrinsic_mean']:.5f}, injected per step mean={st['effective_bonus']:.3e} "
+              f"max={st['effective_max']:.3e}")
         if st['bonus_applied'] == 0:
             raise RuntimeError(f"{wrapper} arm added no intrinsic reward at all — the run would "
                                f"be an unlabelled PPO run (stats={st})")
+        # unnormalized, the arm injects exactly beta * intrinsic_mean; requiring the normalized
+        # cell to beat that by 10x is what keeps --normalize from silently reproducing the
+        # null-by-scale arm of README 3.6 under a new name
+        raw = st['beta'] * st['intrinsic_mean']
+        if normalize and st['effective_bonus'] < 10 * raw:
+            raise RuntimeError(f"{wrapper} arm normalizes to {st['effective_bonus']:.3e} per step, which is "
+                               f"no more than the {raw:.3e} an unnormalized MSE injects — the cell would be "
+                               f"the published null-by-scale arm relabelled (stats={st})")
         bonus=st
     mean,std=evaluate_policy(model, eval_env, n_eval_episodes=eval_eps, deterministic=False)
     vec.close(); eval_env.close()
@@ -80,6 +92,11 @@ def main():
     parser.add_argument('--arms', type=str, nargs='+', default=['ppo','icm','rnd','ngu'],
                         choices=['ppo','icm','rnd','ngu'],
                         help='subset of arms to run, so the grid can be split across processes')
+    parser.add_argument('--normalize', action='store_true',
+                        help='divide the intrinsic error by its running std and clip it (models/bonuses.py). '
+                             'Off by default: the published section 3.6 arms run unnormalized, and at '
+                             'beta=0.01 an unnormalized MSE injects ~1e-7 per step against a 0/1 extrinsic '
+                             'reward, so flipping this changes what the arm IS, not whether it works')
     parser.add_argument('--resume', type=str, default=None,
                         help='existing run directory to continue (its completed cells are kept and skipped)')
     args=parser.parse_args()
@@ -95,13 +112,16 @@ def main():
             raise SystemExit(f"--resume: {comp_dir} does not exist")
     else:
         ts=datetime.now().strftime("%Y%m%d_%H%M%S")
-        comp_dir=os.path.join(args.log_dir, f"maze_heist_{'_'.join(args.games)}_{'_'.join(args.arms)}_{ts}")
+        # the normalized arms are a different benchmark, not a re-run of the same one, so the
+        # run directory says which: cells_measured() globs the parent and must not merge them
+        comp_dir=os.path.join(args.log_dir, f"maze_heist_{'_'.join(args.games)}_{'_'.join(args.arms)}{'_norm' if args.normalize else ''}_{ts}")
     os.makedirs(comp_dir, exist_ok=True)
     protocol={'timesteps': args.timesteps, 'seeds': args.seeds, 'games': args.games,
               'arms': args.arms, 'eval_episodes': args.eval_eps,
               'eval_levels': 'unseen (num_levels=0, seed+1000)',
               'train_levels': 200, 'distribution_mode': 'easy',
-              'intrinsic_beta': 0.01, 'torch': torch.__version__, 'device': device}
+              'intrinsic_beta': 0.01, 'bonus_normalized': bool(args.normalize),
+              'torch': torch.__version__, 'device': device}
     results={}
     done=set()
     prior=os.path.join(comp_dir,'comparison_results.json')
@@ -125,7 +145,7 @@ def main():
                 print(f"\n{'='*60}\n{gk} seed {seed} {game}\n{'='*60}")
                 results[gk]=[c for c in results[gk] if c['seed']!=seed]
                 try:
-                    mean,std,model,bonus,secs=train_one(game, w if w!='ppo' else None, args.timesteps, seed, args.log_dir, device, args.eval_eps, f"{gk}_seed{seed}")
+                    mean,std,model,bonus,secs=train_one(game, w if w!='ppo' else None, args.timesteps, seed, args.log_dir, device, args.eval_eps, f"{gk}_seed{seed}", args.normalize)
                     print(f"{gk} seed {seed}: {mean:.2f} +/- {std:.2f} in {secs}s")
                     results[gk].append({'seed': seed, 'mean_reward': mean, 'std_reward': std,
                                         'seconds': secs, 'bonus': bonus})
