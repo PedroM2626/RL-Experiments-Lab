@@ -75,6 +75,7 @@ def control_cells(frozen, seeds):
         for c in frozen["per_seed"][f"{game}_ppo"]["cells"]:
             if c["seed"] in seeds:
                 out[(f"{game}_ppo", c["seed"])] = {
+                    "seed": c["seed"],
                     "mean_reward": c["mean_reward_10eps"], "std_reward": c["std_reward_10eps"],
                     "bonus": None, "source_run": frozen["per_seed"][f"{game}_ppo"]["source_run"],
                 }
@@ -140,6 +141,15 @@ def main():
                 "n_cells": len(bonuses),
             }
 
+    # The ppo control has no normalized checkpoints to score, so its 100-ep row is the frozen
+    # one: the same reuse already declared for the 10-ep control, carried here so the arm and
+    # its baseline are read at one protocol rather than two.
+    for game in ("maze", "heist"):
+        k = f"{game}_ppo"
+        if k in stats10 and k not in stats100 and k in frozen.get("statistics_100eps", {}):
+            stats100[k] = dict(frozen["statistics_100eps"][k],
+                               reused_from="results/exploration_remeasure.json")
+
     payload = {
         "_provenance": {
             "produced_by": "summarize_exploration_normalized.py",
@@ -158,6 +168,7 @@ def main():
                               "normalization change touches it: same code, same seeds, same "
                               "protocol. Re-running it would be 10 cells spent to reproduce a "
                               "number that is already frozen.",
+                "reused_protocols": ["10eps", "100eps (row carries reused_from)"],
                 "seeds": sorted({s for (k, s) in cells if k.endswith("_ppo")}),
             },
             "seeds": seeds,
