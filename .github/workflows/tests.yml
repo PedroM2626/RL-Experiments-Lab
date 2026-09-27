@@ -25,7 +25,7 @@ jobs:
             "stable-baselines3==2.9.0" "opencv-python-headless" "matplotlib==3.10.9" \
             "scikit-learn==1.5.2" "gplearn==0.4.2" "pytest==9.1.1"
       - name: Compile every module (syntax gate)
-        run: python -m compileall -q . -x "\\.git|__pycache__|legacy"
+        run: python -m compileall -q . -x "\\.git|__pycache__"
       - name: Figure provenance check
         # Fails if README embeds a figure that is not in the repository or that has no
         # recorded producing script (report_figures.py PROVENANCE).
