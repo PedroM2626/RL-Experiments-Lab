@@ -114,6 +114,41 @@ def measure(model, frames):
     }
 
 
+GAMES_FOR_CROSS_CHECK = ("maze", "heist", "bossfight", "starpilot", "dodgeball")
+
+
+def cross_game_response(model, games=GAMES_FOR_CROSS_CHECK, seed=1042):
+    """Total variation between the action distributions of five DIFFERENT games.
+
+    Within one Procgen game consecutive frames barely differ (a 300-step random walk in maze
+    yields 19 distinct frames), so a small within-game TV cannot tell "weak signal" from "no
+    response at all". Frames from different games differ grossly: if the TV between those is
+    still ~0, the policy is not reading the observation.
+    """
+    import numpy as _np
+    pol = model.policy
+    probs, sat = [], []
+    for g in games:
+        env = make_procgen_env(g, num_levels=0, distribution_mode="easy", seed=seed, vector=False)
+        o = env.reset()
+        o = o[0] if isinstance(o, tuple) else o
+        env.close()
+        with torch.no_grad():
+            t = torch.as_tensor(_np.expand_dims(o, 0)).to(next(pol.parameters()).device)
+            feats = pol.extract_features(t, pol.pi_features_extractor)
+            net = pol.mlp_extractor.policy_net
+            first = net[1](net[0](feats))
+            sat.append(float((first.abs() > SATURATION_ZONE).float().mean()))
+            p = pol._get_action_dist_from_latent(net[3](net[2](first))).distribution.probs
+            p = p.detach().cpu().numpy()[0]
+            probs.append(p / p.sum())
+    P = _np.stack(probs)
+    tv = max(float(0.5 * _np.abs(P[i] - P[j]).sum()) for i in range(len(P)) for j in range(i + 1, len(P)))
+    return {"games": list(games), "max_pairwise_tv": round(tv, 6),
+            "distinct_argmax_across_games": int(len(set(int(x) for x in P.argmax(1)))),
+            "first_tanh_saturated_fraction": round(float(_np.mean(sat)), 4)}
+
+
 class Watcher(BaseCallback):
     def __init__(self, frames, every):
         super().__init__()
@@ -144,6 +179,8 @@ def main():
                     help="repo = the published ClassicCNNExtractor; layernorm = the counterfactual")
     ap.add_argument("--out", default=os.path.join(BASE, "results", "policy_saturation_curve.json"))
     ap.add_argument("--save-model", default=None)
+    ap.add_argument("--cross-game", action="store_true",
+                    help="after training, measure the response to five different Procgen games")
     args = ap.parse_args()
 
     frames = probe_frames(args.game, args.seed + 1000)
@@ -177,6 +214,7 @@ def main():
     model.learn(total_timesteps=args.timesteps, callback=w)
     venv.close()
 
+    cross = cross_game_response(model) if args.cross_game else None
     payload = {
         "_provenance": {
             "produced_by": "diagnose_policy_saturation.py",
@@ -187,6 +225,7 @@ def main():
             "saturation_zone": SATURATION_ZONE,
         },
         "curve": w.curve,
+        "cross_game": cross,
     }
     if args.save_model:
         model.save(args.save_model)
