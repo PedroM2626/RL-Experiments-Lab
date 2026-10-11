@@ -814,7 +814,7 @@ As a prerequisite for PA0, running background workloads were safely terminated (
 
 ## 15. Current Status, Boundaries, and Full Grid Completion (PA2-Speed Complete; Parity Complete)
 
-**Current Status.** The primary working tree remains the fully reproducible ProcGen/SB3 study (sections 1–12; reproduction commands in section 5). The JAX port, co-located on `main` under `jax_port/` (without modifying root study files), spans the full experimental design: 13 backbones, PPO/A2C, DQN/QR-DQN, ICM/RND/NGU, data augmentations, 4-arm HRL, stoch+det+gap evaluation, statistical metrics (CI/Cohen/AUC), and the full 615-cell multi-seed parity grid — completely executed and serialized in `jax_port/analysis_full.json` (§15.4.3).
+**Current Status.** The primary working tree remains the fully reproducible ProcGen/SB3 study (sections 1–12; reproduction commands in section 5). The JAX port, co-located on `main` under `jax_port/` (without modifying root study files), spans the full experimental design: 13 backbones, PPO/A2C, DQN/QR-DQN, ICM/RND/NGU, data augmentations, 4-arm HRL, stoch+det+gap evaluation, statistical metrics (CI/Cohen/AUC), and the full 615-cell multi-seed parity grid — completely executed and serialized in `jax_port/analysis_full.json` (§15.4.2).
 
 > **Evidence note (23/09/2026):** the raw per-cell grid outputs are git-ignored, so `jax_port/cells_summary.json` (897 cells = 865 evaluated + 32 MARL) is the committed record they were reduced to. `python -m jax_port.analyze_grade --from_summary jax_port/cells_summary.json` regenerates `analysis_full.json` from that record alone, and `tests/test_grid_analysis.py` fails if the two drift apart. `analyze_grade.py` resolves its own paths and refuses to overwrite a richer analysis with a thinner one (previously a fresh clone silently rewrote the aggregate into an empty file). The top-1-vs-top-2 `overlap` flag in `jax_port/stats.py` is also corrected: its condition was inverted in a way that reported non-overlap almost always, overstating significance — the rankings themselves are unchanged and the regenerated aggregate matches the published one.
 
@@ -840,12 +840,12 @@ Source: `jax_port/pa1_throughput.json`. Standard `gym`/`np.bool8` deprecation wa
 
 > **Empirical Interpretation:** (1) Raw CPU simulation exhibits sub-linear scaling from 1→16 envs (12.6k→18.7k) due to Python single-process synchronous step loops; multi-process C++ wrappers (`gym3`) offer headroom. (2) Step-by-step synchronization (`asarray` + JIT + `block_until_ready` per step) dominates overhead: with 1 env, the pipeline sustains ~`300 FPS`, matching the legacy SB3 training baseline (~`300 FPS`, section 1.4) — but here **without network updates**. (3) Vectorized batching amortizes host-to-device synchronization: 16 envs yield ~`3k FPS` pre-learner, representing a ~`10×` headroom margin before accounting for PPO backpropagation. Path A throughput was subsequently measured with active gradient updates (§15.2), surpassing this 3k benchmark.
 
-**Grid Execution Status.** Full execution of `run_grade.py` across 10 suites with 5 seeds and `--eval-full` was completed on 06/09/2026 (615/615 cells completed), benchmarking ranking consistency against sections 3–12 and confirming statistical parity within inter-seed variance (§15.4.3).
+**Grid Execution Status.** Full execution of `run_grade.py` across 10 suites with 5 seeds and `--eval-full` was completed on 06/09/2026 (615/615 cells completed), benchmarking ranking consistency against sections 3–12 and confirming statistical parity within inter-seed variance (§15.4.2).
 
 ### 15.4. Comprehensive Port — Coverage Map and Test Evidence (05/09/2026)
 
 > **Scope note (11/10/2026):** the study proper is Procgen (sections 1-14). Everything under §15.4 is the
-> JAX port and its appendices — including the multi-agent work in §15.4.4, which is a negative result
+> JAX port and its appendices — including the multi-agent work in §15.4.5, which is a negative result
 > about this code path rather than a claim about SMAX or about cooperative MARL in general.
 
 Each component of the original study corresponds to a JAX module in `jax_port/`, with test coverage:
@@ -881,7 +881,7 @@ Each component of the original study corresponds to a JAX module in `jax_port/`,
 - **Dreamer Actor Tuning (Sweep B/C/D):** Baseline A (raw rewards, entropy 3e-4) returned 0.0; **B (symlog rewards, entropy 3e-4) reached 3.0 return**; C (symlog, entropy 1e-3) reached 2.5; D (raw, entropy 1e-3) reached 0.5. Verdict: **Symlog reward transformation resolves the actor bottleneck**; default updated in `train_dreamer.py`. Artifacts in `sweep.json` and `jax_port/dreams/`.
 - **Dreamer reached by the grid runner (27/09/2026):** the `dreamer` suite was wired into `run_grade.py`'s cell builder on 25/09 but never added to `--suite`'s argparse `choices`, so `--suite dreamer` exited with `invalid choice` and the branch had executed **zero** cells — `results_grade/dreamer/` did not exist. The published Dreamer rows above come from `train_dreamer.py` directly, which is why the dead branch stayed invisible while looking integrated. With the choice registered, one cell was smoked end-to-end through the grid path (`JAX_PLATFORMS=cpu`, `coinrun` seed 42, 20k frames, 8 envs, 3 eval eps): 424 s at 47 SPS, `train_ret_mean20` 3.0, `eval_unseen` 3.33, and `analyze_grade.py`'s `Loader` parses the cell it wrote (`_cfg=dreamer`, `eval_unseen.mean` present, 0 unreadable, 0 no-eval). The artifact is deliberately parked in `results_grade/dreamer_smoke/` rather than `results_grade/dreamer/`: `dreamer` is in `RANKING_SUITES`, so a 20k-frame plumbing cell left in the graded directory would be folded into `cells_summary.json` and into everything downstream of it.
 
-#### 15.4.3. Full Grid Evaluation Verdict (05–06/09/2026, 615 Cells, Eval 100+100+15)
+#### 15.4.2. Full Grid Evaluation Verdict (05–06/09/2026, 615 Cells, Eval 100+100+15)
 
 Full execution: main 240 + exploration 40 + algo 70 + hrl 40 + budget 60 + hard 55 + pilot 20 + spr 30 + gnn 15 + aux 45. Academic analysis:
 
@@ -894,7 +894,7 @@ Full execution: main 240 + exploration 40 + algo 70 + hrl 40 + budget 60 + hard 
 - **Extensions (No Baseline in Original Study):** `gat` achieves ~1.3 global return; `spr_aug > spr`; `acl > curl/cpc` across all 3 games; `hard` difficulty suppresses all returns to ~0.05.
 - **Generalization Gap Re-Ranking (`gen_gap = eval_train − eval_unseen`):** Sorting by minimal generalization gap preserves relative order — top models: `aug_noise` (−0.47), `lstm_attention` (−0.45), `resnet18` (−0.44), `contrastive` (−0.41), with overlapping CIs throughout (`analysis_full.json`). High return correlates with strong generalization; models do not succeed via training-set memorization.
 
-#### 15.4.2. Sample Budget Viability: 50k vs 100k Steps (Probe 05/09/2026, Classic/MLP × Coinrun/Starpilot × Seeds 42–43, Eval 30/30/15)
+#### 15.4.3. Sample Budget Viability: 50k vs 100k Steps (Probe 05/09/2026, Classic/MLP × Coinrun/Starpilot × Seeds 42–43, Eval 30/30/15)
 
 | Game | Extractor | 50k (Eval Unseen) | 100k (Eval Unseen) | Δ |
 |---|---|---:|---:|---:|
@@ -905,7 +905,7 @@ Full execution: main 240 + exploration 40 + algo 70 + hrl 40 + budget 60 + hard 
 
 > **Verdict:** 50k steps preserves relative ranking order (`classic > mlp` across all 4 pairs), and deltas (+0.5–1.0) are smaller than seed-to-seed variance. Combined with §3.13 (stagnation from 100k→500k), the conclusion is: **50k steps suffices for relative ranking** (the study's objective), while **100k provides higher absolute scores and safety margin**. The full grid runs at 100k steps.
 
-#### 15.4.3. Measured Runtime Reductions (Identical RTX 4070 Laptop)
+#### 15.4.4. Measured Runtime Reductions (Identical RTX 4070 Laptop)
 - `coinrun` 50k, 1 model: SB3 ~7 min (§2) → JAX ~8 s training (**~50×**).
 - 100k cell: SB3 ~10 min → JAX ~14 s training + ~40 s full evaluation ≈ 1 min end-to-end (**~10×**).
 - 15 h SB3 run (~8M steps): → ~18 min at 7.5k SPS.
@@ -916,7 +916,7 @@ Full execution: main 240 + exploration 40 + algo 70 + hrl 40 + budget 60 + hard 
 - **MARL/SMAX Integration (`jaxmarl 0.1.0`):** `jax_port/marl/` — 7 algorithms (ippo, mappo, vdn, qmix, mapoca, cte, tarmac) on map `3m` × 3 seeds × 1M steps (21/21 runs, 1.5–3.3k SPS). Outcome: **Win-rate evaluated at 0.0 across all flat feedforward implementations** (`analysis_full.json`) — flat feedforward policies fail to coordinate in `3m` within 1M steps. Diagnosed that JaxMARL literature requires **recurrent GRU-128 + 10M steps**, implemented in `recurrent.py` with sequential BPTT over window T.
 - **Exploration $\beta=0$ Control Suite (`jax_port/exploration_control_summary.json`):** Evaluated all 30 control cells (3 arms × 2 games × 5 seeds at 100k steps with `--explore-beta 0.0` where the bonus network trains but nothing is injected into the reward). Outcome: the chaotic drift floor ($|arm@0 - ppo|$) exceeds the published delta ($|arm@0.01 - ppo|$) across all 6 groups (`heist_icm`: drift 0.22 vs effect -0.18; `heist_rnd`: drift 0.38 vs effect -0.18; `maze_ngu`: drift 2.50 vs effect -0.58). **Scientific Verdict:** The published $\pm 0.5$ exploration spread in the JAX port is entirely within chaotic run-to-run drift and not attributable to intrinsic curiosity mechanisms.
 
-#### 15.4.4. Recurrent MARL at 10M Steps with GRU-128 — a Negative Result about this Port's Q-learning Path (06/09/2026, re-measured 24 and 27/09/2026)
+#### 15.4.5. Recurrent MARL at 10M Steps with GRU-128 — a Negative Result about this Port's Q-learning Path (06/09/2026, re-measured 24 and 27/09/2026)
 
 > **What this section is, and what it is not.** It is a measured negative result about *the JAX port's
 > off-policy cooperative Q-learning path*: after the 21/09/2026 fixes (per-environment sequential
@@ -949,7 +949,7 @@ ttot = mixer.apply(target_mixer_params, target_qs, states)
 # Mathematically corrected Bellman target:
 target_tot = rew + gamma * (1.0 - done) * mixer.apply(target_mixer_params, target_qs, next_states)
 ```
-Without scaling by $r + \gamma(1-d) Q_{tot}^{target}$, the mixer loss $L = (Q_{tot} - target)^2$ was deprived of the external reward signal. In addition to repairing the Bellman target equation, we integrated Polyak soft target updates (`--tau`) and configurable update frequencies (`--target-update-interval`) into `jax_port/marl/train_ql.py`, verified via unit tests in `jax_port/tests/test_marl.py` (`MARL_TESTS_OK`). Correction (23/09/2026): this paragraph previously stated a `--tau` default of `0.005`; the actual default is `tau = 0.0`, which selects the hard target copy every `500` gradient steps, and no published MARL cell passed `--tau` — so every MARL result in section 15.4.4 was produced with hard target updates. `run_grade.py` now exposes both flags so the grid can reach them.
+Without scaling by $r + \gamma(1-d) Q_{tot}^{target}$, the mixer loss $L = (Q_{tot} - target)^2$ was deprived of the external reward signal. In addition to repairing the Bellman target equation, we integrated Polyak soft target updates (`--tau`) and configurable update frequencies (`--target-update-interval`) into `jax_port/marl/train_ql.py`, verified via unit tests in `jax_port/tests/test_marl.py` (`MARL_TESTS_OK`). Correction (23/09/2026): this paragraph previously stated a `--tau` default of `0.005`; the actual default is `tau = 0.0`, which selects the hard target copy every `500` gradient steps, and no published MARL cell passed `--tau` — so every MARL result in section 15.4.5 was produced with hard target updates. `run_grade.py` now exposes both flags so the grid can reach them.
 
 **Definitive Empirical Re-Measurement under Corrected Code (24/09/2026, `jax_port/marl_remeasure_summary.json`):**  
 To definitively resolve whether the 0.0 win-rate was caused by the code defects or fundamental optimization dynamics, all 9 Q-learning cells were re-measured from scratch via `jax_port/marl_ql_remeasure.sh` on map `3m` under the mathematically corrected codebase (verified contiguous sequential buffer, terminal masking, and target mixer scaling):
@@ -961,7 +961,7 @@ To definitively resolve whether the 0.0 win-rate was caused by the code defects 
 
 > 🔬 **Definitive Scientific Verdict:** Re-measurement confirms that the 0.0 win-rate in SMAX symmetric 3v3 combat is **not an artifact of the mixer target omission or buffer bugs** — and that now holds on both maps, `3m` (9 cells) and `2s3z` (3 cells), i.e. every Q-learning cell the study publishes was produced by code whose Bellman target actually sees $r + \gamma(1-d)Q_{tot}^{\text{target}}$. Rather, off-policy cooperative Q-learning without domain-specific credit assignment shaping or dense reward curricula fails to converge to coordinated focus-firing in either map. This settles the methodological integrity of the SMAX benchmark.
 
-#### 15.4.5. Temporal Architecture Bake-Off — 10 Memory Models, 100k Steps, 5 Seeds (06–07/09/2026, Suite `temporal`)
+#### 15.4.6. Temporal Architecture Bake-Off — 10 Memory Models, 100k Steps, 5 Seeds (06–07/09/2026, Suite `temporal`)
 
 Research question: In ProcGen with frame stack $k=4$, does explicit recurrent memory yield measurable advantage? Evaluated on `heist`, `maze`, and `jumper`. Full suite completed at **150/150 runs** (`master_temporal.json`):
 
@@ -973,7 +973,7 @@ Research question: In ProcGen with frame stack $k=4$, does explicit recurrent me
 
 **Findings:** (1) *No recurrent memory architecture separates from simple 1D temporal convolution or stateless MLP* within 100k steps — replicating section 3.8: differences reflect sample variance rather than systematic superiority. (2) Consistent underperformers: `transformer` and `transformer_xl` — higher parameter counts (~1M) with self-attention struggle under a 100k step budget. (3) State space models (`s4`/`s5`/`mamba`) perform competitively without dominating feedforward baselines.
 
-#### 15.4.6. Memory Models under Extended Budget (500k Steps) on Hard Regimes (07/09/2026, Suite `temporal_hard`)
+#### 15.4.7. Memory Models under Extended Budget (500k Steps) on Hard Regimes (07/09/2026, Suite `temporal_hard`)
 
 Evaluated the same 10 architectures on `heist` (hard mode) and `bossfight` across 500k steps × 5 seeds with full evaluation (100/100 runs completed):
 
@@ -996,9 +996,9 @@ Evaluated the same 10 architectures on `heist` (hard mode) and `bossfight` acros
 3. **`bossfight` suppresses all architectures** (0.0–0.2), offering no meaningful temporal differentiation.
 4. **Conclusion:** Explicit temporal memory does not provide significant advantage over feedforward baselines in standard Procgen environments under 100k or 500k budgets.
 
-#### 15.4.7. Single-Frame Regime (`stack=1`): Audit and Paired Recurrent Memory Benchmark (20/09/2026, `starpilot`, 100k Steps, Seed 42)
+#### 15.4.8. Single-Frame Regime (`stack=1`): Audit and Paired Recurrent Memory Benchmark (20/09/2026, `starpilot`, 100k Steps, Seed 42)
 
-A key methodological critique of the preceding bake-offs (§15.4.5 and §15.4.6) is their reliance on `stack=4`. Stacking 4 frames provides a first-order Markovian approximation (velocity via finite differences), potentially masking the necessity of explicit recurrent memory.
+A key methodological critique of the preceding bake-offs (§15.4.6 and §15.4.7) is their reliance on `stack=4`. Stacking 4 frames provides a first-order Markovian approximation (velocity via finite differences), potentially masking the necessity of explicit recurrent memory.
 
 **Pre-Experiment Infrastructure Audit:**
 Auditing `temporal.py` and `train.py` revealed that early temporal models (`LSTMStack`, `S5Stack`, etc.) operated recurrence **strictly within the 4 stacked frames**, remaining *stateless* across environment transition steps ($t \to t+1$, resetting hidden state carry per observation). Executing those implementations with `stack=1` would reduce them to sequence length 1 (effectively feedforward linear layers).
@@ -1035,9 +1035,9 @@ To rigorously evaluate memory under strict partial observability (POMDP) without
 
 > **Engineering Conclusion:** Temporal convolutions (`cnn1d`, `tcn`) possess no latent state and require an external observation buffer (which merely reconstructs frame stacking). Only models with recurrent latent state equations ($h_t = f(h_{t-1}, x_t)$) constitute valid memory architectures at $k=1$. `recurrent_lstm` and `recurrent_s5` represent the gated recurrent and state-space families, respectively.
 
-#### 15.4.8. Single-Frame POMDP Occlusion Benchmark on Caveflyer & Memory Regularization (21/09/2026)
+#### 15.4.9. Single-Frame POMDP Occlusion Benchmark on Caveflyer & Memory Regularization (21/09/2026)
 
-Following the finding in §15.4.7 that feedforward policies outperformed recurrent models in `starpilot` (where velocity is latent but all entities remain on-screen), we conducted a rigorous follow-up addressing two key methodological factors:
+Following the finding in §15.4.8 that feedforward policies outperformed recurrent models in `starpilot` (where velocity is latent but all entities remain on-screen), we conducted a rigorous follow-up addressing two key methodological factors:
 1. **Memory State Transition Alignment:** Auditing the rollout buffer in `jax_port/bench_temporal_stack1.py` revealed that memory carries were saved *after* stepping the environment (`b_mem[t] = next_mems`). For correct recurrent policy gradient backpropagation through time (BPTT), the pre-transition carry $h_{t-1}$ must be stored at step $t$ (`b_mem[t] = mems`), aligning the state that conditioned action $a_t$ with observation $s_t$.
 2. **Hidden Carry Regularization (`RegularizedRecurrentLSTMBackbone`):** To prevent LSTM hidden state drift and memorization overfitting under low-data budgets, we implemented `RegularizedRecurrentLSTMBackbone` in `jax_port/recurrent_step.py`, introducing `LayerNorm` on the recurrent hidden carry $(h_t, c_t)$ along with AdamW weight decay ($1\times 10^{-4}$).
 3. **Authentic Spatial Occlusion Benchmark (`caveflyer`):** Unlike `starpilot` where all adversaries are visible in the viewport, `caveflyer` features winding subterranean caverns and occluded target goals outside the camera frame — constituting an authentic Partial Observability (POMDP) environment where path memory is structurally required.
