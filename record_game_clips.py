@@ -46,12 +46,27 @@ LINE_H = 11                  # px per label line, for the default PIL bitmap fon
 
 
 def wrap(draw, text, width):
-    """Split a label so nothing is silently cut off at the canvas edge."""
+    """Split a label so nothing is silently cut off at the canvas edge.
+
+    A single token wider than the canvas (a long path, an unspaced value) is broken by
+    characters rather than left overflowing: the whole reason the band exists is that the
+    disclaimer on it has to be readable.
+    """
     words, out, cur = text.split(), [], ""
     for w in words:
         trial = (cur + " " + w).strip()
         if draw.textlength(trial) <= width or not cur:
-            cur = trial
+            if draw.textlength(w) > width and not cur:      # unbreakable token
+                piece = w
+                while draw.textlength(piece) > width:
+                    cut = len(piece)
+                    while cut > 1 and draw.textlength(piece[:cut]) > width:
+                        cut -= 1
+                    out.append(piece[:cut])
+                    piece = piece[cut:]
+                cur = piece
+            else:
+                cur = trial
         else:
             out.append(cur)
             cur = w

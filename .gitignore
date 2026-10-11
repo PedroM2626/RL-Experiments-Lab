@@ -8,11 +8,11 @@ __pycache__/
 dist/
 build/
 
-env/
-venv/
-.venv/
-ENV/
-env.bak/
+/env/
+/venv/
+/.venv/
+/ENV/
+/env.bak/
 venv.bak/
 
 .vscode/
