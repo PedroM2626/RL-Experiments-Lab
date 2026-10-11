@@ -1,0 +1,116 @@
+{
+  "_provenance": {
+    "produced_by": "record_game_clips.py",
+    "policy": "uniform random over the 15 Procgen actions",
+    "purpose": "show what each game looks like; not a result",
+    "num_levels": 200,
+    "seed": 42,
+    "why_not_a_trained_agent": "README 3.6.2: the SB3 maze/heist policies emit the same action across five different games, so their gameplay would demonstrate the defect rather than the game"
+  },
+  "clips": [
+    {
+      "game": "coinrun",
+      "mode": "easy",
+      "num_levels": 200,
+      "frames": 60,
+      "distinct_frames": 60,
+      "fps": 15,
+      "seconds": 4.0,
+      "episodes_shown": 1,
+      "bytes": 517185,
+      "reward_events": 0,
+      "path": "results/games/coinrun.gif"
+    },
+    {
+      "game": "starpilot",
+      "mode": "easy",
+      "num_levels": 200,
+      "frames": 60,
+      "distinct_frames": 60,
+      "fps": 15,
+      "seconds": 4.0,
+      "episodes_shown": 2,
+      "bytes": 937420,
+      "reward_events": 0,
+      "path": "results/games/starpilot.gif"
+    },
+    {
+      "game": "dodgeball",
+      "mode": "easy",
+      "num_levels": 200,
+      "frames": 60,
+      "distinct_frames": 60,
+      "fps": 15,
+      "seconds": 4.0,
+      "episodes_shown": 1,
+      "bytes": 671172,
+      "reward_events": 1,
+      "path": "results/games/dodgeball.gif"
+    },
+    {
+      "game": "bossfight",
+      "mode": "easy",
+      "num_levels": 200,
+      "frames": 60,
+      "distinct_frames": 60,
+      "fps": 15,
+      "seconds": 4.0,
+      "episodes_shown": 2,
+      "bytes": 723231,
+      "reward_events": 0,
+      "path": "results/games/bossfight.gif"
+    },
+    {
+      "game": "jumper",
+      "mode": "easy",
+      "num_levels": 200,
+      "frames": 60,
+      "distinct_frames": 60,
+      "fps": 15,
+      "seconds": 4.0,
+      "episodes_shown": 1,
+      "bytes": 589182,
+      "reward_events": 0,
+      "path": "results/games/jumper.gif"
+    },
+    {
+      "game": "plunder",
+      "mode": "easy",
+      "num_levels": 200,
+      "frames": 60,
+      "distinct_frames": 60,
+      "fps": 15,
+      "seconds": 4.0,
+      "episodes_shown": 1,
+      "bytes": 540046,
+      "reward_events": 1,
+      "path": "results/games/plunder.gif"
+    },
+    {
+      "game": "maze",
+      "mode": "easy",
+      "num_levels": 200,
+      "frames": 60,
+      "distinct_frames": 60,
+      "fps": 12,
+      "seconds": 5.0,
+      "episodes_shown": 2,
+      "bytes": 160300,
+      "reward_events": 1,
+      "path": "results/games/maze.gif"
+    },
+    {
+      "game": "heist",
+      "mode": "easy",
+      "num_levels": 200,
+      "frames": 60,
+      "distinct_frames": 60,
+      "fps": 12,
+      "seconds": 5.0,
+      "episodes_shown": 1,
+      "bytes": 327641,
+      "reward_events": 0,
+      "path": "results/games/heist.gif"
+    }
+  ]
+}
