@@ -514,7 +514,7 @@ The primary leverage point was not accumulating more architectures, but rigorous
 | 6 | **Budget scaling `100k→250k→500k`** | ✅ Completed (`compare_budget_scaling.py` → section 3.13) | `24 runs` (`250k+500k` × `resnet18+mlp_vector` × `starpilot+dodgeball` × `3 seeds`); verdict: **curves plateau — additional budget was unnecessary** |
 | 7 | **Re-measure the `rnd`/`ngu` exploration arms** | ✅ Completed (24/09/2026) | Corrected wrappers with dynamic stem probing and active bonus assertions re-measured across 40 runs (`2 games × 4 arms × 5 seeds × 100k`). Results in `results/exploration_remeasure.json` and `results/eval100_results.json`; verified that exploration parity with `PPO` stems from vanishing unnormalized bonus scale ($\sim 10^{-7}$/step), not code defects |
 | 8 | **Test curiosity at a non-inert bonus scale** | ⚠️ Measured, not interpretable (27/09/2026; validity 11/10/2026) | 30 cells re-training `icm`/`rnd`/`ngu` with the intrinsic error divided by its trailing-window mean ($\beta$ left at 0.01, so scale is the only variable), lifting the injected signal from $\sim10^{-7}$ to $2.5$–$9.5\times10^{-3}$ per step. Every scaled arm beats the reused `ppo` control on stochastic return ($g$ 1.70–3.94; all three `heist` arms survive Bonferroni over the six comparisons), while the deterministic readout of the same weights stays $\le 0.70$ — section 3.6.1. Results in `results/exploration_normalized.json` and `results/eval100_normalized.json` |
-| 9 | **Why do the SB3 maze/heist policies ignore the observation?** | 🔴 Open (11/10/2026) | Measured, not explained: 69/70 checkpoints emit the same argmax for five different games (median cross-game TV $4.8	imes10^{-4}$). The feature-scale/$	anh$-saturation hypothesis was tested at the published 100k budget and refuted — a LayerNormed extractor keeps saturation at 36% and still collapses. Establishing a mechanism, and then whether the exploration arms are worth re-running at all, is the open decision |
+| 9 | **Why do the SB3 maze/heist policies ignore the observation?** | 🔴 Open (11/10/2026) | Measured, not explained: 69/70 checkpoints emit the same argmax for five different games (median cross-game TV $4.8\times10^{-4}$). The feature-scale/$\tanh$-saturation hypothesis was tested at the published 100k budget and refuted — a LayerNormed extractor keeps saturation at 36% and still collapses. Establishing a mechanism, and then whether the exploration arms are worth re-running at all, is the open decision |
 
 **Final Scorecard** (4 metric axes — `Performance` = re-eval `30 eps stoch`, `AUC` section 3.9, `Generalization` = gen gap section 3.10, `Robustness` = ±std across seeds; sorted by Performance):
 
@@ -844,6 +844,10 @@ Source: `jax_port/pa1_throughput.json`. Standard `gym`/`np.bool8` deprecation wa
 
 ### 15.4. Comprehensive Port — Coverage Map and Test Evidence (05/09/2026)
 
+> **Scope note (11/10/2026):** the study proper is Procgen (sections 1-14). Everything under §15.4 is the
+> JAX port and its appendices — including the multi-agent work in §15.4.4, which is a negative result
+> about this code path rather than a claim about SMAX or about cooperative MARL in general.
+
 Each component of the original study corresponds to a JAX module in `jax_port/`, with test coverage:
 
 | Primary Study (sections 1–12) | JAX Port Implementation | Executed Verification Test |
@@ -912,7 +916,17 @@ Full execution: main 240 + exploration 40 + algo 70 + hrl 40 + budget 60 + hard 
 - **MARL/SMAX Integration (`jaxmarl 0.1.0`):** `jax_port/marl/` — 7 algorithms (ippo, mappo, vdn, qmix, mapoca, cte, tarmac) on map `3m` × 3 seeds × 1M steps (21/21 runs, 1.5–3.3k SPS). Outcome: **Win-rate evaluated at 0.0 across all flat feedforward implementations** (`analysis_full.json`) — flat feedforward policies fail to coordinate in `3m` within 1M steps. Diagnosed that JaxMARL literature requires **recurrent GRU-128 + 10M steps**, implemented in `recurrent.py` with sequential BPTT over window T.
 - **Exploration $\beta=0$ Control Suite (`jax_port/exploration_control_summary.json`):** Evaluated all 30 control cells (3 arms × 2 games × 5 seeds at 100k steps with `--explore-beta 0.0` where the bonus network trains but nothing is injected into the reward). Outcome: the chaotic drift floor ($|arm@0 - ppo|$) exceeds the published delta ($|arm@0.01 - ppo|$) across all 6 groups (`heist_icm`: drift 0.22 vs effect -0.18; `heist_rnd`: drift 0.38 vs effect -0.18; `maze_ngu`: drift 2.50 vs effect -0.58). **Scientific Verdict:** The published $\pm 0.5$ exploration spread in the JAX port is entirely within chaotic run-to-run drift and not attributable to intrinsic curiosity mechanisms.
 
-#### 15.4.4. Recurrent MARL at 10M Steps with GRU-128: Empirical Evaluation (06/09/2026)
+#### 15.4.4. Recurrent MARL at 10M Steps with GRU-128 — a Negative Result about this Port's Q-learning Path (06/09/2026, re-measured 24 and 27/09/2026)
+
+> **What this section is, and what it is not.** It is a measured negative result about *the JAX port's
+> off-policy cooperative Q-learning path*: after the 21/09/2026 fixes (per-environment sequential
+> buffer, terminal mask in the bootstrap, mixer target scaled by $r+\gamma(1-d)Q_{tot}^{\text{target}}$),
+> **all 12** Q-learning cells — 9 on `3m` plus the 3 `2s3z` recurrent cells re-measured on 27/09 — reach
+> their full budget and still return win-rate 0.000, with `delta_vs_published` 0.000. It is **not** a SMAX
+> benchmark and must not be compared against published JaxMARL numbers: the recipe differs on the two
+> axes the literature is sensitive to (8 parallel envs with 4 epochs here vs 32 envs with 2 epochs, and
+> full-episode TD windows vs length-32 sequence chunks). The on-policy arms (`ippo`, `mappo`, `mapoca`,
+> `cte`, `tarmac`, `ippo-recurrent`) were never invalidated by those fixes and stand on their own.
 
 Evaluated protocol: IPPO-rec and QMIX-rec on map `3m`, seeds 42–44, 10M steps each (~1h15 for IPPO at ~2.1k SPS; ~1h55 for QMIX at ~1.4k SPS per run). **All 6 runs converged to 0.0 evaluation win-rate across all seeds.**
 
