@@ -28,7 +28,9 @@ def test_provenance_map_does_not_advertise_stale_figures():
 
 def test_each_entry_names_a_real_script_and_data_source():
     for name, (script, produced, source) in PROVENANCE.items():
-        assert script.endswith(".py") and name.endswith(".png"), name
+        # .gif since 11/10/2026: the eight game reference clips at the top of the README are
+        # moving images, and they are mapped like every other figure rather than exempted
+        assert script.endswith(".py") and name.endswith((".png", ".gif")), name
         assert produced and source, f"{name} has no producer or data source"
         assert os.path.exists(os.path.join(ROOT, script)), f"{name}: {script} no longer exists"
 

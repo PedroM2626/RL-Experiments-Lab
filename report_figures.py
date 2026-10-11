@@ -56,6 +56,14 @@ PROVENANCE = {
                             "results/eval100_results.json + results/random_baselines.json"),
 }
 
+# The eight reference clips at the top of the README. Each is produced by
+# record_game_clips.py from a live Procgen environment, so "the data source" is the env itself
+# plus the seed recorded in results/games/clips_provenance.json.
+for _game in ("coinrun", "starpilot", "dodgeball", "bossfight", "jumper", "plunder", "maze", "heist"):
+    PROVENANCE[f"{_game}.gif"] = (
+        "record_game_clips.py", f"results/games/{_game}.gif",
+        "live Procgen env, uniform random policy, seed 42 (see results/games/clips_provenance.json)")
+
 DEFAULT_FOOTNOTE = ("dots = per-seed values; error bars are sample std (ddof=1), so they are "
                     "slightly wider than the population std quoted in README section 7")
 

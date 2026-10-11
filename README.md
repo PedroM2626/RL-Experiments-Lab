@@ -4,6 +4,27 @@
 
 > **Abstract.** Systematic evaluation of **16 architectures** across **6 families** (`CNN` vs `Attention` vs `World Models` vs `Augment` vs `New Archs` vs `Exploration`) with **5 seeds** (`42-46`), **5 games** (`bossfight`, `starpilot`, `dodgeball`, `maze`, `heist` + `coinrun` control), and **two difficulty settings** (`easy 200` / `hard 200` / `eval 0`) in `Procgen` (`~300 FPS` on `cuda`, `50k` in `~3 min`). All experiments use `frame_stack=1` (`3×64×64` `CHW` `uint8`), `PPO` (`lr 3e-4`, `n_steps 256`, `batch 64`, `n_epochs 3`, `γ 0.99`, `λ 0.95`, `clip 0.2`), and `tensorboard` for training monitoring. Evaluation initially used `10 episodes` and was systematically hardened throughout the study up to the definitive protocol: **`100 eps` stochastic + deterministic on unseen levels (`seed+1000`)** — sections 3.10→3.12.
 
+### The games this study runs on
+
+Eight Procgen games appear anywhere in this document. Each clip below is **60 frames of a uniform
+random policy** on the same `easy` / 200-training-level distribution the benchmark trains on, and
+the label is burned into every frame — a clip that only names its game in the filename is a claim
+nobody can check by watching it. They are here to show what the agent is looking at, not how well
+it plays: a trained-agent clip would currently be misleading for `maze`/`heist`, where §3.6.2
+measures that the policy emits the same action across five different games. Regenerate with
+`py -3.10 record_game_clips.py` (provenance: `results/games/clips_provenance.json`).
+
+| `coinrun` | `starpilot` | `dodgeball` | `bossfight` |
+|---|---|---|---|
+| ![coinrun](results/games/coinrun.gif) | ![starpilot](results/games/starpilot.gif) | ![dodgeball](results/games/dodgeball.gif) | ![bossfight](results/games/bossfight.gif) |
+| `jumper` | `plunder` | `maze` | `heist` |
+|---|---|---|---|
+| ![jumper](results/games/jumper.gif) | ![plunder](results/games/plunder.gif) | ![maze](results/games/maze.gif) | ![heist](results/games/heist.gif) |
+
+> The first four are the games of the main 16-architecture comparison; `jumper`/`plunder` carry the
+> hierarchical study (§15), `maze`/`heist` the exploration study (§3.6). `caveflyer` appears in the
+> temporal/POMDP benchmarks and is not clipped here.
+
 ## 0. The 5 Main Conclusions of the Study
 
 1. **The evaluation protocol dictates conclusions — and `10` episodes are insufficient.** Each protocol upgrade (`10→30→100 eps`, unseen levels with `seed+1000`, dual stochastic+deterministic evaluation) reshuffled rankings: the global leader dropped (`spatial 1.54 → 1.35`), `ICM` lost its lead in `maze`/`heist` observed at `30 eps` (spurious variance), and `vit` collapsed in `dodgeball`. An enduring lesson: in `Procgen`, rankings evaluated with `<100` episodes are unreliable (sections 3.10–3.12).
@@ -370,6 +391,7 @@ All generated visual artifacts and figures are versioned under `results/`.
 
 | Figures | Drawn by | Data source | Rebuildable today |
 |---|---|---|---|
+| `results/games/*.gif` — the 8 reference clips at the top of this README | `record_game_clips.py` | live Procgen env (uniform random policy, seed 42), recorded in `results/games/clips_provenance.json` | yes — the script re-renders all eight in ~2 min, and refuses to write a clip whose frames do not vary |
 | `coinrun_50k_cnn_vs_mlp.png` (4.1), `bossfight_100k_world_models.png` (4.2) | `report_figures.py` | `results/legacy_records.json` (per-seed values of the pruned runs) | ✅ `py -3.10 report_figures.py` |
 | `rliable_profile.png` (4.9) | `run_rliable_eval.py` | `results/eval100_results.json` + `results/random_baselines.json` | ✅ `py -3.10 run_rliable_eval.py` |
 | `symbolic_regression_*.png` (21.3–21.5) | `symbolic_regression.py` | `jax_port/cells_summary.json` → `results/symbolic_regression.json` | ✅ `py -3.10 symbolic_regression.py` |
@@ -597,7 +619,7 @@ The primary leverage point was not accumulating more architectures, but rigorous
 
 Rendered on demand via `visualize_side_by_side.py` (commands documented in section 4.8): `bossfight_dreams.mp4` (World Models with reconstructed dreams) and `coinrun_side_by_side.mp4` (CNN vs MLP side-by-side rollout). Output is formatted as `.mp4` with `128×128` panels per agent stacked horizontally (`hstack`) at `15 FPS`; latent decoding (`dream()`) implemented for `VAE/AE/Recon` (`models/world_model_extractors.py` `dream()` `deconv`), while `Contrastive` displays `no dream`. Requires `.zip` checkpoints produced during benchmark runs.
 
-> **No video files are committed:** `results/` has never contained an `.mp4` in this repository's history, so both names above are outputs you generate locally. The only committed dream artifacts are `jax_port/dreams/bossfight_dreams.gif` and `jax_port/dreams/dreamer_imagined.gif`. Note also that until the 23/09/2026 extractor fix, `AEExtractor.dream()` decoded through a second encoder branch that `forward()` never used, so an "AE dream" panel from the old code visualized an untrained path; a failed decode now renders a panel labelled `dream unavailable` instead of an unlabeled black frame.
+> **Video formats:** `results/games/*.gif` (8 reference clips, added 11/10/2026, 4.5 MB total) are the only moving images committed. There is still no `.mp4` in the repository's history: GitHub does not play an mp4 referenced from repo files, so the committed format is the one that actually renders in the README. The only committed dream artifacts are `jax_port/dreams/bossfight_dreams.gif` and `jax_port/dreams/dreamer_imagined.gif`. Note also that until the 23/09/2026 extractor fix, `AEExtractor.dream()` decoded through a second encoder branch that `forward()` never used, so an "AE dream" panel from the old code visualized an untrained path; a failed decode now renders a panel labelled `dream unavailable` instead of an unlabeled black frame.
 
 ## 9. Hardware and Limitations
 
