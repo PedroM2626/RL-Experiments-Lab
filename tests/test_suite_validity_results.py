@@ -52,7 +52,7 @@ def _table_rows(text, header):
                 break
             continue
         cells = [c.strip() for c in line.strip("|").split("|")]
-        if set("".join(cells)) <= set("-: ") or cells[0].startswith("arm"):
+        if set("".join(cells)) <= set("-: ") or cells[0].startswith(("arm", "game")):
             continue
         rows.append(cells)
     return rows
@@ -127,8 +127,8 @@ def test_extremes_of_feature_scale_quoted_in_the_prose(readme, audit):
     lo = min(A.values(), key=lambda a: a["feat_max"])
     hi = max(A.values(), key=lambda a: a["feat_max"])
     assert lo["feat_max"] == pytest.approx(3.69, abs=0.01) and hi["feat_max"] > 1500
-    assert f"(`vit`, max `{lo['feat_max']:.2f}`" in readme
-    assert f"(`impala`, max `{hi['feat_max']:.2f}`" in readme
+    assert f"`vit`, `{_fmt(lo['feat_max'], '%.2f')}`" in readme
+    assert f"`impala`, `{_fmt(hi['feat_max'], '%.2f')}`" in readme
     assert lo["max_pairwise_tv"] < 5e-3 and hi["max_pairwise_tv"] == 0.0, \
         "the prose says both extremes are inert"
 
@@ -178,3 +178,89 @@ def test_ae_and_recon_are_the_same_network():
     ae.eval(), rc.eval()
     with torch.no_grad():
         assert torch.equal(ae(x), rc(x)), "forward outputs differ"
+
+
+# ------------------------------------------------------- the three-game fold (item 9 scope)
+
+GAMES = ("starpilot", "bossfight", "dodgeball")
+
+
+def _arms(game):
+    return _load(f"suite_validity_{game}.json")["arms"]
+
+
+def _measured(arms):
+    return {k: v for k, v in arms.items() if "error" not in v}
+
+
+def test_per_game_table_matches_the_three_artifacts(readme):
+    rows = _table_rows(readme, "**The comparison's other two games, same recipe")
+    assert len(rows) == 3, f"expected one row per game, got {len(rows)}"
+    for cells in rows:
+        game, measured, below, sat, largest, hours = _code(cells)
+        arms, ok = _arms(game), _measured(_arms(game))
+        assert measured == f"{len(ok)}/{len(arms)}", f"{game}: measured"
+        n = len(ok)
+        assert below == f"{sum(1 for v in ok.values() if v['max_pairwise_tv'] < 5e-3)}/{n}"
+        assert sat == f"{sum(1 for v in ok.values() if v['first_tanh_saturated_fraction'] >= 0.99)}/{n}"
+        # the cell reads `0.287505` (`c_aug_noise` -- possibly with a note about its twin arm
+        m = re.match(r"`([0-9.]+)` \(`([a-z_]+)`", cells[4].strip())
+        assert m, f"{game}: largest-TV cell is not in the published form: {cells[4]!r}"
+        tv, arm = m.groups()
+        top = max(ok.values(), key=lambda v: v["max_pairwise_tv"])
+        assert tv == _fmt(top["max_pairwise_tv"], "%.6f"), f"{game}: largest TV"
+        assert arms[arm]["max_pairwise_tv"] == top["max_pairwise_tv"], f"{game}: {arm} is not the top"
+        assert hours == _fmt(sum(v["seconds"] for v in ok.values()) / 3600, "%.2f"), f"{game}: hours"
+
+
+def test_all_forty_eight_cells_and_forty_seven_measured_arms(readme):
+    tot = sum(len(_arms(g)) for g in GAMES)
+    ok = sum(len(_measured(_arms(g))) for g in GAMES)
+    assert (tot, ok) == (48, 47)
+    assert all(v["distinct_argmax_across_games"] == 1
+               for g in GAMES for v in _measured(_arms(g)).values())
+    for lit in (f"`{tot}` cells", f"`{tot * 100000 / 1e6:.1f}M` steps",
+                f"`{sum(v['seconds'] for g in GAMES for v in _measured(_arms(g)).values()) / 3600:.2f} h`",
+                f"**All {ok} measured arms emit one argmax"):
+        assert lit in readme, f"not published: {lit}"
+
+
+def test_dodgeball_dissociates_saturation_from_collapse(readme):
+    ok = _measured(_arms("dodgeball"))
+    inert = sum(1 for v in ok.values() if v["max_pairwise_tv"] < 5e-3)
+    sat = sum(1 for v in ok.values() if v["first_tanh_saturated_fraction"] >= 0.99)
+    assert (inert, sat) == (15, 5) and inert > sat
+    assert f"`dodgeball` `{inert}/{len(ok)}` arms are inert while only `{sat}/{len(ok)}`" in readme
+
+
+# ------------------------------------------------------- the vae failure and its seed probe
+
+def test_vae_bossfight_is_recorded_as_a_failure_not_a_zero(readme):
+    v = _arms("bossfight")["vae"]
+    assert "error" in v and "max_pairwise_tv" not in v, "the errored cell must not look like a 0.0"
+    assert "nan" in v["error"].lower()
+    assert v["steps_logged"] < 100000, "the audit records how far the run got"
+    assert _fmt(v["steps_logged"], "`%d`") in readme, "the published step count is not the artifact's"
+    assert "`100000`" in readme
+
+
+def test_vae_seed_probe_cells_match_their_artifact(readme):
+    d = _load("suite_validity_bossfight_vae_seeds.json")
+    assert set(d["arms"]) == {"vae@43", "vae@44"}
+    published = {"vae@43": ("0.000013", "65.04", "0.40"), "vae@44": ("0.037041", "40.47", "0.10")}
+    for key, (tv, feat, ret) in published.items():
+        a = d["arms"][key]
+        assert _fmt(a["max_pairwise_tv"], "%.6f") == tv, f"{key}: TV {a['max_pairwise_tv']}"
+        assert _fmt(a["feat_max"], "%.2f") == feat, f"{key}: feature max"
+        assert _fmt(a["return_10eps"], "%.2f") == ret, f"{key}: return"
+        assert tv in readme and feat in readme, f"{key}: {tv}/{feat} not published"
+    # the arm is well-behaved on starpilot, which is what the README contrasts against
+    assert _fmt(_arms("starpilot")["vae"]["feat_max"], "%.2f") == "233.98"
+    assert "`233.98`" in readme
+
+
+def test_vae_dodgeball_feature_explosion_is_the_published_number(readme):
+    v = _arms("dodgeball")["vae"]
+    assert v["feat_max"] > 1e13
+    assert _fmt(v["feat_max"], "%.1f") in readme, "the exact peak is not published"
+    assert "7.2e13" in readme
