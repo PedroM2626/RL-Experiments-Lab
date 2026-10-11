@@ -27,9 +27,7 @@ measures that the policy emits the same action across five different games. Rege
 
 **And one agent, thought by thought.** The clip below is the same game (`coinrun`) with a trained
 policy, panel by panel: what it sees (the extractor's 512-D output), what it thinks (its six most
-likely actions, with the button combination it actually presses), what it expects to earn
-($V(s)$), and the step counter. It is deliberately the **one** arm of this study that §3.6.2
-measures as reading its observation (cross-game TV `0.739958`, carried on the clip's own caption
+likely actions, with the button combination it actually presses), what it expects to earn (`V(s)`), and the step counter. It is deliberately the **one** arm of this study that §3.6.2 measures as reading its observation (cross-game TV `0.739958`, carried on the clip's own caption
 line) — the other arms would render the same clip with a frozen "what it thinks" panel, which is
 how the defect was found. `48` steps, return `10.00` (level completed), `V(s)` rising to `9.66`.
 
@@ -560,7 +558,7 @@ py -3.10 random_baselines.py --episodes 50  # Empirical random anchors on unseen
 py -3.10 run_rliable_eval.py  # IQM / trimmed mean / stratified bootstrap CIs / profiles -> results/rliable_scorecard.json + rliable_profile.png (section 3.14)
 py -3.10 symbolic_regression.py  # system identification over the 825 committed port cells -> results/symbolic_regression.json + 3 figures (section 21)
 py -3.10 report_figures.py  # Rebuilds figures 4.1/4.2 from results/legacy_records.json; prints which of the other 11 need a re-run
-py -3.10 -m pytest tests -q  # 177 tests: extractors, SB3 integration, bonuses, world models, aggregation, provenance, published-number gates
+py -3.10 -m pytest tests -q  # 178 tests: extractors, SB3 integration, bonuses, world models, aggregation, provenance, published-number gates
 py -3.10 probe_actions.py  # Action space probing (basis for HRL skills)
 py -3.10 audit_suite_validity.py --game starpilot  # All 16 published arms x the cross-game response (section 3.6.2): 1.6M steps, ~2.9 h, ~10 min/arm; resume-safe, writes results/suite_validity_starpilot.json one arm at a time
 bash run_suite_validity.sh starpilot bossfight dodgeball  # The same audit over several games: one process per arm (the cffi deadlock note below), 3 workers, then fuses results/suite_validity_<game>.json -- the 48 cells of section 3.6.2 took 8.08 h
@@ -1132,13 +1130,13 @@ To rigorously evaluate memory under strict partial observability (POMDP) without
 | | `tcn` | Causal dilated conv over 4 frames | Causal conv at $T=1$ degenerates to linear projection. No memory. | Requires explicit FIFO frame buffer. |
 | **Pure Attention** | `transformer` | Self-attention across 4 frames | 1-token self-attention is trivial identity ($QK^T = 1$). Degenerates to feedforward. | Inapplicable without sequence length. |
 | | `transformer_xl` | Self-attention with segment cache | Could maintain FIFO cache of latents, but requires 1-frame input adaptation. | Adaptable via step-by-step cache. |
-| **Recurrent & SSMs** ($h_t = f(h_{t-1}, x_t)$) | `lstm` | LSTMCell over 4 frames | Requires $(c_t, h_t)$ carry across environment steps, reset on `done`. | **Implemented** (`recurrent_lstm`). |
+| **Recurrent & SSMs** — $h_t = f(h_{t-1}, x_t)$ | `lstm` | LSTMCell over 4 frames | Requires $(c_t, h_t)$ carry across environment steps, reset on `done`. | **Implemented** (`recurrent_lstm`). |
 | | `s5` | Associative scan over 4 frames | Scan reduces to recursive step $h_t = \bar{A}h_{t-1} + Bu_t$. | **Implemented** (`recurrent_s5`). |
 | | `gru` | GRUCell over 4 frames | Requires carry $h_t$ across environment steps, reset on `done`. | Viable (direct extension of LSTM). |
 | | `s4` | FFT convolution over 4 frames | Step-by-step operates as discrete SSM. | Viable (SSM variant). |
 | | `mamba` | Selective scan over 4 frames | Operates as input-dependent recurrent step. | Viable (time-varying SSM). |
 
-> **Engineering Conclusion:** Temporal convolutions (`cnn1d`, `tcn`) possess no latent state and require an external observation buffer (which merely reconstructs frame stacking). Only models with recurrent latent state equations ($h_t = f(h_{t-1}, x_t)$) constitute valid memory architectures at $k=1$. `recurrent_lstm` and `recurrent_s5` represent the gated recurrent and state-space families, respectively.
+> **Engineering Conclusion:** Temporal convolutions (`cnn1d`, `tcn`) possess no latent state and require an external observation buffer (which merely reconstructs frame stacking). Only models with recurrent latent state equations $h_t = f(h_{t-1}, x_t)$ constitute valid memory architectures at $k=1$. `recurrent_lstm` and `recurrent_s5` represent the gated recurrent and state-space families, respectively.
 
 #### 15.4.9. Single-Frame POMDP Occlusion Benchmark on Caveflyer & Memory Regularization (21/09/2026)
 
