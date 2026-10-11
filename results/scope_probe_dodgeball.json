@@ -1,0 +1,93 @@
+{
+  "_provenance": {
+    "produced_by": "diagnose_policy_saturation.py",
+    "question": "when does the trained policy stop conditioning on the observation",
+    "game": "dodgeball",
+    "arm": "ppo",
+    "timesteps": 100000,
+    "extractor": "repo",
+    "seed": 42,
+    "probe_frames": 20,
+    "saturation_zone": 0.999
+  },
+  "curve": [
+    {
+      "steps": 0,
+      "feat_mean": 0.2663,
+      "feat_max": 1.939,
+      "tanh_saturated_fraction": 0.0,
+      "cross_frame_kl_max": 6e-06,
+      "cross_frame_tv_mean": 0.000684,
+      "entropy_mean_nats": 2.708,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.13864
+    },
+    {
+      "steps": 20000,
+      "feat_mean": 1.1482,
+      "feat_max": 12.992,
+      "tanh_saturated_fraction": 0.4094,
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 6.9e-05,
+      "entropy_mean_nats": 1.6233,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.01078
+    },
+    {
+      "steps": 40000,
+      "feat_mean": 1.7249,
+      "feat_max": 19.573,
+      "tanh_saturated_fraction": 0.5188,
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 5.2e-05,
+      "entropy_mean_nats": 1.7211,
+      "distinct_argmax_actions": 1,
+      "v_std": 6e-05
+    },
+    {
+      "steps": 60000,
+      "feat_mean": 1.8229,
+      "feat_max": 20.544,
+      "tanh_saturated_fraction": 0.5449,
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 1e-06,
+      "entropy_mean_nats": 0.2275,
+      "distinct_argmax_actions": 1,
+      "v_std": 1e-05
+    },
+    {
+      "steps": 80000,
+      "feat_mean": 1.7496,
+      "feat_max": 19.788,
+      "tanh_saturated_fraction": 0.5941,
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 0.0,
+      "entropy_mean_nats": 0.1515,
+      "distinct_argmax_actions": 1,
+      "v_std": 1e-05
+    },
+    {
+      "steps": 100000,
+      "feat_mean": 1.786,
+      "feat_max": 20.162,
+      "tanh_saturated_fraction": 0.6305,
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 0.0,
+      "entropy_mean_nats": 0.0828,
+      "distinct_argmax_actions": 1,
+      "v_std": 1e-05
+    }
+  ],
+  "cross_game": {
+    "games": [
+      "maze",
+      "heist",
+      "bossfight",
+      "starpilot",
+      "dodgeball"
+    ],
+    "max_pairwise_tv": 1e-06,
+    "distinct_argmax_across_games": 1,
+    "first_tanh_saturated_fraction": 0.9
+  }
+}
