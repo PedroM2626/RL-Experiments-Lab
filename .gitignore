@@ -13,7 +13,7 @@ build/
 /.venv/
 /ENV/
 /env.bak/
-venv.bak/
+/venv.bak/
 
 .vscode/
 .idea/
