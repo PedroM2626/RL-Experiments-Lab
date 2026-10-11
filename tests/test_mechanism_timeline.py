@@ -210,6 +210,19 @@ def test_random_and_trained_numbers_are_published_as_readme_prose(readme):
 
 # ------------------------------------------------------------------ the clip itself
 
+def test_conclusion_two_carries_the_same_numbers_as_the_section(readme, curves):
+    """§0 is the only part many readers open, so its summary must not round differently."""
+    ln = curves["layernorm"]["curve"]
+    gap = _l1_over_50(ln) - _tv_dead(ln)
+    assert gap == 74000 and f"{gap // 1000}k steps before" in readme
+    star = curves["starpilot_fs3"]["cross_game"]["max_pairwise_tv"]
+    base = _load("suite_validity_starpilot.json")["arms"]["classic"]["max_pairwise_tv"]
+    assert round(star / base) == 15 and "$15\\times$" in readme
+    rb = _load("random_baselines.json")["maze"]
+    assert "44% of levels completed by random, ~26% by the arms" in readme
+    assert sum(1 for e in rb["episodes"] if e >= 10) / len(rb["episodes"]) == 0.44
+
+
 def test_dashboard_clip_exists_and_its_panels_actually_move():
     from PIL import Image  # matplotlib pulls Pillow in, and CI installs no imageio
 
