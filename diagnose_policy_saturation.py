@@ -117,34 +117,46 @@ def measure(model, frames):
 GAMES_FOR_CROSS_CHECK = ("maze", "heist", "bossfight", "starpilot", "dodgeball")
 
 
-def cross_game_response(model, games=GAMES_FOR_CROSS_CHECK, seed=1042):
+def cross_game_response(model, games=GAMES_FOR_CROSS_CHECK, seed=1042, vector=False):
     """Total variation between the action distributions of five DIFFERENT games.
 
     Within one Procgen game consecutive frames barely differ (a 300-step random walk in maze
     yields 19 distinct frames), so a small within-game TV cannot tell "weak signal" from "no
     response at all". Frames from different games differ grossly: if the TV between those is
     still ~0, the policy is not reading the observation.
+
+    vector=True feeds the same games through the 256-D downsampled observation, because the
+    mlp_vector arm's input space is a vector and would otherwise reject every frame.
     """
     import numpy as _np
     pol = model.policy
-    probs, sat = [], []
+    dev = next(pol.parameters()).device
+    probs, sat, feats = [], [], []
     for g in games:
-        env = make_procgen_env(g, num_levels=0, distribution_mode="easy", seed=seed, vector=False)
+        env = make_procgen_env(g, num_levels=0, distribution_mode="easy", seed=seed,
+                               vector=vector)
         o = env.reset()
         o = o[0] if isinstance(o, tuple) else o
         env.close()
         with torch.no_grad():
-            t = torch.as_tensor(_np.expand_dims(o, 0)).to(next(pol.parameters()).device)
-            feats = pol.extract_features(t, pol.pi_features_extractor)
+            t = torch.as_tensor(_np.expand_dims(o, 0)).to(dev)
+            f = pol.extract_features(t, pol.pi_features_extractor)
+            # magnitude measured through the same extractor measure() uses, but via
+            # extract_features so SB3's obs preprocessor runs first: the raw module fed a
+            # uint8 frame returns uint8 features for the vector arm, whose .mean() then fails.
+            feats.append(pol.extract_features(t, pol.features_extractor))
             net = pol.mlp_extractor.policy_net
-            first = net[1](net[0](feats))
+            first = net[1](net[0](f))
             sat.append(float((first.abs() > SATURATION_ZONE).float().mean()))
             p = pol._get_action_dist_from_latent(net[3](net[2](first))).distribution.probs
             p = p.detach().cpu().numpy()[0]
             probs.append(p / p.sum())
     P = _np.stack(probs)
     tv = max(float(0.5 * _np.abs(P[i] - P[j]).sum()) for i in range(len(P)) for j in range(i + 1, len(P)))
-    return {"games": list(games), "max_pairwise_tv": round(tv, 6),
+    F = torch.cat(feats)
+    return {"games": list(games), "observation": "vector" if vector else "image",
+            "max_pairwise_tv": round(tv, 6),
+            "feat_mean": round(float(F.mean()), 4), "feat_max": round(float(F.max()), 3),
             "distinct_argmax_across_games": int(len(set(int(x) for x in P.argmax(1)))),
             "first_tanh_saturated_fraction": round(float(_np.mean(sat)), 4)}
 

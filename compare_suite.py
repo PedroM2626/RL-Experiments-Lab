@@ -29,14 +29,21 @@ def train_one(game, extractor_class, kwargs, timesteps, seed, log_dir, device, v
     vec.close(); eval_env.close()
     return float(mean), float(std), model
 
+# The published per-game configurations, at module scope so an audit can iterate exactly the
+# arms the study reports (README 3.7, 3.12) instead of keeping a second list that could drift
+# from this one. Values are unchanged from where they were declared inside run_suite().
+WORLD_CONFIGS = [('vae', VAEExtractor, dict(features_dim=512, latent_dim=128)), ('ae', AEExtractor, dict(features_dim=512)), ('recon', ReconExtractor, dict(features_dim=512)), ('contrastive', ContrastiveExtractor, dict(features_dim=512))]
+PROCGEN_CONFIGS = [('classic', ClassicCNNExtractor, dict(features_dim=512), False), ('cbam', AttentionCNNExtractor, dict(features_dim=512, use_cbam=True), False), ('spatial', AttentionCNNExtractor, dict(features_dim=512, use_cbam=False), False), ('mlp_vector', None, {}, True)]
+AUGMENT_CONFIGS = [('c_aug_crop', ContrastiveCrop, dict(features_dim=512)), ('c_aug_color', ContrastiveColor, dict(features_dim=512)), ('c_aug_noise', ContrastiveNoise, dict(features_dim=512))]
+
 def run_suite(games, timesteps, seeds, log_dir, device):
     ts=datetime.now().strftime("%Y%m%d_%H%M%S")
     comp_dir=os.path.join(log_dir, f"suite_{'_'.join(games)}_{ts}")
     os.makedirs(comp_dir, exist_ok=True)
     # configs
-    world_configs=[('vae', VAEExtractor, dict(features_dim=512, latent_dim=128)), ('ae', AEExtractor, dict(features_dim=512)), ('recon', ReconExtractor, dict(features_dim=512)), ('contrastive', ContrastiveExtractor, dict(features_dim=512))]
-    procgen_configs=[('classic', ClassicCNNExtractor, dict(features_dim=512), False), ('cbam', AttentionCNNExtractor, dict(features_dim=512, use_cbam=True), False), ('spatial', AttentionCNNExtractor, dict(features_dim=512, use_cbam=False), False), ('mlp_vector', None, {}, True)]
-    augment_configs=[('c_aug_crop', ContrastiveCrop, dict(features_dim=512)), ('c_aug_color', ContrastiveColor, dict(features_dim=512)), ('c_aug_noise', ContrastiveNoise, dict(features_dim=512))]
+    world_configs=WORLD_CONFIGS
+    procgen_configs=PROCGEN_CONFIGS
+    augment_configs=AUGMENT_CONFIGS
 
     all_results={}
     for game in games:
