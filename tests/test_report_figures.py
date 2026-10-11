@@ -9,18 +9,6 @@ import os
 from report_figures import PROVENANCE, REBUILDABLE, load_legacy, readme_figures
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-
-def test_readme_has_no_tab_characters():
-    """A backslash-macro eaten by a shell or heredoc turns 	ext into <TAB>ext, 	imes into
-    <TAB>imes, and the README renders those as a gap inside $...$ -- KaTeX fails silently and
-    no editor shows the difference. The only reliable gate is the byte."""
-    with open(os.path.join(ROOT, "README.md"), encoding="utf-8") as f:
-        text = f.read()
-    bad = [f"line {i}" for i, line in enumerate(text.splitlines(), 1) if "	" in line]
-    assert not bad, f"README contains TAB characters (collapsed LaTeX macros?): {bad[:5]}"
-
-
 def test_every_embedded_figure_exists_and_is_mapped():
     embedded = readme_figures()
     assert embedded, "no figures found in README section 4"

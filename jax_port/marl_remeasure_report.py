@@ -1,6 +1,6 @@
 """Reduce the re-measured SMAX Q-learning cells against the published win-rates.
 
-README sections 15.4 and 15.4.4 report 0.0 win-rate for every Q-learning arm and explain the
+README sections 15.4 and 15.4.5 report 0.0 win-rate for every Q-learning arm and explain the
 recurrent QMIX failure as a property of symmetric combat. That explanation was written while
 the mixer target dropped the external reward, the replay buffer interleaved parallel
 environments, and the bootstrap ignored terminations — all fixed on 21/09/2026. This script

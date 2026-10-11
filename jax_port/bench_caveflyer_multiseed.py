@@ -1,4 +1,4 @@
-"""Multi-seed expansion of the Caveflyer stack=1 POMDP occlusion benchmark (README section 15.4.8).
+"""Multi-seed expansion of the Caveflyer stack=1 POMDP occlusion benchmark (README section 15.4.9).
 
 Runs 5 seeds (42-46) across 4 architectures:
   - classic (feedforward NatureCNN)

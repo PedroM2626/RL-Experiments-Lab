@@ -1,6 +1,6 @@
 """Decide whether the port's exploration arms did anything a control arm would not.
 
-README section 15.4.3 lists 40 `exploration` cells whose ICM/RND/NGU configs score differently
+README section 15.4.2 lists 40 `exploration` cells whose ICM/RND/NGU configs score differently
 from their PPO control (up to +-0.5 mean reward on maze/heist). Those cells were produced before
 any bonus bookkeeping existed, so nothing in them shows the intrinsic reward reached the policy —
 and the arms inject ~1e-4 reward per step against a 0/1 extrinsic signal, which is small enough
