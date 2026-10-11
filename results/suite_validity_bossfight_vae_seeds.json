@@ -1,0 +1,59 @@
+{
+  "_provenance": {
+    "produced_by": "audit_suite_validity.py",
+    "question": "does each of the 16 published arms condition on its observation",
+    "training": "compare_suite.train_one / compare_new_archs.train_one, unchanged",
+    "response_measure": "max pairwise total variation across five games' initial frames (diagnose_policy_saturation.cross_game_response)",
+    "note": "TV near 0 means the policy emits the same action distribution for five different games; it is not a measure of skill",
+    "game": "bossfight",
+    "timesteps": 100000,
+    "seed": 43,
+    "shards_merged": [
+      "logs_audit/shards\\probe-vae-bossfight-s43.json",
+      "logs_audit/shards\\probe-vae-bossfight-s44.json"
+    ],
+    "rows": "arm@seed, one shard per seed"
+  },
+  "arms": {
+    "vae@43": {
+      "family": "world_model",
+      "vector_obs": false,
+      "return_10eps": 0.4,
+      "std_10eps": 0.663,
+      "seconds": 305.3,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "image",
+      "max_pairwise_tv": 1.3e-05,
+      "feat_mean": 4.9784,
+      "feat_max": 65.043,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 0.9844
+    },
+    "vae@44": {
+      "family": "world_model",
+      "vector_obs": false,
+      "return_10eps": 0.1,
+      "std_10eps": 0.3,
+      "seconds": 309.3,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "image",
+      "max_pairwise_tv": 0.037041,
+      "feat_mean": 3.0087,
+      "feat_max": 40.474,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 0.9656
+    }
+  }
+}

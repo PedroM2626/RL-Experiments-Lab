@@ -83,3 +83,27 @@ def test_merge_refuses_an_arm_measured_twice_with_different_values(tmp_path):
     # identical re-measurements are the same measurement, not a conflict
     _shard(tmp_path, "s3", {"classic": {"max_pairwise_tv": 0.1}})
     assert merge(os.path.join(str(tmp_path), "s[13].json"), str(tmp_path / "all.json"))
+
+
+def test_merge_refuses_shards_from_different_games(tmp_path):
+    """A starpilot row and a dodgeball row of one arm would otherwise overwrite each other."""
+    _shard(tmp_path, "s1", {"classic": {"max_pairwise_tv": 0.1}}, game="starpilot")
+    _shard(tmp_path, "s2", {"vae": {"max_pairwise_tv": 0.2}}, game="dodgeball")
+    with pytest.raises(AssertionError, match="different games or budgets"):
+        merge(os.path.join(str(tmp_path), "s*.json"), str(tmp_path / "all.json"))
+
+
+def test_key_by_seed_keeps_a_seed_sweep_as_three_rows(tmp_path):
+    for seed in (42, 43):
+        p = tmp_path / f"p{seed}.json"
+        p.write_text(json.dumps({"_provenance": {"game": "bossfight", "timesteps": 100000,
+                                                 "seed": seed},
+                                 "arms": {"vae": {"max_pairwise_tv": seed / 1e6}}}),
+                     encoding="utf-8")
+    data = merge(os.path.join(str(tmp_path), "p*.json"), str(tmp_path / "all.json"),
+                 key_by_seed=True)
+    assert set(data["arms"]) == {"vae@42", "vae@43"}
+    assert data["_provenance"]["rows"] == "arm@seed, one shard per seed"
+    # and without the flag the same files are a conflict, not a merge
+    with pytest.raises(AssertionError, match="different games or budgets|measured twice"):
+        merge(os.path.join(str(tmp_path), "p*.json"), str(tmp_path / "all2.json"))

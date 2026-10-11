@@ -68,6 +68,33 @@ def save(out, data):
     os.replace(tmp, out)
 
 
+def steps_logged(log_dir):
+    """How far the most recent run in log_dir got, in environment steps.
+
+    When an arm dies mid-training the error message alone cannot say whether it died at step
+    1 or at step 99k, and that difference is the finding (the vae arm's NaN on bossfight is a
+    mid-run divergence, not a broken evaluation). The number is written into the artifact
+    because a claim in the README has to be carried by the file it cites, not by a log dir
+    that CI never sees.
+    """
+    import glob as _glob
+    try:
+        from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+    except ImportError:
+        return None
+    files = sorted(_glob.glob(os.path.join(log_dir, "PPO_*", "events*")), key=os.path.getmtime)
+    if not files:
+        return None
+    ea = EventAccumulator(files[-1], size_guidance={"scalars": 5000})
+    ea.Reload()
+    tags = ea.Tags()["scalars"]
+    if "rollout/timesteps" in tags and ea.Scalars("rollout/timesteps"):
+        return int(ea.Scalars("rollout/timesteps")[-1].value)
+    if "train/clip_fraction" in tags:  # one logged update per n_steps batch
+        return len(ea.Scalars("train/clip_fraction")) * 256
+    return None
+
+
 def run_arm(name, game, timesteps, seed, device):
     _, family, cls, kw, vector = BY_NAME[name]
     # Safe point for gym3 finalizers. Each arm builds ~7 Procgen envs (train, eval, five
@@ -89,26 +116,40 @@ def run_arm(name, game, timesteps, seed, device):
             **resp}
 
 
-def merge(pattern, out):
+def merge(pattern, out, key_by_seed=False):
     """Combine shard files written by parallel --out runs into the canonical output.
 
-    Three shards share one GPU and one CPU box, so they train concurrently but must not write
-    the same JSON. Each keeps its own file; this one checks they cover the arms exactly once
-    and then produces the single artifact the README cites.
+    Several processes share one GPU, so they train concurrently but must not write the same
+    JSON. Each keeps its own file; this one checks they cover the arms exactly once and then
+    produces the single artifact the README cites.
+
+    Shards are only the same measurement if they share game/budget/seed, and that is asserted:
+    otherwise a bossfight row and a dodgeball row of one arm silently overwrite each other and
+    the artifact looks like a clean 16-arm table. A seed sweep is the legitimate exception --
+    the same arm appears once per shard -- so --key-by-seed names those rows arm@seed.
     """
     import glob as _glob
     files = sorted(_glob.glob(pattern))
     assert files, f"no shard files match {pattern}"
-    arms, prov = {}, None
+    arms, prov, fixed = {}, None, None
     for f in files:
         with open(f, encoding="utf-8") as fh:
             d = json.load(fh)
-        prov = prov or d.get("_provenance", {})
+        p = d.get("_provenance", {})
+        stamp = (p.get("game"), p.get("timesteps"), p.get("seed"))
+        if prov is None:
+            prov, fixed = p, stamp
+        elif not key_by_seed:
+            assert stamp == fixed, (f"{f}: provenance {stamp} differs from {fixed} -- shards of "
+                                    "different games or budgets are not one artifact")
         for name, row in d.get("arms", {}).items():
-            dup = arms.get(name)
-            assert dup is None or dup == row, f"{name} measured twice with different values"
-            arms[name] = row
+            key = f"{name}@{p.get('seed')}" if key_by_seed else name
+            dup = arms.get(key)
+            assert dup is None or dup == row, f"{key} measured twice with different values"
+            arms[key] = row
     data = {"_provenance": {**prov, "shards_merged": files}, "arms": arms}
+    if key_by_seed:
+        data["_provenance"]["rows"] = "arm@seed, one shard per seed"
     save(out, data)
     print(f"{len(arms)} braços fundidos em {os.path.relpath(out, BASE).replace(os.sep, '/')}")
     return data
@@ -124,10 +165,12 @@ def main():
     ap.add_argument("--out", default=None)
     ap.add_argument("--merge", default=None, metavar="GLOB",
                     help="fuse shard files into --out instead of training")
+    ap.add_argument("--key-by-seed", action="store_true",
+                    help="with --merge: name the rows arm@seed, for a sweep over seeds")
     args = ap.parse_args()
     out = args.out or os.path.join(BASE, "results", f"suite_validity_{args.game}.json")
     if args.merge:
-        merge(args.merge, out)
+        merge(args.merge, out, key_by_seed=args.key_by_seed)
         return
     data = load(out)
     data["_provenance"].update({"game": args.game, "timesteps": args.timesteps,
@@ -144,8 +187,10 @@ def main():
                   f"1oTanh={row['first_tanh_saturated_fraction']*100:5.1f}%  "
                   f"feat_max={row['feat_max']:7.2f}  {row['seconds']/60:5.1f} min", flush=True)
         except Exception as e:  # one OOM must not discard the arms already measured
-            row = {"error": f"{type(e).__name__}: {e}"}
-            print(f"[{i}/{len(todo)}] {name:14s} ERRO {row['error'][:90]}", flush=True)
+            row = {"error": f"{type(e).__name__}: {e}",
+                   "steps_logged": steps_logged("logs_audit")}
+            print(f"[{i}/{len(todo)}] {name:14s} ERRO after {row['steps_logged']} steps: "
+                  f"{row['error'][:80]}", flush=True)
         data["arms"][name] = row
         save(out, data)
     save(out, data)

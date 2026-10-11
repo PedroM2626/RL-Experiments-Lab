@@ -1,0 +1,336 @@
+{
+  "_provenance": {
+    "produced_by": "audit_suite_validity.py",
+    "question": "does each of the 16 published arms condition on its observation",
+    "training": "compare_suite.train_one / compare_new_archs.train_one, unchanged",
+    "response_measure": "max pairwise total variation across five games' initial frames (diagnose_policy_saturation.cross_game_response)",
+    "note": "TV near 0 means the policy emits the same action distribution for five different games; it is not a measure of skill",
+    "game": "bossfight",
+    "timesteps": 100000,
+    "seed": 42,
+    "shards_merged": [
+      "logs_audit/shards\\g-bossfight-ae.json",
+      "logs_audit/shards\\g-bossfight-c_aug_color.json",
+      "logs_audit/shards\\g-bossfight-c_aug_crop.json",
+      "logs_audit/shards\\g-bossfight-c_aug_noise.json",
+      "logs_audit/shards\\g-bossfight-cbam.json",
+      "logs_audit/shards\\g-bossfight-classic.json",
+      "logs_audit/shards\\g-bossfight-contrastive.json",
+      "logs_audit/shards\\g-bossfight-impala.json",
+      "logs_audit/shards\\g-bossfight-impoola.json",
+      "logs_audit/shards\\g-bossfight-lstm_attention.json",
+      "logs_audit/shards\\g-bossfight-mlp_vector.json",
+      "logs_audit/shards\\g-bossfight-recon.json",
+      "logs_audit/shards\\g-bossfight-resnet18.json",
+      "logs_audit/shards\\g-bossfight-spatial.json",
+      "logs_audit/shards\\g-bossfight-vae.json",
+      "logs_audit/shards\\g-bossfight-vit.json"
+    ]
+  },
+  "arms": {
+    "ae": {
+      "family": "world_model",
+      "vector_obs": false,
+      "return_10eps": 0.0,
+      "std_10eps": 0.0,
+      "seconds": 513.7,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "image",
+      "max_pairwise_tv": 8e-06,
+      "feat_mean": 3.7825,
+      "feat_max": 48.002,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 1.0
+    },
+    "c_aug_color": {
+      "family": "augment",
+      "vector_obs": false,
+      "return_10eps": 0.0,
+      "std_10eps": 0.0,
+      "seconds": 504.7,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "image",
+      "max_pairwise_tv": 5e-06,
+      "feat_mean": 4.8933,
+      "feat_max": 70.067,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 1.0
+    },
+    "c_aug_crop": {
+      "family": "augment",
+      "vector_obs": false,
+      "return_10eps": 1.2,
+      "std_10eps": 3.6,
+      "seconds": 502.9,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "image",
+      "max_pairwise_tv": 0.0,
+      "feat_mean": 4.284,
+      "feat_max": 77.872,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 1.0
+    },
+    "c_aug_noise": {
+      "family": "augment",
+      "vector_obs": false,
+      "return_10eps": 0.0,
+      "std_10eps": 0.0,
+      "seconds": 516.4,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "image",
+      "max_pairwise_tv": 0.287505,
+      "feat_mean": 0.1292,
+      "feat_max": 1.167,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 0.0
+    },
+    "cbam": {
+      "family": "procgen_cnn",
+      "vector_obs": false,
+      "return_10eps": 0.1,
+      "std_10eps": 0.3,
+      "seconds": 759.7,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "image",
+      "max_pairwise_tv": 0.0,
+      "feat_mean": 16.7029,
+      "feat_max": 221.45,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 1.0
+    },
+    "classic": {
+      "family": "procgen_cnn",
+      "vector_obs": false,
+      "return_10eps": 0.0,
+      "std_10eps": 0.0,
+      "seconds": 516.3,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "image",
+      "max_pairwise_tv": 0.0,
+      "feat_mean": 9.3739,
+      "feat_max": 137.648,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 1.0
+    },
+    "contrastive": {
+      "family": "world_model",
+      "vector_obs": false,
+      "return_10eps": 0.0,
+      "std_10eps": 0.0,
+      "seconds": 497.7,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "image",
+      "max_pairwise_tv": 0.287505,
+      "feat_mean": 0.1292,
+      "feat_max": 1.167,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 0.0
+    },
+    "impala": {
+      "family": "new_arch",
+      "vector_obs": false,
+      "return_10eps": 0.0,
+      "std_10eps": 0.0,
+      "seconds": 837.3,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "image",
+      "max_pairwise_tv": 0.0,
+      "feat_mean": 4.7485,
+      "feat_max": 80.149,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 1.0
+    },
+    "impoola": {
+      "family": "new_arch",
+      "vector_obs": false,
+      "return_10eps": 0.0,
+      "std_10eps": 0.0,
+      "seconds": 825.4,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "image",
+      "max_pairwise_tv": 0.0,
+      "feat_mean": 1.9321,
+      "feat_max": 24.384,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 1.0
+    },
+    "lstm_attention": {
+      "family": "new_arch",
+      "vector_obs": false,
+      "return_10eps": 0.2,
+      "std_10eps": 0.4,
+      "seconds": 813.9,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "image",
+      "max_pairwise_tv": 0.0,
+      "feat_mean": 2.1943,
+      "feat_max": 35.608,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 1.0
+    },
+    "mlp_vector": {
+      "family": "procgen_cnn",
+      "vector_obs": true,
+      "return_10eps": 0.2,
+      "std_10eps": 0.4,
+      "seconds": 359.0,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "vector",
+      "max_pairwise_tv": 0.032973,
+      "feat_mean": 119.7922,
+      "feat_max": 254.0,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 0.9969
+    },
+    "recon": {
+      "family": "world_model",
+      "vector_obs": false,
+      "return_10eps": 0.0,
+      "std_10eps": 0.0,
+      "seconds": 516.2,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "image",
+      "max_pairwise_tv": 8e-06,
+      "feat_mean": 3.7825,
+      "feat_max": 48.002,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 1.0
+    },
+    "resnet18": {
+      "family": "new_arch",
+      "vector_obs": false,
+      "return_10eps": 0.1,
+      "std_10eps": 0.3,
+      "seconds": 966.9,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "image",
+      "max_pairwise_tv": 0.072775,
+      "feat_mean": 0.8005,
+      "feat_max": 15.01,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 0.9375
+    },
+    "spatial": {
+      "family": "procgen_cnn",
+      "vector_obs": false,
+      "return_10eps": 0.0,
+      "std_10eps": 0.0,
+      "seconds": 578.7,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "image",
+      "max_pairwise_tv": 0.0,
+      "feat_mean": 25.2793,
+      "feat_max": 338.658,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 1.0
+    },
+    "vae": {
+      "error": "ValueError: Expected parameter logits (Tensor of shape (1, 15)) of distribution Categorical(logits: torch.Size([1, 15])) to satisfy the constraint IndependentConstraint(Real(), 1), but found invalid values:\ntensor([[nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan]],\n       device='cuda:0')",
+      "steps_logged": 39680
+    },
+    "vit": {
+      "family": "new_arch",
+      "vector_obs": false,
+      "return_10eps": 0.0,
+      "std_10eps": 0.0,
+      "seconds": 726.3,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "image",
+      "max_pairwise_tv": 9.6e-05,
+      "feat_mean": 0.3802,
+      "feat_max": 4.677,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 0.3281
+    }
+  }
+}
