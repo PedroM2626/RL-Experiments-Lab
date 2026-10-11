@@ -211,15 +211,23 @@ def test_random_and_trained_numbers_are_published_as_readme_prose(readme):
 # ------------------------------------------------------------------ the clip itself
 
 def test_dashboard_clip_exists_and_its_panels_actually_move():
-    import imageio.v3 as iio
+    from PIL import Image  # matplotlib pulls Pillow in, and CI installs no imageio
+
     path = os.path.join(RESULTS, "agent_dashboard.gif")
     assert os.path.exists(path), "README embeds results/agent_dashboard.gif, which is missing"
-    frames = iio.imread(path, index=None)
+    frames = []
+    im = Image.open(path)
+    try:
+        while True:
+            frames.append(np.asarray(im.convert("RGB")).astype(np.int16))
+            im.seek(im.tell() + 1)
+    except EOFError:
+        pass
     assert len(frames) >= 20, f"only {len(frames)} frames -- too short to show a policy acting"
-    a = frames.astype(np.int16)
-    # the right half of the frame is the panel column; if the policy were state-independent this
+    a = np.stack(frames)
+    # the right of the frame is the panel column; if the policy were state-independent this
     # is exactly the region that would sit still, which is how the defect was first noticed
-    panels = a[:, 400:, :, :3]
+    panels = a[:, 400:, :, :]
     deltas = np.abs(np.diff(panels, axis=0)).mean(axis=(1, 2, 3))
     moving = float((deltas > 0.5).mean())
     assert moving > 0.5, f"only {moving:.0%} of consecutive frames change the panels"
