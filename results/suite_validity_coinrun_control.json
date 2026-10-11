@@ -1,0 +1,74 @@
+{
+  "_provenance": {
+    "produced_by": "audit_suite_validity.py",
+    "question": "does each of the 16 published arms condition on its observation",
+    "training": "compare_suite.train_one / compare_new_archs.train_one, unchanged",
+    "response_measure": "max pairwise total variation across five games' initial frames (diagnose_policy_saturation.cross_game_response)",
+    "note": "TV near 0 means the policy emits the same action distribution for five different games; it is not a measure of skill",
+    "game": "coinrun",
+    "timesteps": 100000,
+    "seed": 42
+  },
+  "arms": {
+    "classic": {
+      "family": "procgen_cnn",
+      "vector_obs": false,
+      "return_10eps": 6.0,
+      "std_10eps": 4.899,
+      "seconds": 608.2,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "image",
+      "max_pairwise_tv": 0.739958,
+      "feat_mean": 0.0777,
+      "feat_max": 1.328,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 0.0
+    },
+    "vit": {
+      "family": "new_arch",
+      "vector_obs": false,
+      "return_10eps": 6.0,
+      "std_10eps": 4.899,
+      "seconds": 903.9,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "image",
+      "max_pairwise_tv": 3e-06,
+      "feat_mean": 0.4164,
+      "feat_max": 4.205,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 0.2344
+    },
+    "mlp_vector": {
+      "family": "procgen_cnn",
+      "vector_obs": true,
+      "return_10eps": 7.0,
+      "std_10eps": 4.583,
+      "seconds": 406.8,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "vector",
+      "max_pairwise_tv": 0.021878,
+      "feat_mean": 119.7922,
+      "feat_max": 254.0,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 1.0
+    }
+  }
+}

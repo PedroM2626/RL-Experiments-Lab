@@ -16,11 +16,18 @@ Each arm is written to the output file as it finishes, and an existing entry is 
 interrupted audit resumes rather than restarts. No checkpoints are saved: the audit needs the
 response of each policy once, and 16 zips would be ~800 MB of weight in the repository for it.
 
+Shards should stay short: two of the three shards in the first full run deadlocked in cffi
+while creating the env of their 3rd/4th arm (see run_arm), after ~20 env creations in one
+process. One arm per process is the safe shape, and run_arm forces a collection at each
+boundary regardless.
+
 Usage:
     py -3.10 audit_suite_validity.py --game starpilot --configs classic mlp_vector
     py -3.10 audit_suite_validity.py --game starpilot --out results/suite_validity_starpilot.json
+    py -3.10 audit_suite_validity.py --merge "logs_audit/shards/sh-*.json"
 """
 import argparse
+import gc
 import json
 import os
 import time
@@ -63,6 +70,13 @@ def save(out, data):
 
 def run_arm(name, game, timesteps, seed, device):
     _, family, cls, kw, vector = BY_NAME[name]
+    # Safe point for gym3 finalizers. Each arm builds ~7 Procgen envs (train, eval, five
+    # cross-game probes) and gym3's Libenv.__del__ closes the C handle through cffi; when the
+    # gc triggers that collector while the main thread is already inside cffi's
+    # accessor-construction lock, the reentrant acquire deadlocks -- observed on two shards at
+    # once, 0% CPU, hung in make_accessor with a __del__/close frame in the middle of the
+    # stack. Collecting here runs those finalizers where no FFI call is in progress.
+    gc.collect()
     t0 = time.time()
     if family == "new_arch":
         mean, std, model = CNA.train_one(game, cls, kw, timesteps, seed, "logs_audit", device)
