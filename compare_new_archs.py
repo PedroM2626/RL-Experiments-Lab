@@ -11,6 +11,16 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from procgen_wrapper import make_procgen_env
 from models.combined_extractors import ImpalaCNNExtractor, ImpoolaCNNExtractor, LSTMAttentionExtractor, ViTExtractor, ResNet18Extractor
 
+# Module scope so the validity audit covers exactly the published five (README 3.7) rather than
+# a copy of the list that could drift. Values unchanged from inside main().
+NEW_ARCH_CONFIGS = [
+    ('impala', ImpalaCNNExtractor, dict(features_dim=512)),
+    ('impoola', ImpoolaCNNExtractor, dict(features_dim=512)),
+    ('lstm_attention', LSTMAttentionExtractor, dict(features_dim=512)),
+    ('vit', ViTExtractor, dict(features_dim=512)),
+    ('resnet18', ResNet18Extractor, dict(features_dim=512)),
+]
+
 def train_one(game, cls, kwargs, timesteps, seed, log_dir, device):
     def make_env(): return Monitor(make_procgen_env(game, num_levels=200, distribution_mode='easy', seed=seed, vector=False))
     vec = DummyVecEnv([make_env])
@@ -35,13 +45,7 @@ def main():
     ts=datetime.now().strftime("%Y%m%d_%H%M%S")
     comp_dir=os.path.join(args.log_dir, f"new_archs_{'_'.join(args.games)}_{ts}")
     os.makedirs(comp_dir, exist_ok=True)
-    configs=[
-        ('impala', ImpalaCNNExtractor, dict(features_dim=512)),
-        ('impoola', ImpoolaCNNExtractor, dict(features_dim=512)),
-        ('lstm_attention', LSTMAttentionExtractor, dict(features_dim=512)),
-        ('vit', ViTExtractor, dict(features_dim=512)),
-        ('resnet18', ResNet18Extractor, dict(features_dim=512)),
-    ]
+    configs=NEW_ARCH_CONFIGS
     results={}
     for game in args.games:
         for key, cls, kw in configs:
