@@ -54,6 +54,12 @@ PROVENANCE = {
                                                 "results/symbolic_regression.json"),
     "rliable_profile.png": ("run_rliable_eval.py", "results/rliable_profile.png",
                             "results/eval100_results.json + results/random_baselines.json"),
+    # The dashboard clip is the one recording made of a policy the audit measures as responsive.
+    # Its weights are git-ignored, so the entry names the command that reproduces them.
+    "agent_dashboard.gif": ("record_dashboard_video.py", "results/agent_dashboard.gif",
+                            "logs_audit/models/coinrun_classic.zip (regenerate: diagnose_policy_"
+                            "saturation.py --game coinrun --timesteps 100000 --save-model ...) + "
+                            "results/suite_validity_coinrun_control.json"),
 }
 
 # The eight reference clips at the top of the README. Each is produced by

@@ -1,0 +1,346 @@
+{
+  "_provenance": {
+    "produced_by": "diagnose_policy_saturation.py",
+    "question": "when does the trained policy stop conditioning on the observation",
+    "game": "coinrun",
+    "arm": "ppo",
+    "timesteps": 100000,
+    "extractor": "repo",
+    "frame_stack": 1,
+    "seed": 42,
+    "probe_frames": 20,
+    "saturation_zone": 0.999
+  },
+  "curve": [
+    {
+      "steps": 0,
+      "feat_mean": 0.3553,
+      "feat_max": 2.707,
+      "tanh_saturated_fraction": 0.0,
+      "tanh_saturated_by_layer": [
+        0.0,
+        0.0
+      ],
+      "cross_frame_kl_max": 3e-06,
+      "cross_frame_tv_mean": 0.000595,
+      "entropy_mean_nats": 2.708,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.0937
+    },
+    {
+      "steps": 5000,
+      "feat_mean": 1.0861,
+      "feat_max": 10.429,
+      "tanh_saturated_fraction": 0.3043,
+      "tanh_saturated_by_layer": [
+        0.6086,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 8.9e-05,
+      "entropy_mean_nats": 2.5584,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.003
+    },
+    {
+      "steps": 10000,
+      "feat_mean": 0.4927,
+      "feat_max": 4.335,
+      "tanh_saturated_fraction": 0.0402,
+      "tanh_saturated_by_layer": [
+        0.0805,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.000333,
+      "cross_frame_tv_mean": 0.004845,
+      "entropy_mean_nats": 2.3421,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.13799
+    },
+    {
+      "steps": 15000,
+      "feat_mean": 0.4804,
+      "feat_max": 4.153,
+      "tanh_saturated_fraction": 0.059,
+      "tanh_saturated_by_layer": [
+        0.118,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.000574,
+      "cross_frame_tv_mean": 0.007217,
+      "entropy_mean_nats": 2.6888,
+      "distinct_argmax_actions": 2,
+      "v_std": 0.05772
+    },
+    {
+      "steps": 20000,
+      "feat_mean": 0.3497,
+      "feat_max": 3.059,
+      "tanh_saturated_fraction": 0.0125,
+      "tanh_saturated_by_layer": [
+        0.025,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.001376,
+      "cross_frame_tv_mean": 0.010999,
+      "entropy_mean_nats": 2.2865,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.03863
+    },
+    {
+      "steps": 25000,
+      "feat_mean": 0.2921,
+      "feat_max": 2.376,
+      "tanh_saturated_fraction": 0.048,
+      "tanh_saturated_by_layer": [
+        0.0922,
+        0.0039
+      ],
+      "cross_frame_kl_max": 0.000304,
+      "cross_frame_tv_mean": 0.005105,
+      "entropy_mean_nats": 1.3719,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.51616
+    },
+    {
+      "steps": 30000,
+      "feat_mean": 0.2702,
+      "feat_max": 2.575,
+      "tanh_saturated_fraction": 0.0039,
+      "tanh_saturated_by_layer": [
+        0.0078,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.000888,
+      "cross_frame_tv_mean": 0.008752,
+      "entropy_mean_nats": 1.6826,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.10499
+    },
+    {
+      "steps": 35000,
+      "feat_mean": 0.2549,
+      "feat_max": 2.479,
+      "tanh_saturated_fraction": 0.002,
+      "tanh_saturated_by_layer": [
+        0.0039,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.000867,
+      "cross_frame_tv_mean": 0.008565,
+      "entropy_mean_nats": 1.3512,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.20754
+    },
+    {
+      "steps": 40000,
+      "feat_mean": 0.2783,
+      "feat_max": 2.966,
+      "tanh_saturated_fraction": 0.0059,
+      "tanh_saturated_by_layer": [
+        0.0039,
+        0.0078
+      ],
+      "cross_frame_kl_max": 0.000584,
+      "cross_frame_tv_mean": 0.00739,
+      "entropy_mean_nats": 1.0723,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.19733
+    },
+    {
+      "steps": 45000,
+      "feat_mean": 0.232,
+      "feat_max": 2.361,
+      "tanh_saturated_fraction": 0.0,
+      "tanh_saturated_by_layer": [
+        0.0,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.000201,
+      "cross_frame_tv_mean": 0.003979,
+      "entropy_mean_nats": 0.7454,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.09692
+    },
+    {
+      "steps": 50000,
+      "feat_mean": 0.1116,
+      "feat_max": 1.56,
+      "tanh_saturated_fraction": 0.0215,
+      "tanh_saturated_by_layer": [
+        0.0391,
+        0.0039
+      ],
+      "cross_frame_kl_max": 0.07903,
+      "cross_frame_tv_mean": 0.084866,
+      "entropy_mean_nats": 0.971,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.74167
+    },
+    {
+      "steps": 55000,
+      "feat_mean": 0.1598,
+      "feat_max": 1.593,
+      "tanh_saturated_fraction": 0.0059,
+      "tanh_saturated_by_layer": [
+        0.0039,
+        0.0078
+      ],
+      "cross_frame_kl_max": 0.000876,
+      "cross_frame_tv_mean": 0.005565,
+      "entropy_mean_nats": 0.3597,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.30441
+    },
+    {
+      "steps": 60000,
+      "feat_mean": 0.1739,
+      "feat_max": 1.788,
+      "tanh_saturated_fraction": 0.0,
+      "tanh_saturated_by_layer": [
+        0.0,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.001089,
+      "cross_frame_tv_mean": 0.005951,
+      "entropy_mean_nats": 0.4041,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.20608
+    },
+    {
+      "steps": 65000,
+      "feat_mean": 0.0885,
+      "feat_max": 1.531,
+      "tanh_saturated_fraction": 0.0004,
+      "tanh_saturated_by_layer": [
+        0.0008,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.571975,
+      "cross_frame_tv_mean": 0.262801,
+      "entropy_mean_nats": 0.5196,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.91107
+    },
+    {
+      "steps": 70000,
+      "feat_mean": 0.1238,
+      "feat_max": 1.651,
+      "tanh_saturated_fraction": 0.0,
+      "tanh_saturated_by_layer": [
+        0.0,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.016765,
+      "cross_frame_tv_mean": 0.029242,
+      "entropy_mean_nats": 0.4457,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.29858
+    },
+    {
+      "steps": 75000,
+      "feat_mean": 0.1308,
+      "feat_max": 1.537,
+      "tanh_saturated_fraction": 0.0,
+      "tanh_saturated_by_layer": [
+        0.0,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.007685,
+      "cross_frame_tv_mean": 0.00955,
+      "entropy_mean_nats": 0.3695,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.5568
+    },
+    {
+      "steps": 80000,
+      "feat_mean": 0.1832,
+      "feat_max": 2.146,
+      "tanh_saturated_fraction": 0.0,
+      "tanh_saturated_by_layer": [
+        0.0,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.002488,
+      "cross_frame_tv_mean": 0.0102,
+      "entropy_mean_nats": 0.2734,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.44823
+    },
+    {
+      "steps": 85000,
+      "feat_mean": 0.1119,
+      "feat_max": 1.533,
+      "tanh_saturated_fraction": 0.002,
+      "tanh_saturated_by_layer": [
+        0.0,
+        0.0039
+      ],
+      "cross_frame_kl_max": 0.019084,
+      "cross_frame_tv_mean": 0.023675,
+      "entropy_mean_nats": 0.1598,
+      "distinct_argmax_actions": 1,
+      "v_std": 1.04703
+    },
+    {
+      "steps": 90000,
+      "feat_mean": 0.1078,
+      "feat_max": 1.579,
+      "tanh_saturated_fraction": 0.0039,
+      "tanh_saturated_by_layer": [
+        0.0039,
+        0.0039
+      ],
+      "cross_frame_kl_max": 0.052925,
+      "cross_frame_tv_mean": 0.044223,
+      "entropy_mean_nats": 0.268,
+      "distinct_argmax_actions": 1,
+      "v_std": 1.07705
+    },
+    {
+      "steps": 95000,
+      "feat_mean": 0.3121,
+      "feat_max": 4.215,
+      "tanh_saturated_fraction": 0.0402,
+      "tanh_saturated_by_layer": [
+        0.0609,
+        0.0195
+      ],
+      "cross_frame_kl_max": 3e-06,
+      "cross_frame_tv_mean": 0.000123,
+      "entropy_mean_nats": 0.1089,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.05244
+    },
+    {
+      "steps": 100000,
+      "feat_mean": 0.1195,
+      "feat_max": 1.507,
+      "tanh_saturated_fraction": 0.0,
+      "tanh_saturated_by_layer": [
+        0.0,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.000802,
+      "cross_frame_tv_mean": 0.003361,
+      "entropy_mean_nats": 0.1262,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.16838
+    }
+  ],
+  "cross_game": {
+    "games": [
+      "maze",
+      "heist",
+      "bossfight",
+      "starpilot",
+      "dodgeball"
+    ],
+    "observation": "image",
+    "max_pairwise_tv": 0.739958,
+    "feat_mean": 0.0777,
+    "feat_max": 1.328,
+    "distinct_argmax_across_games": 1,
+    "first_tanh_saturated_fraction": 0.0
+  }
+}
