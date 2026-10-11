@@ -84,3 +84,17 @@ def test_readme_math_delimiters_are_balanced():
         if outside.count("$") % 2:
             bad.append(f"line {i}: {line[:70]}")
     assert not bad, f"lines with an odd number of $ outside code spans: {bad[:5]}"
+
+
+def test_no_math_has_parentheses_inside_and_outside():
+    """GitHub's tokenizer skips exactly this shape; the page then shows the raw source.
+
+    Measured on the rendered README (11/10/2026): 267 of 270 inline formulas were marked as
+    math, and the two that were not -- ($V(s)$) and ($h_t = f(h_{t-1}, x_t)$) -- are the only
+    two in the file whose content contains a parenthesis while also being wrapped in one.
+    The other 31 ($...$) spans render, so the outer parens alone are not the problem.
+    """
+    with open(README, encoding="utf-8") as f:
+        text = f.read()
+    offenders = [m.group(0) for m in re.finditer(r"\(\$[^$\n]*[()][^$\n]*\$\)", text)]
+    assert not offenders, f"($...$) with inner parens render as literal text: {offenders[:5]}"
