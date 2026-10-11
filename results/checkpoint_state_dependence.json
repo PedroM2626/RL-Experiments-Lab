@@ -1,0 +1,705 @@
+{
+  "n": 70,
+  "rows": [
+    {
+      "ckpt": "heist_icm_seed42.zip",
+      "dir": "maze_heist_heist_ppo_icm_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 1.0,
+      "tv": 1.5252923428003365e-07,
+      "argmax": 1,
+      "feat_mean": 1.148655891418457,
+      "feat_max": 12.891908645629883
+    },
+    {
+      "ckpt": "heist_icm_seed43.zip",
+      "dir": "maze_heist_heist_ppo_icm_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 0.9739583333333334,
+      "tv": 1.850251768094798e-07,
+      "argmax": 1,
+      "feat_mean": 1.4041721820831299,
+      "feat_max": 12.82068157196045
+    },
+    {
+      "ckpt": "heist_icm_seed44.zip",
+      "dir": "maze_heist_heist_ppo_icm_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 0.94921875,
+      "tv": 2.7089627110399306e-06,
+      "argmax": 1,
+      "feat_mean": 1.1870708465576172,
+      "feat_max": 11.132074356079102
+    },
+    {
+      "ckpt": "heist_icm_seed45.zip",
+      "dir": "maze_heist_heist_ppo_icm_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 1.0,
+      "tv": 2.0562826345364252e-07,
+      "argmax": 1,
+      "feat_mean": 1.3376810550689697,
+      "feat_max": 14.178085327148438
+    },
+    {
+      "ckpt": "heist_icm_seed46.zip",
+      "dir": "maze_heist_heist_ppo_icm_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 0.9479166666666666,
+      "tv": 2.7894445035296184e-07,
+      "argmax": 1,
+      "feat_mean": 1.1840169429779053,
+      "feat_max": 14.199540138244629
+    },
+    {
+      "ckpt": "heist_ppo_seed42.zip",
+      "dir": "maze_heist_heist_ppo_icm_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 0.9739583333333334,
+      "tv": 1.1055211264950533e-06,
+      "argmax": 1,
+      "feat_mean": 1.038395643234253,
+      "feat_max": 10.080227851867676
+    },
+    {
+      "ckpt": "heist_ppo_seed43.zip",
+      "dir": "maze_heist_heist_ppo_icm_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 0.5234375,
+      "tv": 0.0006441957048082259,
+      "argmax": 1,
+      "feat_mean": 1.2706888914108276,
+      "feat_max": 12.625279426574707
+    },
+    {
+      "ckpt": "heist_ppo_seed44.zip",
+      "dir": "maze_heist_heist_ppo_icm_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 0.99609375,
+      "tv": 1.9922481442335993e-08,
+      "argmax": 1,
+      "feat_mean": 2.8170547485351562,
+      "feat_max": 28.794382095336914
+    },
+    {
+      "ckpt": "heist_ppo_seed45.zip",
+      "dir": "maze_heist_heist_ppo_icm_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 1.0,
+      "tv": 6.548361852765083e-07,
+      "argmax": 1,
+      "feat_mean": 3.231961250305176,
+      "feat_max": 41.37845230102539
+    },
+    {
+      "ckpt": "heist_ppo_seed46.zip",
+      "dir": "maze_heist_heist_ppo_icm_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 1.0,
+      "tv": 3.9569082825134196e-08,
+      "argmax": 1,
+      "feat_mean": 1.3662444353103638,
+      "feat_max": 18.250890731811523
+    },
+    {
+      "ckpt": "heist_ngu_seed42.zip",
+      "dir": "maze_heist_heist_rnd_ngu_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 0.9739583333333334,
+      "tv": 1.0391052758980852e-07,
+      "argmax": 1,
+      "feat_mean": 1.0266414880752563,
+      "feat_max": 9.953553199768066
+    },
+    {
+      "ckpt": "heist_ngu_seed43.zip",
+      "dir": "maze_heist_heist_rnd_ngu_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 1.0,
+      "tv": 1.7391660852202524e-08,
+      "argmax": 1,
+      "feat_mean": 2.107781171798706,
+      "feat_max": 27.37562370300293
+    },
+    {
+      "ckpt": "heist_ngu_seed44.zip",
+      "dir": "maze_heist_heist_rnd_ngu_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 0.9752604166666666,
+      "tv": 0.008245501783676445,
+      "argmax": 1,
+      "feat_mean": 1.2065626382827759,
+      "feat_max": 13.474431037902832
+    },
+    {
+      "ckpt": "heist_ngu_seed45.zip",
+      "dir": "maze_heist_heist_rnd_ngu_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 0.9947916666666666,
+      "tv": 6.480792459721366e-07,
+      "argmax": 1,
+      "feat_mean": 0.9896706938743591,
+      "feat_max": 8.875242233276367
+    },
+    {
+      "ckpt": "heist_ngu_seed46.zip",
+      "dir": "maze_heist_heist_rnd_ngu_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 1.0,
+      "tv": 1.1517355839411418e-07,
+      "argmax": 1,
+      "feat_mean": 1.5760235786437988,
+      "feat_max": 17.3193359375
+    },
+    {
+      "ckpt": "heist_rnd_seed42.zip",
+      "dir": "maze_heist_heist_rnd_ngu_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 0.9309895833333334,
+      "tv": 2.1261403162498027e-06,
+      "argmax": 1,
+      "feat_mean": 0.7798383831977844,
+      "feat_max": 8.696682929992676
+    },
+    {
+      "ckpt": "heist_rnd_seed43.zip",
+      "dir": "maze_heist_heist_rnd_ngu_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 0.9947916666666666,
+      "tv": 1.9200463915088525e-07,
+      "argmax": 1,
+      "feat_mean": 1.2175636291503906,
+      "feat_max": 12.140327453613281
+    },
+    {
+      "ckpt": "heist_rnd_seed44.zip",
+      "dir": "maze_heist_heist_rnd_ngu_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 0.9765625,
+      "tv": 6.322952685877681e-07,
+      "argmax": 1,
+      "feat_mean": 1.0826889276504517,
+      "feat_max": 12.395779609680176
+    },
+    {
+      "ckpt": "heist_rnd_seed45.zip",
+      "dir": "maze_heist_heist_rnd_ngu_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 0.9427083333333334,
+      "tv": 1.5903472861585517e-06,
+      "argmax": 1,
+      "feat_mean": 1.3526095151901245,
+      "feat_max": 13.1847562789917
+    },
+    {
+      "ckpt": "heist_rnd_seed46.zip",
+      "dir": "maze_heist_heist_rnd_ngu_20260923_173522",
+      "game": "heist",
+      "first_tanh_sat": 1.0,
+      "tv": 1.515533464650313e-07,
+      "argmax": 1,
+      "feat_mean": 1.717330813407898,
+      "feat_max": 23.326631546020508
+    },
+    {
+      "ckpt": "maze_icm_seed42.zip",
+      "dir": "maze_heist_maze_ppo_icm_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 2.8550857678055763e-08,
+      "argmax": 1,
+      "feat_mean": 1.807320237159729,
+      "feat_max": 19.018556594848633
+    },
+    {
+      "ckpt": "maze_icm_seed43.zip",
+      "dir": "maze_heist_maze_ppo_icm_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 3.932897622386614e-08,
+      "argmax": 1,
+      "feat_mean": 1.3617172241210938,
+      "feat_max": 15.052298545837402
+    },
+    {
+      "ckpt": "maze_icm_seed44.zip",
+      "dir": "maze_heist_maze_ppo_icm_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 0.96875,
+      "tv": 7.227839281161627e-07,
+      "argmax": 1,
+      "feat_mean": 1.3421357870101929,
+      "feat_max": 12.617766380310059
+    },
+    {
+      "ckpt": "maze_icm_seed45.zip",
+      "dir": "maze_heist_maze_ppo_icm_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 0.984375,
+      "tv": 4.1788249897460146e-09,
+      "argmax": 1,
+      "feat_mean": 1.2516437768936157,
+      "feat_max": 11.514208793640137
+    },
+    {
+      "ckpt": "maze_icm_seed46.zip",
+      "dir": "maze_heist_maze_ppo_icm_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 1.0865430037180583e-09,
+      "argmax": 1,
+      "feat_mean": 2.987555980682373,
+      "feat_max": 31.432300567626953
+    },
+    {
+      "ckpt": "maze_ppo_seed42.zip",
+      "dir": "maze_heist_maze_ppo_icm_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 0.953125,
+      "tv": 5.529068099955718e-06,
+      "argmax": 1,
+      "feat_mean": 1.8417620658874512,
+      "feat_max": 20.527103424072266
+    },
+    {
+      "ckpt": "maze_ppo_seed43.zip",
+      "dir": "maze_heist_maze_ppo_icm_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 1.8944653371969858e-07,
+      "argmax": 1,
+      "feat_mean": 1.1230252981185913,
+      "feat_max": 12.90272045135498
+    },
+    {
+      "ckpt": "maze_ppo_seed44.zip",
+      "dir": "maze_heist_maze_ppo_icm_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 2.3768128206332524e-08,
+      "argmax": 1,
+      "feat_mean": 1.9164197444915771,
+      "feat_max": 25.74833106994629
+    },
+    {
+      "ckpt": "maze_ppo_seed45.zip",
+      "dir": "maze_heist_maze_ppo_icm_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 0.9375,
+      "tv": 0.00033135758712887764,
+      "argmax": 1,
+      "feat_mean": 1.3088916540145874,
+      "feat_max": 15.003118515014648
+    },
+    {
+      "ckpt": "maze_ppo_seed46.zip",
+      "dir": "maze_heist_maze_ppo_icm_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 3.003515303134918e-08,
+      "argmax": 1,
+      "feat_mean": 1.9280683994293213,
+      "feat_max": 21.777246475219727
+    },
+    {
+      "ckpt": "maze_ngu_seed42.zip",
+      "dir": "maze_heist_maze_rnd_ngu_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 6.100890459492803e-08,
+      "argmax": 1,
+      "feat_mean": 4.315236568450928,
+      "feat_max": 50.38917922973633
+    },
+    {
+      "ckpt": "maze_ngu_seed43.zip",
+      "dir": "maze_heist_maze_rnd_ngu_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 4.0148734115064144e-08,
+      "argmax": 1,
+      "feat_mean": 1.467814326286316,
+      "feat_max": 14.60006332397461
+    },
+    {
+      "ckpt": "maze_ngu_seed44.zip",
+      "dir": "maze_heist_maze_rnd_ngu_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 0.9895833333333334,
+      "tv": 6.629076475898424e-07,
+      "argmax": 1,
+      "feat_mean": 0.9412963390350342,
+      "feat_max": 9.831156730651855
+    },
+    {
+      "ckpt": "maze_ngu_seed45.zip",
+      "dir": "maze_heist_maze_rnd_ngu_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 1.990944535161058e-07,
+      "argmax": 1,
+      "feat_mean": 1.0315712690353394,
+      "feat_max": 12.9964017868042
+    },
+    {
+      "ckpt": "maze_ngu_seed46.zip",
+      "dir": "maze_heist_maze_rnd_ngu_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 0.96875,
+      "tv": 1.7596369919677575e-06,
+      "argmax": 1,
+      "feat_mean": 1.6360723972320557,
+      "feat_max": 16.41535758972168
+    },
+    {
+      "ckpt": "maze_rnd_seed42.zip",
+      "dir": "maze_heist_maze_rnd_ngu_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 0.9947916666666666,
+      "tv": 7.602963402556876e-07,
+      "argmax": 1,
+      "feat_mean": 1.1710535287857056,
+      "feat_max": 8.305503845214844
+    },
+    {
+      "ckpt": "maze_rnd_seed43.zip",
+      "dir": "maze_heist_maze_rnd_ngu_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 6.600263683746258e-07,
+      "argmax": 1,
+      "feat_mean": 1.099522590637207,
+      "feat_max": 10.765896797180176
+    },
+    {
+      "ckpt": "maze_rnd_seed44.zip",
+      "dir": "maze_heist_maze_rnd_ngu_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 0.9908854166666666,
+      "tv": 6.832124199718237e-09,
+      "argmax": 1,
+      "feat_mean": 1.166549563407898,
+      "feat_max": 11.579951286315918
+    },
+    {
+      "ckpt": "maze_rnd_seed45.zip",
+      "dir": "maze_heist_maze_rnd_ngu_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 1.0204773085812728e-07,
+      "argmax": 1,
+      "feat_mean": 0.8502071499824524,
+      "feat_max": 11.410897254943848
+    },
+    {
+      "ckpt": "maze_rnd_seed46.zip",
+      "dir": "maze_heist_maze_rnd_ngu_20260923_173522",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 4.597677616402507e-08,
+      "argmax": 1,
+      "feat_mean": 1.3210315704345703,
+      "feat_max": 16.777584075927734
+    },
+    {
+      "ckpt": "heist_icm_seed42.zip",
+      "dir": "maze_heist_heist_icm_rnd_norm_20260927_073748",
+      "game": "heist",
+      "first_tanh_sat": 1.0,
+      "tv": 5.727633833885193e-07,
+      "argmax": 1,
+      "feat_mean": 1.3335580825805664,
+      "feat_max": 15.604561805725098
+    },
+    {
+      "ckpt": "heist_icm_seed43.zip",
+      "dir": "maze_heist_heist_icm_rnd_norm_20260927_073748",
+      "game": "heist",
+      "first_tanh_sat": 0.9088541666666666,
+      "tv": 0.00031751130397121113,
+      "argmax": 1,
+      "feat_mean": 0.7480096220970154,
+      "feat_max": 9.269969940185547
+    },
+    {
+      "ckpt": "heist_icm_seed44.zip",
+      "dir": "maze_heist_heist_icm_rnd_norm_20260927_073748",
+      "game": "heist",
+      "first_tanh_sat": 0.984375,
+      "tv": 0.00017890411739548048,
+      "argmax": 1,
+      "feat_mean": 1.4983937740325928,
+      "feat_max": 14.495702743530273
+    },
+    {
+      "ckpt": "heist_icm_seed45.zip",
+      "dir": "maze_heist_heist_icm_rnd_norm_20260927_073748",
+      "game": "heist",
+      "first_tanh_sat": 0.54296875,
+      "tv": 0.00017999655877550444,
+      "argmax": 1,
+      "feat_mean": 0.5566797256469727,
+      "feat_max": 8.012945175170898
+    },
+    {
+      "ckpt": "heist_icm_seed46.zip",
+      "dir": "maze_heist_heist_icm_rnd_norm_20260927_073748",
+      "game": "heist",
+      "first_tanh_sat": 1.0,
+      "tv": 3.886719544728597e-07,
+      "argmax": 1,
+      "feat_mean": 1.4435080289840698,
+      "feat_max": 16.59925651550293
+    },
+    {
+      "ckpt": "heist_rnd_seed42.zip",
+      "dir": "maze_heist_heist_icm_rnd_norm_20260927_073748",
+      "game": "heist",
+      "first_tanh_sat": 1.0,
+      "tv": 1.1997569041947523e-07,
+      "argmax": 1,
+      "feat_mean": 1.9258447885513306,
+      "feat_max": 25.971176147460938
+    },
+    {
+      "ckpt": "heist_rnd_seed43.zip",
+      "dir": "maze_heist_heist_icm_rnd_norm_20260927_073748",
+      "game": "heist",
+      "first_tanh_sat": 1.0,
+      "tv": 4.757506151994069e-07,
+      "argmax": 1,
+      "feat_mean": 1.820718765258789,
+      "feat_max": 26.392507553100586
+    },
+    {
+      "ckpt": "heist_rnd_seed44.zip",
+      "dir": "maze_heist_heist_icm_rnd_norm_20260927_073748",
+      "game": "heist",
+      "first_tanh_sat": 1.0,
+      "tv": 1.9678069899479547e-06,
+      "argmax": 1,
+      "feat_mean": 0.7767400741577148,
+      "feat_max": 9.752132415771484
+    },
+    {
+      "ckpt": "heist_rnd_seed45.zip",
+      "dir": "maze_heist_heist_icm_rnd_norm_20260927_073748",
+      "game": "heist",
+      "first_tanh_sat": 1.0,
+      "tv": 6.852399868269762e-07,
+      "argmax": 1,
+      "feat_mean": 0.9124724268913269,
+      "feat_max": 10.20667839050293
+    },
+    {
+      "ckpt": "heist_rnd_seed46.zip",
+      "dir": "maze_heist_heist_icm_rnd_norm_20260927_073748",
+      "game": "heist",
+      "first_tanh_sat": 1.0,
+      "tv": 3.546786804993947e-07,
+      "argmax": 1,
+      "feat_mean": 1.6659517288208008,
+      "feat_max": 23.126766204833984
+    },
+    {
+      "ckpt": "heist_ngu_seed42.zip",
+      "dir": "maze_heist_heist_ngu_norm_20260927_073748",
+      "game": "heist",
+      "first_tanh_sat": 1.0,
+      "tv": 1.465377863496542e-07,
+      "argmax": 1,
+      "feat_mean": 2.0845823287963867,
+      "feat_max": 23.718528747558594
+    },
+    {
+      "ckpt": "heist_ngu_seed43.zip",
+      "dir": "maze_heist_heist_ngu_norm_20260927_073748",
+      "game": "heist",
+      "first_tanh_sat": 0.9947916666666666,
+      "tv": 1.6973305415983002e-06,
+      "argmax": 1,
+      "feat_mean": 1.3905487060546875,
+      "feat_max": 16.688560485839844
+    },
+    {
+      "ckpt": "heist_ngu_seed44.zip",
+      "dir": "maze_heist_heist_ngu_norm_20260927_073748",
+      "game": "heist",
+      "first_tanh_sat": 0.8151041666666666,
+      "tv": 0.03417912013052652,
+      "argmax": 2,
+      "feat_mean": 1.2400386333465576,
+      "feat_max": 12.92321491241455
+    },
+    {
+      "ckpt": "heist_ngu_seed45.zip",
+      "dir": "maze_heist_heist_ngu_norm_20260927_073748",
+      "game": "heist",
+      "first_tanh_sat": 0.97265625,
+      "tv": 1.2377293993874142e-05,
+      "argmax": 1,
+      "feat_mean": 1.906670093536377,
+      "feat_max": 18.21329116821289
+    },
+    {
+      "ckpt": "heist_ngu_seed46.zip",
+      "dir": "maze_heist_heist_ngu_norm_20260927_073748",
+      "game": "heist",
+      "first_tanh_sat": 1.0,
+      "tv": 7.665366865694523e-07,
+      "argmax": 1,
+      "feat_mean": 1.301892876625061,
+      "feat_max": 11.880385398864746
+    },
+    {
+      "ckpt": "maze_icm_seed42.zip",
+      "dir": "maze_heist_maze_icm_rnd_norm_20260927_073748",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 1.2122715512911478e-07,
+      "argmax": 1,
+      "feat_mean": 1.0693345069885254,
+      "feat_max": 13.080804824829102
+    },
+    {
+      "ckpt": "maze_icm_seed43.zip",
+      "dir": "maze_heist_maze_icm_rnd_norm_20260927_073748",
+      "game": "maze",
+      "first_tanh_sat": 0.9479166666666666,
+      "tv": 0.0017560880320767562,
+      "argmax": 1,
+      "feat_mean": 1.7943542003631592,
+      "feat_max": 17.663148880004883
+    },
+    {
+      "ckpt": "maze_icm_seed44.zip",
+      "dir": "maze_heist_maze_icm_rnd_norm_20260927_073748",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 2.0799537499745686e-08,
+      "argmax": 1,
+      "feat_mean": 2.687201499938965,
+      "feat_max": 34.47639465332031
+    },
+    {
+      "ckpt": "maze_icm_seed45.zip",
+      "dir": "maze_heist_maze_icm_rnd_norm_20260927_073748",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 5.2619725465774536e-08,
+      "argmax": 1,
+      "feat_mean": 1.5994346141815186,
+      "feat_max": 23.198820114135742
+    },
+    {
+      "ckpt": "maze_icm_seed46.zip",
+      "dir": "maze_heist_maze_icm_rnd_norm_20260927_073748",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 2.0799537499745686e-08,
+      "argmax": 1,
+      "feat_mean": 2.5381083488464355,
+      "feat_max": 26.631919860839844
+    },
+    {
+      "ckpt": "maze_rnd_seed42.zip",
+      "dir": "maze_heist_maze_icm_rnd_norm_20260927_073748",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 6.712798494845629e-08,
+      "argmax": 1,
+      "feat_mean": 1.9018489122390747,
+      "feat_max": 29.490440368652344
+    },
+    {
+      "ckpt": "maze_rnd_seed43.zip",
+      "dir": "maze_heist_maze_icm_rnd_norm_20260927_073748",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 0.0,
+      "argmax": 1,
+      "feat_mean": 3.0319650173187256,
+      "feat_max": 31.454689025878906
+    },
+    {
+      "ckpt": "maze_rnd_seed44.zip",
+      "dir": "maze_heist_maze_icm_rnd_norm_20260927_073748",
+      "game": "maze",
+      "first_tanh_sat": 0.953125,
+      "tv": 0.0005965238281836113,
+      "argmax": 1,
+      "feat_mean": 1.0898125171661377,
+      "feat_max": 11.411261558532715
+    },
+    {
+      "ckpt": "maze_rnd_seed45.zip",
+      "dir": "maze_heist_maze_icm_rnd_norm_20260927_073748",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 7.936614565551281e-08,
+      "argmax": 1,
+      "feat_mean": 1.362409234046936,
+      "feat_max": 14.923401832580566
+    },
+    {
+      "ckpt": "maze_rnd_seed46.zip",
+      "dir": "maze_heist_maze_icm_rnd_norm_20260927_073748",
+      "game": "maze",
+      "first_tanh_sat": 0.984375,
+      "tv": 1.4521647244691849e-06,
+      "argmax": 1,
+      "feat_mean": 2.3870303630828857,
+      "feat_max": 27.40340805053711
+    },
+    {
+      "ckpt": "maze_ngu_seed42.zip",
+      "dir": "maze_heist_maze_ngu_norm_20260927_073748",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 2.5965467405815918e-08,
+      "argmax": 1,
+      "feat_mean": 1.9186999797821045,
+      "feat_max": 20.250659942626953
+    },
+    {
+      "ckpt": "maze_ngu_seed43.zip",
+      "dir": "maze_heist_maze_ngu_norm_20260927_073748",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 7.852213457226753e-08,
+      "argmax": 1,
+      "feat_mean": 1.5070128440856934,
+      "feat_max": 16.978946685791016
+    },
+    {
+      "ckpt": "maze_ngu_seed44.zip",
+      "dir": "maze_heist_maze_ngu_norm_20260927_073748",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 9.646949668725331e-08,
+      "argmax": 1,
+      "feat_mean": 2.417726755142212,
+      "feat_max": 24.671804428100586
+    },
+    {
+      "ckpt": "maze_ngu_seed45.zip",
+      "dir": "maze_heist_maze_ngu_norm_20260927_073748",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 5.842108900348345e-08,
+      "argmax": 1,
+      "feat_mean": 1.7312135696411133,
+      "feat_max": 18.201353073120117
+    },
+    {
+      "ckpt": "maze_ngu_seed46.zip",
+      "dir": "maze_heist_maze_ngu_norm_20260927_073748",
+      "game": "maze",
+      "first_tanh_sat": 1.0,
+      "tv": 2.1969511484106383e-07,
+      "argmax": 1,
+      "feat_mean": 1.7850831747055054,
+      "feat_max": 20.766942977905273
+    }
+  ]
+}
