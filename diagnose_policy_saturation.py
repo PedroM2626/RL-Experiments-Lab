@@ -59,13 +59,13 @@ class LayerNormExtractor(BaseFeaturesExtractor):
 SATURATION_ZONE = 0.999      # |tanh(x)| above this is numerically saturated
 
 
-def probe_frames(game, seed, n=20):
+def probe_frames(game, seed, n=20, frame_stack=1):
     """Frames from a policy-independent random walk, so the probe set is not adapted to."""
     rng = np.random.default_rng(seed)
     out = []
     for lvl in range(4):
         env = make_procgen_env(game, num_levels=0, distribution_mode="easy",
-                               seed=seed + lvl, vector=False)
+                               seed=seed + lvl, vector=False, frame_stack=frame_stack)
         o = env.reset()
         o = o[0] if isinstance(o, tuple) else o
         for _ in range(5):
@@ -87,10 +87,14 @@ def measure(model, frames):
             f = pol.extract_features(t, pol.pi_features_extractor)
             net = pol.mlp_extractor.policy_net
             post = f
-            for layer in net:                       # walk the latent MLP, count after each Tanh
-                post = layer(post)
-                if isinstance(layer, torch.nn.Tanh):
-                    sat.append(float((post.abs() > SATURATION_ZONE).float().mean()))
+            k = 0                                      # ordinal of the Tanh, not of the layer:
+            for layer in net:                          # policy_net is [Linear, Tanh, Linear, Tanh]
+                post = layer(post)                     # and counting by index would leave an
+                if isinstance(layer, torch.nn.Tanh):   # empty bucket per Linear -> NaN means
+                    while len(sat) <= k:
+                        sat.append([])
+                    sat[k].append(float((post.abs() > SATURATION_ZONE).float().mean()))
+                    k += 1
             p = pol._get_action_dist_from_latent(post).distribution.probs.detach().cpu().numpy()[0]
             probs.append(p / p.sum())
         P = np.stack(probs)
@@ -102,10 +106,15 @@ def measure(model, frames):
         tv = float(np.mean([0.5 * np.abs(q - p0).sum() for q in P]))
         ent = float(np.mean([-np.sum(q * np.log(q + 1e-12)) for q in P]))
         values = [float(pol.predict_values(t).detach().cpu().numpy().ravel()[0]) for t in tens]
+    flat = [x for layer in sat for x in layer]
     return {
         "feat_mean": round(float(feats.mean().item()), 4),
         "feat_max": round(float(feats.max().item()), 3),
-        "tanh_saturated_fraction": round(float(np.mean(sat)), 4),
+        "tanh_saturated_fraction": round(float(np.mean(flat)), 4),
+        # per layer, so "which came first" is answerable: the first Tanh sees the extractor
+        # output, the second one the mixed latent. A single average over both hides a layer
+        # that saturates early behind a layer that never does.
+        "tanh_saturated_by_layer": [round(float(np.mean(layer)), 4) for layer in sat],
         "cross_frame_kl_max": round(kl, 6),
         "cross_frame_tv_mean": round(tv, 6),
         "entropy_mean_nats": round(ent, 4),
@@ -117,7 +126,8 @@ def measure(model, frames):
 GAMES_FOR_CROSS_CHECK = ("maze", "heist", "bossfight", "starpilot", "dodgeball")
 
 
-def cross_game_response(model, games=GAMES_FOR_CROSS_CHECK, seed=1042, vector=False):
+def cross_game_response(model, games=GAMES_FOR_CROSS_CHECK, seed=1042, vector=False,
+                        frame_stack=1):
     """Total variation between the action distributions of five DIFFERENT games.
 
     Within one Procgen game consecutive frames barely differ (a 300-step random walk in maze
@@ -134,7 +144,7 @@ def cross_game_response(model, games=GAMES_FOR_CROSS_CHECK, seed=1042, vector=Fa
     probs, sat, feats = [], [], []
     for g in games:
         env = make_procgen_env(g, num_levels=0, distribution_mode="easy", seed=seed,
-                               vector=vector)
+                               vector=vector, frame_stack=frame_stack)
         o = env.reset()
         o = o[0] if isinstance(o, tuple) else o
         env.close()
@@ -193,14 +203,20 @@ def main():
     ap.add_argument("--save-model", default=None)
     ap.add_argument("--cross-game", action="store_true",
                     help="after training, measure the response to five different Procgen games")
+    ap.add_argument("--frame-stack", type=int, default=1,
+                    help="tiles the last N frames into the observation. The intervention that "
+                         "tests the low-input-variance account directly: if the frame barely "
+                         "changes between steps, showing N of them is what makes motion visible "
+                         "inside a single observation, and a policy that still cannot condition "
+                         "is not being starved of input change")
     args = ap.parse_args()
 
-    frames = probe_frames(args.game, args.seed + 1000)
+    frames = probe_frames(args.game, args.seed + 1000, frame_stack=args.frame_stack)
     print(f"probe: {len(frames)} frames de {args.game} (random walk, seed {args.seed + 1000})")
 
     def make_env():
         env = make_procgen_env(args.game, num_levels=200, distribution_mode="easy",
-                               seed=args.seed, vector=False)
+                               seed=args.seed, vector=False, frame_stack=args.frame_stack)
         if args.arm == "rnd":
             from models.bonuses import RNDWrapper
             env = RNDWrapper(env)
@@ -226,13 +242,13 @@ def main():
     model.learn(total_timesteps=args.timesteps, callback=w)
     venv.close()
 
-    cross = cross_game_response(model) if args.cross_game else None
+    cross = cross_game_response(model, frame_stack=args.frame_stack) if args.cross_game else None
     payload = {
         "_provenance": {
             "produced_by": "diagnose_policy_saturation.py",
             "question": "when does the trained policy stop conditioning on the observation",
             "game": args.game, "arm": args.arm, "timesteps": args.timesteps,
-            "extractor": args.extractor,
+            "extractor": args.extractor, "frame_stack": args.frame_stack,
             "seed": args.seed, "probe_frames": len(frames),
             "saturation_zone": SATURATION_ZONE,
         },

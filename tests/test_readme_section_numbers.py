@@ -66,3 +66,21 @@ def test_readme_has_no_tab_characters():
         text = f.read()
     bad = [f"line {i}" for i, line in enumerate(text.splitlines(), 1) if "\t" in line]
     assert not bad, f"README contains TAB characters (collapsed LaTeX macros?): {bad[:5]}"
+
+
+def test_readme_math_delimiters_are_balanced():
+    """An unpaired $ does not fail a test -- it silently breaks the rendered page.
+
+    Twice during 11/10/2026 a code span was closed with a dollar instead of a backtick
+    (`16$ ...), which GitHub's tokenizer renders as "Unable to render expression." or, worse,
+    as italic prose. Code spans are stripped first: a shell prompt or a currency sign inside
+    backticks is not a math delimiter. Display math ($$) is even, so it passes untouched.
+    """
+    with open(README, encoding="utf-8") as f:
+        lines = f.read().splitlines()
+    bad = []
+    for i, line in enumerate(lines, 1):
+        outside = re.sub(r"`[^`]*`", "", line)
+        if outside.count("$") % 2:
+            bad.append(f"line {i}: {line[:70]}")
+    assert not bad, f"lines with an odd number of $ outside code spans: {bad[:5]}"
