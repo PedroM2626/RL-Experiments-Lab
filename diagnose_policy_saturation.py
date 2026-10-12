@@ -19,10 +19,13 @@ it vanishes and the policy freezes into a state-independent action prior.
 
 Usage:
     py -3.10 diagnose_policy_saturation.py --timesteps 20000 --out results/policy_saturation_curve.json
+    py -3.10 diagnose_policy_saturation.py --timesteps 50000 --probe-every 500 --n-envs 16 --n-steps 16
 """
 import argparse
 import json
 import os
+import time
+from functools import partial
 
 import numpy as np
 import torch
@@ -172,21 +175,46 @@ def cross_game_response(model, games=GAMES_FOR_CROSS_CHECK, seed=1042, vector=Fa
 
 
 class Watcher(BaseCallback):
-    def __init__(self, frames, every):
+    """Probes on the ENVIRONMENT-step grid, not on the vec-env step count.
+
+    One _on_step is one vec step, which is n_envs environment steps -- so the old
+    n_calls cadence would space a 16-env arm's probes 16x apart and give every arm a
+    different grid. model.num_timesteps is the only clock all arms share: the probe
+    fires when it crosses each grid point. The row records the nominal point and the
+    actual count, which differ by at most n_envs - 1.
+    """
+
+    def __init__(self, frames, every, timesteps):
         super().__init__()
         self.frames, self.every, self.curve = frames, every, []
+        self._next = every
+        self._last = (timesteps // every) * every
+
+    def _probe(self, at):
+        row = {"steps": at, "env_steps": int(self.model.num_timesteps)}
+        row.update(measure(self.model, self.frames))
+        self.curve.append(row)
+        print(f"  step {at:7d}  feat_mean={row['feat_mean']:7.3f} "
+              f"feat_max={row['feat_max']:7.2f}  saturated={row['tanh_saturated_fraction']*100:5.1f}%  "
+              f"KL={row['cross_frame_kl_max']:.5f} TV={row['cross_frame_tv_mean']:.5f} "
+              f"ent={row['entropy_mean_nats']:.3f} argmax_distintos={row['distinct_argmax_actions']}/20",
+              flush=True)
 
     def _on_step(self):
-        if self.n_calls % self.every == 0:
-            row = {"steps": self.n_calls}
-            row.update(measure(self.model, self.frames))
-            self.curve.append(row)
-            print(f"  step {self.n_calls:7d}  feat_mean={row['feat_mean']:7.3f} "
-                  f"feat_max={row['feat_max']:7.2f}  saturated={row['tanh_saturated_fraction']*100:5.1f}%  "
-                  f"KL={row['cross_frame_kl_max']:.5f} TV={row['cross_frame_tv_mean']:.5f} "
-                  f"ent={row['entropy_mean_nats']:.3f} argmax_distintos={row['distinct_argmax_actions']}/20",
-                  flush=True)
+        while self._next <= self.model.num_timesteps and self._next <= self._last:
+            self._probe(self._next)
+            self._next += self.every
         return True
+
+    def flush(self):
+        """Training must not leave grid points unprobed: a curve with holes would read
+        as "nothing happened there" instead of "the probe never ran". num_timesteps
+        cannot undershoot the budget, so an incomplete grid here is a configuration
+        error (probe-every vs n_envs) and fails loudly rather than shipping quietly."""
+        if self._next <= self._last:
+            last = self.curve[-1]["steps"] if self.curve else "none"
+            raise RuntimeError(f"probe grid incomplete: last probe at {last}, "
+                               f"{self._last} never reached")
 
 
 def main():
@@ -196,6 +224,16 @@ def main():
     ap.add_argument("--timesteps", type=int, default=20000)
     ap.add_argument("--probe-every", type=int, default=2000)
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--n-envs", type=int, default=1,
+                    help="parallel environment count. The published recipe is 1; raising it "
+                         "is the intervention on the rollout itself, because each update "
+                         "then sees N decorrelated trajectories instead of one long one. "
+                         "Each env gets its own level stream (construction seed + rank) -- "
+                         "N envs on one seed would be N copies of the same trajectory")
+    ap.add_argument("--n-steps", type=int, default=256,
+                    help="rollout length per env per update. n_envs * n_steps is the "
+                         "per-update batch, so holding it at the published 256 while "
+                         "raising n_envs isolates the rollout's SHAPE from its SIZE")
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--extractor", choices=("repo", "layernorm"), default="repo",
                     help="repo = the published ClassicCNNExtractor; layernorm = the counterfactual")
@@ -214,32 +252,38 @@ def main():
     frames = probe_frames(args.game, args.seed + 1000, frame_stack=args.frame_stack)
     print(f"probe: {len(frames)} frames de {args.game} (random walk, seed {args.seed + 1000})")
 
-    def make_env():
+    def make_env(rank):
         env = make_procgen_env(args.game, num_levels=200, distribution_mode="easy",
-                               seed=args.seed, vector=False, frame_stack=args.frame_stack)
+                               seed=args.seed + rank, vector=False, frame_stack=args.frame_stack)
         if args.arm == "rnd":
             from models.bonuses import RNDWrapper
             env = RNDWrapper(env)
         return Monitor(env)
     from stable_baselines3.common.monitor import Monitor
-    venv = DummyVecEnv([make_env])
+    venv = DummyVecEnv([partial(make_env, rank) for rank in range(args.n_envs)])
 
-    model = PPO("CnnPolicy", venv, verbose=0, learning_rate=3e-4, n_steps=256, batch_size=64,
+    model = PPO("CnnPolicy", venv, verbose=0, learning_rate=3e-4, n_steps=args.n_steps,
+                batch_size=64,
                 n_epochs=3, gamma=0.99, gae_lambda=0.95, clip_range=0.2, seed=args.seed,
                 device=args.device,
                 policy_kwargs={"features_extractor_class":
                                LayerNormExtractor if args.extractor == "layernorm" else ClassicCNNExtractor,
                                "features_extractor_kwargs": dict(features_dim=512)})
-    w = Watcher(frames, args.probe_every)
-    print(f"treinando {args.arm}/{args.extractor} em {args.game}, {args.timesteps} passos, device={args.device}")
-    row0 = {"steps": 0}
+    w = Watcher(frames, args.probe_every, args.timesteps)
+    print(f"treinando {args.arm}/{args.extractor} em {args.game}, {args.timesteps} passos, "
+          f"n_envs={args.n_envs} x n_steps={args.n_steps} (batch por update "
+          f"{args.n_envs * args.n_steps}), device={args.device}")
+    row0 = {"steps": 0, "env_steps": 0}
     row0.update(measure(model, frames))
     w.curve.append(row0)
     print(f"  passo      0  feat_mean={row0['feat_mean']:7.3f} feat_max={row0['feat_max']:7.2f} "
           f"saturated={row0['tanh_saturated_fraction']*100:5.1f}%  KL={row0['cross_frame_kl_max']:.5f} "
           f"TV={row0['cross_frame_tv_mean']:.5f} ent={row0['entropy_mean_nats']:.3f} "
           f"argmax_distintos={row0['distinct_argmax_actions']}/20", flush=True)
+    started = time.time()
     model.learn(total_timesteps=args.timesteps, callback=w)
+    seconds = round(time.time() - started, 1)
+    w.flush()
     venv.close()
 
     cross = cross_game_response(model, frame_stack=args.frame_stack) if args.cross_game else None
@@ -249,7 +293,11 @@ def main():
             "question": "when does the trained policy stop conditioning on the observation",
             "game": args.game, "arm": args.arm, "timesteps": args.timesteps,
             "extractor": args.extractor, "frame_stack": args.frame_stack,
+            "n_envs": args.n_envs, "n_steps": args.n_steps,
+            "per_update_batch": args.n_envs * args.n_steps,
             "seed": args.seed, "probe_frames": len(frames),
+            "probe_every": args.probe_every,
+            "training_seconds": seconds,
             "saturation_zone": SATURATION_ZONE,
         },
         "curve": w.curve,
