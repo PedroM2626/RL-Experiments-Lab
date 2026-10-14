@@ -147,6 +147,12 @@ def merge(pattern, out, key_by_seed=False):
         elif not key_by_seed:
             assert stamp == fixed, (f"{f}: provenance {stamp} differs from {fixed} -- shards of "
                                     "different games or budgets are not one artifact")
+        else:
+            # a seed sweep varies only the seed: game, budget and recipe must still agree,
+            # or a bossfight shard would fuse into a starpilot merge unnoticed
+            sans_seed = lambda t: tuple(x for i, x in enumerate(t) if i != 2)
+            assert sans_seed(stamp) == sans_seed(fixed), (f"{f}: {stamp} vs {fixed} -- key-by-seed "
+                                                          "shards must share game/budget/recipe")
         for name, row in d.get("arms", {}).items():
             key = f"{name}@{p.get('seed')}" if key_by_seed else name
             dup = arms.get(key)
