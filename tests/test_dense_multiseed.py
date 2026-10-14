@@ -54,12 +54,12 @@ def test_the_merged_artifact_matches_the_per_run_files(merged):
             assert a == b, f"{lever}: run rows drifted"
 
 
-def test_all_thirty_one_runs_are_complete_and_on_the_shared_grid(merged):
-    """25 dose-response runs (5 arms x 5 seeds, the seed-42 five of them the committed
-    3.6.4 artifacts) plus 6 lever runs -- the 26 NEW ones are what 3.6.5 added."""
+def test_all_forty_one_runs_are_complete_and_on_the_shared_grid(merged):
+    """35 dose-response runs (7 arms x 5 seeds -- the seed-42 five of the first four
+    arms are the committed 3.6.4 artifacts) plus 6 lever runs."""
     files = [r["file"] for rows in merged["runs"].values() for r in rows]
     files += [r["file"] for d in merged["levers"].values() for r in d["rows"]]
-    assert len(files) == len(set(files)) == 31
+    assert len(files) == len(set(files)) == 41
     for fn in files:
         d = _load(fn)
         assert [r["steps"] for r in d["curve"]] == GRID, f"{fn}: grid"
@@ -70,11 +70,29 @@ def test_all_thirty_one_runs_are_complete_and_on_the_shared_grid(merged):
 
 # ----------------------------------------------------------------- the replication table
 
-def test_the_gradient_is_monotone_in_reliability(merged):
+def test_the_curve_is_monotone_with_a_cliff_between_two_and_four_levels(merged):
     counts = {arm: merged["by_arm"][arm]["end_responsive"] for arm in
-              ("1x256", "4x64", "16x16", "16x256")}
-    assert counts == {"1x256": 0, "4x64": 3, "16x16": 4, "16x256": 5}
+              ("1x256", "2x128", "4x64", "8x32", "16x16", "16x256")}
+    assert counts == {"1x256": 0, "2x128": 0, "4x64": 3, "8x32": 3, "16x16": 4, "16x256": 5}
     assert merged["by_arm"]["coinrun"]["end_responsive"] == 5
+
+
+def test_the_two_level_arm_is_indistinguishable_from_the_published_one(merged):
+    """2x128 doubles the update's distinct levels and changes nothing: this is the
+    cell that makes the levels factor a threshold rather than a slope."""
+    rows = merged["runs"]["2x128"]
+    assert [r["first_dead_at"] for r in rows] == [10000, 13000, 8000, 17000, 18500]
+    assert all(r["final_tv"] <= 6.5e-05 for r in rows)
+    assert sorted(r["alive_probes"] for r in rows) == [17, 47, 47, 48, 51]
+
+
+def test_the_eight_level_arm_matches_the_four_level_rate(merged):
+    rows = merged["runs"]["8x32"]
+    deads = sorted((r["first_dead_at"] for r in rows), key=lambda x: (x is None, x))
+    assert deads == [16000, 42000, None, None, None]
+    best = max(rows, key=lambda r: r["final_tv"])
+    assert best["seed"] == 46 and best["final_tv"] == pytest.approx(0.156991, abs=1e-6)
+    assert sorted(r["alive_probes"] for r in rows) == [76, 83, 100, 101, 101]
 
 
 def test_the_single_stream_always_ends_blind(merged):
@@ -147,20 +165,22 @@ def test_the_coverage_lever_survives_on_both_seeds(merged):
     assert all(r["final_v_std"] > 0.6 for r in rows)
 
 
-def test_the_coverage_rule_holds_across_all_twenty_six_runs(merged):
-    """The computable form of the section's closing claim: every configuration at the
-    published coverage (256 transitions from one stream, with or without repeat and
-    entropy pressure) ends dead on every seed; responsive endpoints appear only in the
-    widened configurations -- 14 of 17."""
-    at_published = (list(merged["runs"]["1x256"])
-                    + merged["levers"]["repeat4"]["rows"]
-                    + merged["levers"]["entcoef001"]["rows"])
-    assert len(at_published) == 9
-    assert all(r["final_tv"] <= ALIVE for r in at_published), "an at-coverage run survived"
-    widened = (list(merged["runs"]["4x64"]) + list(merged["runs"]["16x16"])
-               + list(merged["runs"]["16x256"]) + merged["levers"]["nsteps1024"]["rows"])
-    assert len(widened) == 17
-    assert sum(1 for r in widened if r["final_tv"] > ALIVE) == 14
+def test_the_coverage_threshold_rule_holds_across_the_whole_grid(merged):
+    """The computable form of claim 5's closing count: every configuration below the
+    threshold -- 1 or ~2 distinct levels at the published 256 transitions, with or
+    without repeat and entropy pressure -- ends dead on every seed (14/14); every
+    configuration at or above it (>=4 levels at 256 transitions, or >=4x transitions)
+    survives in 17 of 22 seeds."""
+    below = (list(merged["runs"]["1x256"]) + list(merged["runs"]["2x128"])
+             + merged["levers"]["repeat4"]["rows"]
+             + merged["levers"]["entcoef001"]["rows"])
+    assert len(below) == 14
+    assert all(r["final_tv"] <= ALIVE for r in below), "a below-threshold run survived"
+    at_or_above = (list(merged["runs"]["4x64"]) + list(merged["runs"]["8x32"])
+                   + list(merged["runs"]["16x16"]) + list(merged["runs"]["16x256"])
+                   + merged["levers"]["nsteps1024"]["rows"])
+    assert len(at_or_above) == 22
+    assert sum(1 for r in at_or_above if r["final_tv"] > ALIVE) == 17
 
 
 # ----------------------------------------------------------------- the published prose
@@ -182,9 +202,10 @@ def _rows(text, header_start):
 
 def test_replication_table_cells_match_the_artifacts(readme, merged):
     rows = _rows(readme, "### 3.6.5.")
-    assert len(rows) == 6, f"header + 5 runs, got {len(rows)}"
-    key = {"maze`, `1×256`": "1x256", "maze`, `4×64`": "4x64", "maze`, `16×16`": "16x16",
-           "maze`, `16×256`": "16x256", "`coinrun`, `1×256`": "coinrun"}
+    assert len(rows) == 8, f"header + 7 runs, got {len(rows)}"
+    key = {"maze`, `1×256`": "1x256", "maze`, `2×128`": "2x128", "maze`, `4×64`": "4x64",
+           "maze`, `8×32`": "8x32", "maze`, `16×16`": "16x16", "maze`, `16×256`": "16x256",
+           "`coinrun`, `1×256`": "coinrun"}
     n_found = 0
     for cells in rows:
         tag = next((v for k, v in key.items() if k in cells[0]), None)
@@ -197,7 +218,7 @@ def test_replication_table_cells_match_the_artifacts(readme, merged):
         assert cells[2] == ", ".join(dead), f"{cells[0]}: dead column says {cells[2]}"
         alive = ", ".join(str(x) for x in agg["alive_probes"])
         assert cells[3] == alive, f"{cells[0]}: alive column says {cells[3]}"
-    assert n_found == 5, f"the replication table must have 5 data rows, saw {n_found}"
+    assert n_found == 7, f"the replication table must have 7 data rows, saw {n_found}"
 
 
 def test_lever_table_cells_match_the_artifacts(readme, merged):
@@ -226,11 +247,19 @@ def test_section_prose_carries_the_measured_numbers(readme):
         "dead at 29500, revives to `0.149`, ends TV `0`",
         "final entropy `2.2751`/`2.3627`",
         "2 of 5 baseline seeds are already dead by their 35th–37th update",
+        "the levels factor is a cliff, not a slope",
+        "**`2×128` ends dead on 0/5 seeds**",
+        "**3/5 — exactly the `4×64` rate**",
+        "final cross-frame TV **`0.156991`**, seed 46",
+        "every seed dies, 14 of 14",
+        "17 of 22 seeds survive**",
         "never survive it (9/9 seeds dead)",
         "survive in 14 of 17 seeds**",
+        "still dies, so the operative distinction is not widened-vs-published",
         "47.3 GPU-minutes",
-        "**53.6 GPU-minutes**",
-        "`2×128` (~2 levels, 256 transitions) against `8×32` (~8 levels, 256 transitions)",
+        "**15.0**",
+        "**68.6 GPU-minutes**",
+        "the cliff sits between two and four",
         "**`16×256`, the only arm that replicated 5/5**",
     ):
         assert s in readme, f"prose lost: {s!r}"

@@ -9,6 +9,10 @@ publishes (first dead probe, alive count, peak, endpoint, cross-game response), 
 the runs by arm, and writes results/policy_saturation_dense_multiseed.json. The README
 gates on that file; nothing here re-runs training.
 
+The (iv) dose (14/10/2026) adds 2x128 and 8x32 -- two more points on the
+levels-per-update axis at the fixed published batch of 256 transitions -- so the merged
+artifact carries seven five-seed arms plus the six lever runs.
+
 Usage:
     py -3.10 summarize_dense_multiseed.py            # writes the merged artifact
     py -3.10 summarize_dense_multiseed.py --check    # recompute from per-run files, exit 1 on drift
@@ -24,7 +28,11 @@ RESULTS = os.path.join(BASE, "results")
 # other run is the arm's pattern instantiated with its seed
 DOSE_RESPONSE = {
     "1x256": ("policy_saturation_dense_nenv1_nsteps256.json", "policy_saturation_dense_nenv1_nsteps256_seed{}.json"),
+    # the (iv) dose of 14/10: two more points on the levels-per-update axis at the
+    # fixed published batch of 256 transitions, filling the gap between 1 and 4 levels
+    "2x128": ("policy_saturation_dense_nenv2_nsteps128_seed42.json", "policy_saturation_dense_nenv2_nsteps128_seed{}.json"),
     "4x64": ("policy_saturation_dense_nenv4_nsteps64.json", "policy_saturation_dense_nenv4_nsteps64_seed{}.json"),
+    "8x32": ("policy_saturation_dense_nenv8_nsteps32_seed42.json", "policy_saturation_dense_nenv8_nsteps32_seed{}.json"),
     "16x16": ("policy_saturation_dense_nenv16_nsteps16.json", "policy_saturation_dense_nenv16_nsteps16_seed{}.json"),
     "16x256": ("policy_saturation_dense_nenv16_nsteps256.json", "policy_saturation_dense_nenv16_nsteps256_seed{}.json"),
     "coinrun": ("coinrun_dense_curve.json", "coinrun_dense_seed{}.json"),
