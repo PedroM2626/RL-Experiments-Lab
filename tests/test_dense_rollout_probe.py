@@ -393,9 +393,10 @@ def test_summary_and_roadmap_carry_the_intervention(readme):
     # section 0, conclusion 2
     i = readme.index("§3.6.4 names it: **the single-stream rollout**")
     assert "**21/101** for the published single-stream arm" in readme[i:i + 700]
-    # section 6, item 9
-    assert "confirmed interventionally (12/10/2026)" in readme
-    assert "the first version of that re-run that could say anything about architectures" in readme
+    # section 6, item 9: closed 14/10 after the replication, the levers and the grid
+    # (the 12/10 status it carried while the item was open is superseded)
+    assert "✅ Closed (14/10/2026): cause identified and replicated, levers split, grid re-run" in readme
+    assert "**Then the intervention**" in readme and "**Then the (iii) grid**" in readme
     # 3.6.3's claim 5 points forward to the section that decided it
     j = readme.index("The next measurement is therefore")
     assert "that measurement ran" in readme[j:j + 700]
