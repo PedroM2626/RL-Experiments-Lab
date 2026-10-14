@@ -52,7 +52,7 @@ def load(out):
     return {"_provenance": {
         "produced_by": "audit_suite_validity.py",
         "question": "does each of the 16 published arms condition on its observation",
-        "training": "compare_suite.train_one / compare_new_archs.train_one, unchanged",
+        "training": "compare_suite.train_one / compare_new_archs.train_one, recipe recorded in n_envs/n_steps",
         "response_measure": "max pairwise total variation across five games' initial frames "
                             "(diagnose_policy_saturation.cross_game_response)",
         "note": "TV near 0 means the policy emits the same action distribution for five "
@@ -95,24 +95,27 @@ def steps_logged(log_dir):
     return None
 
 
-def run_arm(name, game, timesteps, seed, device):
+def run_arm(name, game, timesteps, seed, device, n_envs=1, n_steps=256):
     _, family, cls, kw, vector = BY_NAME[name]
     # Safe point for gym3 finalizers. Each arm builds ~7 Procgen envs (train, eval, five
-    # cross-game probes) and gym3's Libenv.__del__ closes the C handle through cffi; when the
-    # gc triggers that collector while the main thread is already inside cffi's
-    # accessor-construction lock, the reentrant acquire deadlocks -- observed on two shards at
-    # once, 0% CPU, hung in make_accessor with a __del__/close frame in the middle of the
-    # stack. Collecting here runs those finalizers where no FFI call is in progress.
+    # cross-game probes) at n_envs=1 -- 22 at the pilot's 16 -- and gym3's Libenv.__del__
+    # closes the C handle through cffi; when the gc triggers that collector while the
+    # main thread is already inside cffi's accessor-construction lock, the reentrant
+    # acquire deadlocks -- observed on two shards at once, 0% CPU, hung in make_accessor
+    # with a __del__/close frame in the middle of the stack. Collecting here runs those
+    # finalizers where no FFI call is in progress.
     gc.collect()
     t0 = time.time()
     if family == "new_arch":
-        mean, std, model = CNA.train_one(game, cls, kw, timesteps, seed, "logs_audit", device)
+        mean, std, model = CNA.train_one(game, cls, kw, timesteps, seed, "logs_audit", device,
+                                         n_envs=n_envs, n_steps=n_steps)
     else:
         mean, std, model = CS.train_one(game, cls, kw, timesteps, seed, "logs_audit",
-                                        device, vector=vector)
+                                        device, vector=vector, n_envs=n_envs, n_steps=n_steps)
     resp = cross_game_response(model, vector=vector)
     return {"family": family, "vector_obs": vector, "return_10eps": round(float(mean), 3),
-            "std_10eps": round(float(std), 3), "seconds": round(time.time() - t0, 1),
+            "std_10eps": round(float(std), 3),
+            "seconds": round(time.time() - t0, 1), "n_envs": n_envs, "n_steps": n_steps,
             **resp}
 
 
@@ -123,9 +126,10 @@ def merge(pattern, out, key_by_seed=False):
     JSON. Each keeps its own file; this one checks they cover the arms exactly once and then
     produces the single artifact the README cites.
 
-    Shards are only the same measurement if they share game/budget/seed, and that is asserted:
-    otherwise a bossfight row and a dodgeball row of one arm silently overwrite each other and
-    the artifact looks like a clean 16-arm table. A seed sweep is the legitimate exception --
+    Shards are only the same measurement if they share game/budget/seed AND recipe -- and
+    that is asserted, recipe included: otherwise a n_envs=1 shard and a pilot shard, or a
+    bossfight row and a dodgeball row of one arm, silently overwrite each other and the
+    artifact looks like a clean 16-arm table. A seed sweep is the legitimate exception --
     the same arm appears once per shard -- so --key-by-seed names those rows arm@seed.
     """
     import glob as _glob
@@ -136,7 +140,8 @@ def merge(pattern, out, key_by_seed=False):
         with open(f, encoding="utf-8") as fh:
             d = json.load(fh)
         p = d.get("_provenance", {})
-        stamp = (p.get("game"), p.get("timesteps"), p.get("seed"))
+        stamp = (p.get("game"), p.get("timesteps"), p.get("seed"),
+                 p.get("n_envs"), p.get("n_steps"))
         if prov is None:
             prov, fixed = p, stamp
         elif not key_by_seed:
@@ -161,6 +166,12 @@ def main():
     ap.add_argument("--timesteps", type=int, default=100000)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--n-envs", type=int, default=1,
+                    help="parallel envs per run. The published recipe is 1 (the collapsing "
+                         "one, 3.6.2-3.6.5); the pilot raises it to 16 -- each env on its "
+                         "own level stream, per-update batch 4096 (3.6.6)")
+    ap.add_argument("--n-steps", type=int, default=256,
+                    help="rollout length per env per update, the published 256 by default")
     ap.add_argument("--configs", nargs="*", default=[a[0] for a in ARMS])
     ap.add_argument("--out", default=None)
     ap.add_argument("--merge", default=None, metavar="GLOB",
@@ -174,13 +185,15 @@ def main():
         return
     data = load(out)
     data["_provenance"].update({"game": args.game, "timesteps": args.timesteps,
-                                "seed": args.seed})
+                                "seed": args.seed, "n_envs": args.n_envs,
+                                "n_steps": args.n_steps})
     todo = [c for c in args.configs if c not in data["arms"]]
     print(f"{len(args.configs)} braços pedidos, {len(todo)} a medir, "
           f"{len(args.configs) - len(todo)} já no arquivo", flush=True)
     for i, name in enumerate(todo, 1):
         try:
-            row = run_arm(name, args.game, args.timesteps, args.seed, args.device)
+            row = run_arm(name, args.game, args.timesteps, args.seed, args.device,
+                          n_envs=args.n_envs, n_steps=args.n_steps)
             print(f"[{i}/{len(todo)}] {name:14s} ret={row['return_10eps']:6.2f}  "
                   f"TV={row['max_pairwise_tv']:.6f}  argmax_distintos="
                   f"{row['distinct_argmax_across_games']}/5  "
