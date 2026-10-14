@@ -15,15 +15,18 @@ from models.world_model_extractors import VAEExtractor, AEExtractor, ReconExtrac
 from models.sb3_extractors import ClassicCNNExtractor, AttentionCNNExtractor
 from compare_augment_contrastive import ContrastiveCrop, ContrastiveColor, ContrastiveNoise
 
-def train_one(game, extractor_class, kwargs, timesteps, seed, log_dir, device, vector=False):
-    def make_env(): return Monitor(make_procgen_env(game, num_levels=200, distribution_mode='easy', seed=seed, vector=vector))
-    vec = DummyVecEnv([make_env])
+def train_one(game, extractor_class, kwargs, timesteps, seed, log_dir, device, vector=False, n_envs=1, n_steps=256):
+    # n_envs/n_steps default to the published recipe (1 x 256), so every existing call and
+    # artifact is untouched. The pilot raises them (README 3.6.6): each env gets its own
+    # level stream (seed + rank) -- N envs on one seed would be N copies of one trajectory.
+    def make_env(rank): return Monitor(make_procgen_env(game, num_levels=200, distribution_mode='easy', seed=seed + rank, vector=vector))
+    vec = DummyVecEnv([(lambda r=rank: make_env(r)) for rank in range(n_envs)])
     eval_env = DummyVecEnv([lambda: Monitor(make_procgen_env(game, num_levels=0, distribution_mode='easy', seed=seed+1000, vector=vector))])
     if vector:
         policy, pk = "MlpPolicy", {}
     else:
         policy, pk = "CnnPolicy", {"features_extractor_class": extractor_class, "features_extractor_kwargs": kwargs}
-    model = PPO(policy, vec, verbose=0, learning_rate=3e-4, n_steps=256, batch_size=64, n_epochs=3, gamma=0.99, gae_lambda=0.95, clip_range=0.2, seed=seed, device=device, policy_kwargs=pk, tensorboard_log=log_dir)
+    model = PPO(policy, vec, verbose=0, learning_rate=3e-4, n_steps=n_steps, batch_size=64, n_epochs=3, gamma=0.99, gae_lambda=0.95, clip_range=0.2, seed=seed, device=device, policy_kwargs=pk, tensorboard_log=log_dir)
     model.learn(total_timesteps=timesteps)
     mean,std = evaluate_policy(model, eval_env, n_eval_episodes=10, deterministic=False)
     vec.close(); eval_env.close()

@@ -21,11 +21,13 @@ NEW_ARCH_CONFIGS = [
     ('resnet18', ResNet18Extractor, dict(features_dim=512)),
 ]
 
-def train_one(game, cls, kwargs, timesteps, seed, log_dir, device):
-    def make_env(): return Monitor(make_procgen_env(game, num_levels=200, distribution_mode='easy', seed=seed, vector=False))
-    vec = DummyVecEnv([make_env])
+def train_one(game, cls, kwargs, timesteps, seed, log_dir, device, n_envs=1, n_steps=256):
+    # n_envs/n_steps default to the published recipe (1 x 256); the pilot raises them
+    # (README 3.6.6), with per-rank level streams (seed + rank) as in compare_suite.
+    def make_env(rank): return Monitor(make_procgen_env(game, num_levels=200, distribution_mode='easy', seed=seed + rank, vector=False))
+    vec = DummyVecEnv([(lambda r=rank: make_env(r)) for rank in range(n_envs)])
     eval_env = DummyVecEnv([lambda: Monitor(make_procgen_env(game, num_levels=0, distribution_mode='easy', seed=seed+1000, vector=False))])
-    model = PPO("CnnPolicy", vec, verbose=0, learning_rate=3e-4, n_steps=256, batch_size=64, n_epochs=3, gamma=0.99, gae_lambda=0.95, clip_range=0.2, seed=seed, device=device, policy_kwargs={"features_extractor_class": cls, "features_extractor_kwargs": kwargs}, tensorboard_log=log_dir)
+    model = PPO("CnnPolicy", vec, verbose=0, learning_rate=3e-4, n_steps=n_steps, batch_size=64, n_epochs=3, gamma=0.99, gae_lambda=0.95, clip_range=0.2, seed=seed, device=device, policy_kwargs={"features_extractor_class": cls, "features_extractor_kwargs": kwargs}, tensorboard_log=log_dir)
     model.learn(total_timesteps=timesteps)
     mean,std = evaluate_policy(model, eval_env, n_eval_episodes=10, deterministic=False)
     vec.close(); eval_env.close()
