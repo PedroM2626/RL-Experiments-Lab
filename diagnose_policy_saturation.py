@@ -35,6 +35,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import DummyVecEnv
 
+from compare_action_repeat import VariableRepeatEnv
 from models.sb3_extractors import ClassicCNNExtractor
 from procgen_wrapper import make_procgen_env
 
@@ -234,6 +235,20 @@ def main():
                     help="rollout length per env per update. n_envs * n_steps is the "
                          "per-update batch, so holding it at the published 256 while "
                          "raising n_envs isolates the rollout's SHAPE from its SIZE")
+    ap.add_argument("--action-repeat", type=int, default=1,
+                    help="frames repeated per agent step in the TRAINING env only "
+                         "(VariableRepeatEnv, the compare_action_repeat.py wrapper). The "
+                         "mechanism lever for the input-correlation account: at n_envs=1 "
+                         "a repeat of k multiplies how much the screen can change between "
+                         "two observations the policy actually sees. Costs k frames per "
+                         "agent step, so the budget in agent steps is unchanged but the "
+                         "run sees k times the primitive frames")
+    ap.add_argument("--ent-coef", type=float, default=0.0,
+                    help="PPO entropy coefficient. The published recipe leaves it at 0.0; "
+                         "the mechanism lever for the entropy account: if the collapse is "
+                         "the marginal being a comfortable optimum of the clipped "
+                         "objective, active entropy pressure should change whether the "
+                         "policy stays responsive")
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--extractor", choices=("repo", "layernorm"), default="repo",
                     help="repo = the published ClassicCNNExtractor; layernorm = the counterfactual")
@@ -255,6 +270,8 @@ def main():
     def make_env(rank):
         env = make_procgen_env(args.game, num_levels=200, distribution_mode="easy",
                                seed=args.seed + rank, vector=False, frame_stack=args.frame_stack)
+        if args.action_repeat > 1:
+            env = VariableRepeatEnv(env, args.action_repeat)
         if args.arm == "rnd":
             from models.bonuses import RNDWrapper
             env = RNDWrapper(env)
@@ -265,7 +282,7 @@ def main():
     model = PPO("CnnPolicy", venv, verbose=0, learning_rate=3e-4, n_steps=args.n_steps,
                 batch_size=64,
                 n_epochs=3, gamma=0.99, gae_lambda=0.95, clip_range=0.2, seed=args.seed,
-                device=args.device,
+                ent_coef=args.ent_coef, device=args.device,
                 policy_kwargs={"features_extractor_class":
                                LayerNormExtractor if args.extractor == "layernorm" else ClassicCNNExtractor,
                                "features_extractor_kwargs": dict(features_dim=512)})
@@ -295,6 +312,7 @@ def main():
             "extractor": args.extractor, "frame_stack": args.frame_stack,
             "n_envs": args.n_envs, "n_steps": args.n_steps,
             "per_update_batch": args.n_envs * args.n_steps,
+            "action_repeat": args.action_repeat, "ent_coef": args.ent_coef,
             "seed": args.seed, "probe_frames": len(frames),
             "probe_every": args.probe_every,
             "training_seconds": seconds,
