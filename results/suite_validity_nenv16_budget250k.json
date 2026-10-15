@@ -1,0 +1,275 @@
+{
+ "_provenance": {
+  "produced_by": "summarize_budget_nenv16.py",
+  "question": "does a 2.5x budget change return and response differently for arms that read the observation and arms that do not",
+  "recipe": "n_envs=16 x n_steps=256, seeds 42-46, paired with the 3.6.7 100k cells",
+  "arms": [
+   "classic",
+   "cbam",
+   "vit",
+   "mlp_vector"
+  ],
+  "games": [
+   "starpilot",
+   "dodgeball"
+  ]
+ },
+ "arms": {
+  "classic": {
+   "reads": true,
+   "never_reads": false,
+   "starpilot": {
+    "returns_100k": [
+     5.2,
+     3.5,
+     1.7,
+     1.8,
+     3.1
+    ],
+    "returns_250k": [
+     4.3,
+     3.3,
+     2.0,
+     3.2,
+     2.4
+    ],
+    "mean_100k": 3.06,
+    "mean_250k": 3.04,
+    "delta": -0.02,
+    "paired_deltas": [
+     -0.9,
+     -0.2,
+     0.3,
+     1.4,
+     -0.7
+    ],
+    "tv_mean_100k": 0.280602,
+    "tv_mean_250k": 0.45106,
+    "tv_cells_100k_over_0p1": 5,
+    "tv_cells_250k_over_0p1": 5
+   },
+   "dodgeball": {
+    "returns_100k": [
+     1.4,
+     0.2,
+     0.8,
+     0.6,
+     1.0
+    ],
+    "returns_250k": [
+     1.0,
+     0.6,
+     1.2,
+     1.0,
+     1.4
+    ],
+    "mean_100k": 0.8,
+    "mean_250k": 1.04,
+    "delta": 0.24,
+    "paired_deltas": [
+     -0.4,
+     0.4,
+     0.4,
+     0.4,
+     0.4
+    ],
+    "tv_mean_100k": 0.14602,
+    "tv_mean_250k": 0.267309,
+    "tv_cells_100k_over_0p1": 5,
+    "tv_cells_250k_over_0p1": 5
+   }
+  },
+  "cbam": {
+   "reads": true,
+   "never_reads": false,
+   "starpilot": {
+    "returns_100k": [
+     3.5,
+     2.2,
+     2.5,
+     2.0,
+     2.5
+    ],
+    "returns_250k": [
+     2.2,
+     2.1,
+     1.9,
+     2.2,
+     3.4
+    ],
+    "mean_100k": 2.54,
+    "mean_250k": 2.36,
+    "delta": -0.18,
+    "paired_deltas": [
+     -1.3,
+     -0.1,
+     -0.6,
+     0.2,
+     0.9
+    ],
+    "tv_mean_100k": 0.253881,
+    "tv_mean_250k": 0.538095,
+    "tv_cells_100k_over_0p1": 5,
+    "tv_cells_250k_over_0p1": 5
+   },
+   "dodgeball": {
+    "returns_100k": [
+     3.8,
+     0.6,
+     1.0,
+     1.0,
+     2.4
+    ],
+    "returns_250k": [
+     2.6,
+     0.6,
+     1.4,
+     2.6,
+     1.6
+    ],
+    "mean_100k": 1.76,
+    "mean_250k": 1.76,
+    "delta": 0.0,
+    "paired_deltas": [
+     -1.2,
+     0.0,
+     0.4,
+     1.6,
+     -0.8
+    ],
+    "tv_mean_100k": 0.174159,
+    "tv_mean_250k": 0.280417,
+    "tv_cells_100k_over_0p1": 5,
+    "tv_cells_250k_over_0p1": 5
+   }
+  },
+  "vit": {
+   "reads": false,
+   "never_reads": true,
+   "starpilot": {
+    "returns_100k": [
+     6.4,
+     1.7,
+     2.2,
+     1.5,
+     2.7
+    ],
+    "returns_250k": [
+     2.2,
+     2.9,
+     2.4,
+     1.7,
+     2.6
+    ],
+    "mean_100k": 2.9,
+    "mean_250k": 2.36,
+    "delta": -0.54,
+    "paired_deltas": [
+     -4.2,
+     1.2,
+     0.2,
+     0.2,
+     -0.1
+    ],
+    "tv_mean_100k": 0.07431,
+    "tv_mean_250k": 0.078657,
+    "tv_cells_100k_over_0p1": 1,
+    "tv_cells_250k_over_0p1": 2
+   },
+   "dodgeball": {
+    "returns_100k": [
+     2.8,
+     2.2,
+     2.4,
+     1.2,
+     1.6
+    ],
+    "returns_250k": [
+     1.0,
+     0.0,
+     1.4,
+     2.4,
+     2.0
+    ],
+    "mean_100k": 2.04,
+    "mean_250k": 1.36,
+    "delta": -0.68,
+    "paired_deltas": [
+     -1.8,
+     -2.2,
+     -1.0,
+     1.2,
+     0.4
+    ],
+    "tv_mean_100k": 6e-05,
+    "tv_mean_250k": 0.0,
+    "tv_cells_100k_over_0p1": 0,
+    "tv_cells_250k_over_0p1": 0
+   }
+  },
+  "mlp_vector": {
+   "reads": false,
+   "never_reads": true,
+   "starpilot": {
+    "returns_100k": [
+     1.8,
+     2.4,
+     2.7,
+     2.7,
+     2.2
+    ],
+    "returns_250k": [
+     2.6,
+     2.6,
+     2.3,
+     2.9,
+     3.8
+    ],
+    "mean_100k": 2.36,
+    "mean_250k": 2.84,
+    "delta": 0.48,
+    "paired_deltas": [
+     0.8,
+     0.2,
+     -0.4,
+     0.2,
+     1.6
+    ],
+    "tv_mean_100k": 0.058618,
+    "tv_mean_250k": 0.120391,
+    "tv_cells_100k_over_0p1": 0,
+    "tv_cells_250k_over_0p1": 3
+   },
+   "dodgeball": {
+    "returns_100k": [
+     2.8,
+     0.6,
+     2.0,
+     0.8,
+     2.0
+    ],
+    "returns_250k": [
+     0.4,
+     0.8,
+     1.6,
+     1.6,
+     1.8
+    ],
+    "mean_100k": 1.64,
+    "mean_250k": 1.24,
+    "delta": -0.4,
+    "paired_deltas": [
+     -2.4,
+     0.2,
+     -0.4,
+     0.8,
+     -0.2
+    ],
+    "tv_mean_100k": 0.049736,
+    "tv_mean_250k": 0.002116,
+    "tv_cells_100k_over_0p1": 0,
+    "tv_cells_250k_over_0p1": 0
+   }
+  }
+ }
+}
