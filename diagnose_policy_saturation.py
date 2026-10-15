@@ -36,6 +36,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 from compare_action_repeat import VariableRepeatEnv
+from models.combined_extractors import ViTExtractor
 from models.sb3_extractors import ClassicCNNExtractor
 from procgen_wrapper import make_procgen_env
 
@@ -61,6 +62,22 @@ class LayerNormExtractor(BaseFeaturesExtractor):
             observations = observations.float() / 255.0
         return self.linear(self.cnn(observations))
 SATURATION_ZONE = 0.999      # |tanh(x)| above this is numerically saturated
+
+
+class ViTLayerNormExtractor(ViTExtractor):
+    """The 3.6.10 counterfactual. vit's blindness was measured to be frontal -- a RANGE
+    collapse: its 512 features come out frame-invariant (zero dims past the activation
+    scale) while the head is healthy. If that collapse is the mechanism, LayerNorm on
+    the same output should hold the range open and the policy should condition -- the
+    same test LayerNormExtractor ran for the classic front end in the 3.6.4 timeline.
+    """
+
+    def __init__(self, observation_space, features_dim=512):
+        super().__init__(observation_space, features_dim)
+        self.norm = nn.LayerNorm(features_dim)
+
+    def forward(self, o):
+        return self.norm(super().forward(o))
 
 
 def probe_frames(game, seed, n=20, frame_stack=1, vector=False):
@@ -254,13 +271,15 @@ def main():
                          "objective, active entropy pressure should change whether the "
                          "policy stays responsive")
     ap.add_argument("--device", default="cuda")
-    ap.add_argument("--arch", choices=("classic", "vit", "mlp", "impoola"), default="classic",
+    ap.add_argument("--arch", choices=("classic", "vit", "mlp", "impoola", "vit_ln"),
+                    default="classic",
                     help="which front end to probe. classic = the published extractor "
                          "(--extractor repo|layernorm applies to it); vit/impoola = those "
                          "front ends of the 16-arm comparison, probed because the grid "
-                         "measures them among the non-readers; mlp = the MlpPolicy over "
-                         "the 256-D downsampled observation (vector obs, frame stacking "
-                         "unavailable there)")
+                         "measures them among the non-readers; vit_ln = the 3.6.10 "
+                         "counterfactual (ViT + LayerNorm on its features); mlp = the "
+                         "MlpPolicy over the 256-D downsampled observation (vector obs, "
+                         "frame stacking unavailable there)")
     ap.add_argument("--extractor", choices=("repo", "layernorm"), default="repo",
                     help="repo = the published ClassicCNNExtractor; layernorm = the counterfactual")
     ap.add_argument("--out", default=os.path.join(BASE, "results", "policy_saturation_curve.json"))
@@ -298,11 +317,12 @@ def main():
 
     front = None
     if args.arch == "vit":
-        from models.combined_extractors import ViTExtractor
         front = ViTExtractor
     elif args.arch == "impoola":
         from models.combined_extractors import ImpoolaCNNExtractor
         front = ImpoolaCNNExtractor
+    elif args.arch == "vit_ln":
+        front = ViTLayerNormExtractor
     if vector:
         policy, pk = "MlpPolicy", {}
     else:

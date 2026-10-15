@@ -1,0 +1,45 @@
+{
+ "_provenance": {
+  "produced_by": "diagnose_feature_vs_actor.py",
+  "question": "do the blind cells' front ends encode state, and does the head use it",
+  "game": "bossfight",
+  "arch": "vit",
+  "timesteps": 100000,
+  "n_envs": 16,
+  "n_steps": 256,
+  "seed": 45,
+  "seconds": 233.6,
+  "feature_measure": "per-dim cross-frame range over the run's mean |activation|; dims_range_over_scale = fraction of dims whose range exceeds that scale"
+ },
+ "within_game": {
+  "features": {
+   "feat_scale": 0.4234,
+   "feat_range_over_scale_mean": 0.1492,
+   "feat_dims_range_over_scale": 0.0,
+   "feat_dims": 512
+  },
+  "action_tv": 7e-06
+ },
+ "cross_game": {
+  "features": {
+   "feat_scale": 0.423,
+   "feat_range_over_scale_mean": 0.0923,
+   "feat_dims_range_over_scale": 0.0,
+   "feat_dims": 512
+  },
+  "action_tv": 5e-06,
+  "games": [
+   "maze",
+   "heist",
+   "bossfight",
+   "starpilot",
+   "dodgeball"
+  ],
+  "observation": "image",
+  "max_pairwise_tv": 1.6e-05,
+  "feat_mean": 0.4215,
+  "feat_max": 4.811,
+  "distinct_argmax_across_games": 1,
+  "first_tanh_saturated_fraction": 0.2094
+ }
+}

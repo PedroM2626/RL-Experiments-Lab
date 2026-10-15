@@ -34,8 +34,8 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
 
-from diagnose_policy_saturation import (LayerNormExtractor, probe_frames,
-                                         cross_game_response)
+from diagnose_policy_saturation import (LayerNormExtractor, ViTLayerNormExtractor,
+                                         probe_frames, cross_game_response)
 from models.sb3_extractors import ClassicCNNExtractor
 from procgen_wrapper import make_procgen_env
 
@@ -100,7 +100,8 @@ def cross_frames(games, seed=1042, vector=False):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--game", default="bossfight")
-    ap.add_argument("--arch", choices=("classic", "vit", "mlp", "impoola"), default="vit")
+    ap.add_argument("--arch", choices=("classic", "vit", "mlp", "impoola", "vit_ln"),
+                    default="vit")
     ap.add_argument("--timesteps", type=int, default=100000)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--n-envs", type=int, default=16)
@@ -126,6 +127,8 @@ def main():
     elif args.arch == "impoola":
         from models.combined_extractors import ImpoolaCNNExtractor
         front = ImpoolaCNNExtractor
+    elif args.arch == "vit_ln":
+        front = ViTLayerNormExtractor
     if vector:
         policy, pk = "MlpPolicy", {}
     else:

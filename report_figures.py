@@ -57,9 +57,26 @@ PROVENANCE = {
     # The dashboard clip is the one recording made of a policy the audit measures as responsive.
     # Its weights are git-ignored, so the entry names the command that reproduces them.
     "agent_dashboard.gif": ("record_dashboard_video.py", "results/agent_dashboard.gif",
-                            "logs_audit/models/coinrun_classic.zip (regenerate: diagnose_policy_"
-                            "saturation.py --game coinrun --timesteps 100000 --save-model ...) + "
+                            "logs_audit/models/coinrun_classic.zip (regenerate: diagnose_"
+                            "policy_saturation.py --game coinrun --timesteps 100000 --save-model ...) + "
                             "results/suite_validity_coinrun_control.json"),
+    # The dense-probe arc (README 3.6.4-3.6.10): five figures drawn from committed
+    # artifacts by report_diagnostics_figures.py -- no training anywhere, so the
+    # rebuilds are byte-comparable and CI-gated like every other entry.
+    "dense_probe_timelines.png": ("report_diagnostics_figures.py", "results/dense_probe_timelines.png",
+                                  "results/policy_saturation_dense_nenv1_nsteps256.json + "
+                                  "results/policy_saturation_dense_nenv16_nsteps16.json + "
+                                  "results/coinrun_dense_curve.json"),
+    "dose_response_reliability.png": ("report_diagnostics_figures.py",
+                                      "results/dose_response_reliability.png",
+                                      "results/policy_saturation_dense_multiseed.json"),
+    "response_cliff.png": ("report_diagnostics_figures.py", "results/response_cliff.png",
+                           "results/suite_validity_nenv16_grid.json"),
+    "budget_response.png": ("report_diagnostics_figures.py", "results/budget_response.png",
+                            "results/suite_validity_nenv16_budget250k.json"),
+    "anatomy_matrix.png": ("report_diagnostics_figures.py", "results/anatomy_matrix.png",
+                           "results/feature_vs_actor_{classic,vit,mlp,impoola}_{bossfight,dodgeball}.json "
+                           "+ the 12 multi-seed feature_vs_actor_*_seed4[3-6].json"),
 }
 
 # The eight reference clips at the top of the README. Each is produced by
