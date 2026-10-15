@@ -17,7 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESULTS = os.path.join(ROOT, "results")
 README = os.path.join(ROOT, "README.md")
 GRID = list(range(0, 100001, 500))
-ARCHS = ("classic", "vit", "mlp")
+ARCHS = ("classic", "vit", "mlp", "impoola")
 
 
 def _load(name):
@@ -49,7 +49,7 @@ def _first_dead(c):
     return next((r["steps"] for r in c if r["cross_frame_tv_mean"] < 5e-5), None)
 
 
-def test_all_nine_probes_are_complete_grid_runs(probes):
+def test_all_twelve_probes_are_complete_grid_runs(probes):
     for (a, g), d in probes.items():
         assert [r["steps"] for r in d["curve"]] == GRID, f"{a}/{g}"
         p = d["_provenance"]
@@ -126,9 +126,34 @@ def test_the_probe_reproduces_the_pilot_cell_field_by_field(probes):
         (0.361022, 3, 0.1688, 11.358)
 
 
+def test_impoola_is_the_weak_reader_family_with_one_inert_cell(probes):
+    # dodgeball and starpilot: born small, grows 120x / 33x, never dips
+    for g, final, peak in (("dodgeball", 0.017502, 0.021441), ("starpilot", 0.020158, 0.066320)):
+        c = _curve(probes, "impoola", g)
+        assert _alive(c) == 201 and _first_dead(c) is None
+        assert c[-1]["cross_frame_tv_mean"] == final
+        assert max(r["cross_frame_tv_mean"] for r in c) == peak
+    # bossfight: born flat, one early excursion, neither ignites nor dies
+    c = _curve(probes, "impoola", "bossfight")
+    assert c[0]["cross_frame_tv_mean"] == 0.000397 and c[-1]["cross_frame_tv_mean"] == 0.000325
+    assert max(r["cross_frame_tv_mean"] for r in c) == 0.008743
+    assert _alive(c) == 201 and c[-1]["tanh_saturated_by_layer"][0] == 0.75
+
+
+def test_the_impoola_probe_reproduces_the_pilot_cell(probes):
+    row = probes[("impoola", "starpilot")]["cross_game"]
+    pilot = _load("suite_validity_starpilot_nenv16.json")["arms"]["impoola"]
+    for k in ("max_pairwise_tv", "distinct_argmax_across_games",
+              "first_tanh_saturated_fraction", "feat_max"):
+        assert row[k] == pilot[k], f"probe vs pilot drifted on {k}"
+    assert (row["max_pairwise_tv"], row["distinct_argmax_across_games"],
+            row["first_tanh_saturated_fraction"], row["feat_max"]) == \
+        (0.026367, 1, 0.0063, 2.35)
+
+
 def test_section_prose_carries_the_measured_numbers(readme):
     for s in (
-        "Nine curves, **~14 GPU-minutes**",
+        "Twelve curves, **~23 GPU-minutes**",
         "**never ignites**: born near-dead, decays from step 0",
         "**dies absorbing-ly at 8500**",
         "`25/201` probes alive, all early",
@@ -138,7 +163,10 @@ def test_section_prose_carries_the_measured_numbers(readme):
         "`91.33%`–`97.89%` of its first `Tanh` is already saturated",
         "identical to the §3.6.6 pilot's `classic` cell on all four fields",
         "Two scripts, one trajectory",
-        "two blindnesses, not one",
+        "three distinct failure shapes",
+        "Inertness without collapse",
+        "grows **120× and 33×**",
+        "the third cross-script reproduction of this section",
         "a third to a tenth of `classic`'s depth",
         "first `Tanh` never above `14.5%`",
     ):
@@ -146,5 +174,5 @@ def test_section_prose_carries_the_measured_numbers(readme):
 
 
 def test_the_3_6_7_note_points_here(readme):
-    i = readme.index("**Follow-up (14/10/2026):** the dense probe ran on the non-readers")
-    assert "§3.6.9." in readme[i:i + 400]
+    i = readme.index("**Follow-up (14/10/2026):** the dense probe ran on all three non-readers")
+    assert "§3.6.9" in readme[i:i + 500] and "§3.6.10" in readme[i:i + 500]

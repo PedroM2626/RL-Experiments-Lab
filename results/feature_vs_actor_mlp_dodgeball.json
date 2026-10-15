@@ -1,0 +1,45 @@
+{
+ "_provenance": {
+  "produced_by": "diagnose_feature_vs_actor.py",
+  "question": "do the blind cells' front ends encode state, and does the head use it",
+  "game": "dodgeball",
+  "arch": "mlp",
+  "timesteps": 100000,
+  "n_envs": 16,
+  "n_steps": 256,
+  "seed": 42,
+  "seconds": 68.3,
+  "feature_measure": "per-dim cross-frame range over the run's mean |activation|; dims_range_over_scale = fraction of dims whose range exceeds that scale"
+ },
+ "within_game": {
+  "features": {
+   "feat_scale": 121.7844,
+   "feat_range_over_scale_mean": 0.8417,
+   "feat_dims_range_over_scale": 0.0117,
+   "feat_dims": 256
+  },
+  "action_tv": 0.0
+ },
+ "cross_game": {
+  "features": {
+   "feat_scale": 119.7922,
+   "feat_range_over_scale_mean": 1.2991,
+   "feat_dims_range_over_scale": 0.8906,
+   "feat_dims": 256
+  },
+  "action_tv": 0.009228,
+  "games": [
+   "maze",
+   "heist",
+   "bossfight",
+   "starpilot",
+   "dodgeball"
+  ],
+  "observation": "vector",
+  "max_pairwise_tv": 0.036448,
+  "feat_mean": 119.7922,
+  "feat_max": 254.0,
+  "distinct_argmax_across_games": 1,
+  "first_tanh_saturated_fraction": 0.9938
+ }
+}

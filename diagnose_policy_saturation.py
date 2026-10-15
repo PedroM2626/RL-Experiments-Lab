@@ -254,13 +254,13 @@ def main():
                          "objective, active entropy pressure should change whether the "
                          "policy stays responsive")
     ap.add_argument("--device", default="cuda")
-    ap.add_argument("--arch", choices=("classic", "vit", "mlp"), default="classic",
+    ap.add_argument("--arch", choices=("classic", "vit", "mlp", "impoola"), default="classic",
                     help="which front end to probe. classic = the published extractor "
-                         "(--extractor repo|layernorm applies to it); vit = the ViT front "
-                         "end of the 16-arm comparison, probed because the grid measures "
-                         "it reading nothing on bossfight/dodgeball; mlp = the MlpPolicy "
-                         "over the 256-D downsampled observation (vector obs, frame "
-                         "stacking unavailable there)")
+                         "(--extractor repo|layernorm applies to it); vit/impoola = those "
+                         "front ends of the 16-arm comparison, probed because the grid "
+                         "measures them among the non-readers; mlp = the MlpPolicy over "
+                         "the 256-D downsampled observation (vector obs, frame stacking "
+                         "unavailable there)")
     ap.add_argument("--extractor", choices=("repo", "layernorm"), default="repo",
                     help="repo = the published ClassicCNNExtractor; layernorm = the counterfactual")
     ap.add_argument("--out", default=os.path.join(BASE, "results", "policy_saturation_curve.json"))
@@ -296,15 +296,20 @@ def main():
     from stable_baselines3.common.monitor import Monitor
     venv = DummyVecEnv([partial(make_env, rank) for rank in range(args.n_envs)])
 
+    front = None
     if args.arch == "vit":
         from models.combined_extractors import ViTExtractor
+        front = ViTExtractor
+    elif args.arch == "impoola":
+        from models.combined_extractors import ImpoolaCNNExtractor
+        front = ImpoolaCNNExtractor
     if vector:
         policy, pk = "MlpPolicy", {}
     else:
         policy = "CnnPolicy"
-        pk = {"features_extractor_class":
-              ViTExtractor if args.arch == "vit"
-              else (LayerNormExtractor if args.extractor == "layernorm" else ClassicCNNExtractor),
+        if front is None:
+            front = LayerNormExtractor if args.extractor == "layernorm" else ClassicCNNExtractor
+        pk = {"features_extractor_class": front,
               "features_extractor_kwargs": dict(features_dim=512)}
     model = PPO(policy, venv, verbose=0, learning_rate=3e-4, n_steps=args.n_steps,
                 batch_size=64,
