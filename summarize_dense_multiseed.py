@@ -29,8 +29,10 @@ RESULTS = os.path.join(BASE, "results")
 DOSE_RESPONSE = {
     "1x256": ("policy_saturation_dense_nenv1_nsteps256.json", "policy_saturation_dense_nenv1_nsteps256_seed{}.json"),
     # the (iv) dose of 14/10: two more points on the levels-per-update axis at the
-    # fixed published batch of 256 transitions, filling the gap between 1 and 4 levels
+    # fixed published batch of 256 transitions, filling the gap between 1 and 4 levels;
+    # 3x64 (added 14/10 evening) is the middle of the cliff -- ~3 levels per update
     "2x128": ("policy_saturation_dense_nenv2_nsteps128_seed42.json", "policy_saturation_dense_nenv2_nsteps128_seed{}.json"),
+    "3x64": ("policy_saturation_dense_nenv3_nsteps64_seed42.json", "policy_saturation_dense_nenv3_nsteps64_seed{}.json"),
     "4x64": ("policy_saturation_dense_nenv4_nsteps64.json", "policy_saturation_dense_nenv4_nsteps64_seed{}.json"),
     "8x32": ("policy_saturation_dense_nenv8_nsteps32_seed42.json", "policy_saturation_dense_nenv8_nsteps32_seed{}.json"),
     "16x16": ("policy_saturation_dense_nenv16_nsteps16.json", "policy_saturation_dense_nenv16_nsteps16_seed{}.json"),
@@ -80,7 +82,9 @@ def collect():
         arms[arm] = rows
     levers = {}
     for lever, (pattern, question) in MECHANISM.items():
-        rows = [reduce_run(_load(pattern.format(s))) for s in (42, 43)]
+        # five seeds each since the 14/10 evening pass -- the levers were n=2 when
+        # 3.6.5 first published them
+        rows = [reduce_run(_load(pattern.format(s))) for s in (42, 43, 44, 45, 46)]
         levers[lever] = {"question": question, "rows": rows}
     return arms, levers
 

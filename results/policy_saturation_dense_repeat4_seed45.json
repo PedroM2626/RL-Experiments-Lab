@@ -1,0 +1,1655 @@
+{
+  "_provenance": {
+    "produced_by": "diagnose_policy_saturation.py",
+    "question": "when does the trained policy stop conditioning on the observation",
+    "game": "maze",
+    "arm": "ppo",
+    "timesteps": 50000,
+    "arch": "classic",
+    "extractor": "repo",
+    "frame_stack": 1,
+    "n_envs": 1,
+    "n_steps": 256,
+    "per_update_batch": 256,
+    "action_repeat": 4,
+    "ent_coef": 0.0,
+    "seed": 45,
+    "probe_frames": 20,
+    "probe_every": 500,
+    "training_seconds": 325.4,
+    "saturation_zone": 0.999
+  },
+  "curve": [
+    {
+      "steps": 0,
+      "env_steps": 0,
+      "feat_mean": 0.1609,
+      "feat_max": 1.392,
+      "tanh_saturated_fraction": 0.0,
+      "tanh_saturated_by_layer": [
+        0.0,
+        0.0
+      ],
+      "cross_frame_kl_max": 2e-06,
+      "cross_frame_tv_mean": 0.000414,
+      "entropy_mean_nats": 2.708,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.0857
+    },
+    {
+      "steps": 500,
+      "env_steps": 500,
+      "feat_mean": 0.1582,
+      "feat_max": 1.444,
+      "tanh_saturated_fraction": 0.0,
+      "tanh_saturated_by_layer": [
+        0.0,
+        0.0
+      ],
+      "cross_frame_kl_max": 1.3e-05,
+      "cross_frame_tv_mean": 0.000857,
+      "entropy_mean_nats": 2.7075,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.17263
+    },
+    {
+      "steps": 1000,
+      "env_steps": 1000,
+      "feat_mean": 0.2691,
+      "feat_max": 2.266,
+      "tanh_saturated_fraction": 0.0,
+      "tanh_saturated_by_layer": [
+        0.0,
+        0.0
+      ],
+      "cross_frame_kl_max": 1.3e-05,
+      "cross_frame_tv_mean": 0.000932,
+      "entropy_mean_nats": 2.7064,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.09544
+    },
+    {
+      "steps": 1500,
+      "env_steps": 1500,
+      "feat_mean": 0.3746,
+      "feat_max": 3.448,
+      "tanh_saturated_fraction": 0.0,
+      "tanh_saturated_by_layer": [
+        0.0,
+        0.0
+      ],
+      "cross_frame_kl_max": 3.6e-05,
+      "cross_frame_tv_mean": 0.001516,
+      "entropy_mean_nats": 2.7009,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.05222
+    },
+    {
+      "steps": 2000,
+      "env_steps": 2000,
+      "feat_mean": 0.4613,
+      "feat_max": 4.001,
+      "tanh_saturated_fraction": 0.002,
+      "tanh_saturated_by_layer": [
+        0.0039,
+        0.0
+      ],
+      "cross_frame_kl_max": 9e-06,
+      "cross_frame_tv_mean": 0.000864,
+      "entropy_mean_nats": 2.6891,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.1586
+    },
+    {
+      "steps": 2500,
+      "env_steps": 2500,
+      "feat_mean": 0.3787,
+      "feat_max": 3.877,
+      "tanh_saturated_fraction": 0.0,
+      "tanh_saturated_by_layer": [
+        0.0,
+        0.0
+      ],
+      "cross_frame_kl_max": 4e-05,
+      "cross_frame_tv_mean": 0.001291,
+      "entropy_mean_nats": 2.6937,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.08948
+    },
+    {
+      "steps": 3000,
+      "env_steps": 3000,
+      "feat_mean": 0.3712,
+      "feat_max": 3.171,
+      "tanh_saturated_fraction": 0.0,
+      "tanh_saturated_by_layer": [
+        0.0,
+        0.0
+      ],
+      "cross_frame_kl_max": 3.7e-05,
+      "cross_frame_tv_mean": 0.001388,
+      "entropy_mean_nats": 2.6865,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.10082
+    },
+    {
+      "steps": 3500,
+      "env_steps": 3500,
+      "feat_mean": 0.5108,
+      "feat_max": 4.433,
+      "tanh_saturated_fraction": 0.0117,
+      "tanh_saturated_by_layer": [
+        0.0234,
+        0.0
+      ],
+      "cross_frame_kl_max": 7e-06,
+      "cross_frame_tv_mean": 0.000748,
+      "entropy_mean_nats": 2.6709,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.06215
+    },
+    {
+      "steps": 4000,
+      "env_steps": 4000,
+      "feat_mean": 0.7145,
+      "feat_max": 6.812,
+      "tanh_saturated_fraction": 0.1215,
+      "tanh_saturated_by_layer": [
+        0.243,
+        0.0
+      ],
+      "cross_frame_kl_max": 4e-06,
+      "cross_frame_tv_mean": 0.000489,
+      "entropy_mean_nats": 2.6582,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.25345
+    },
+    {
+      "steps": 4500,
+      "env_steps": 4500,
+      "feat_mean": 1.1727,
+      "feat_max": 12.707,
+      "tanh_saturated_fraction": 0.3086,
+      "tanh_saturated_by_layer": [
+        0.6172,
+        0.0
+      ],
+      "cross_frame_kl_max": 1e-05,
+      "cross_frame_tv_mean": 0.001033,
+      "entropy_mean_nats": 2.6399,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00118
+    },
+    {
+      "steps": 5000,
+      "env_steps": 5000,
+      "feat_mean": 1.2366,
+      "feat_max": 13.487,
+      "tanh_saturated_fraction": 0.3602,
+      "tanh_saturated_by_layer": [
+        0.7203,
+        0.0
+      ],
+      "cross_frame_kl_max": 7e-06,
+      "cross_frame_tv_mean": 0.000582,
+      "entropy_mean_nats": 2.6824,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.0532
+    },
+    {
+      "steps": 5500,
+      "env_steps": 5500,
+      "feat_mean": 1.1228,
+      "feat_max": 12.793,
+      "tanh_saturated_fraction": 0.3066,
+      "tanh_saturated_by_layer": [
+        0.6133,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 0.000134,
+      "entropy_mean_nats": 2.6671,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00275
+    },
+    {
+      "steps": 6000,
+      "env_steps": 6000,
+      "feat_mean": 1.2041,
+      "feat_max": 13.681,
+      "tanh_saturated_fraction": 0.3457,
+      "tanh_saturated_by_layer": [
+        0.6914,
+        0.0
+      ],
+      "cross_frame_kl_max": 2e-06,
+      "cross_frame_tv_mean": 0.000249,
+      "entropy_mean_nats": 2.6235,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.08708
+    },
+    {
+      "steps": 6500,
+      "env_steps": 6500,
+      "feat_mean": 1.1585,
+      "feat_max": 13.034,
+      "tanh_saturated_fraction": 0.3594,
+      "tanh_saturated_by_layer": [
+        0.7188,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 0.000158,
+      "entropy_mean_nats": 2.6165,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00058
+    },
+    {
+      "steps": 7000,
+      "env_steps": 7000,
+      "feat_mean": 1.104,
+      "feat_max": 12.866,
+      "tanh_saturated_fraction": 0.3301,
+      "tanh_saturated_by_layer": [
+        0.6602,
+        0.0
+      ],
+      "cross_frame_kl_max": 1e-06,
+      "cross_frame_tv_mean": 0.000352,
+      "entropy_mean_nats": 2.6209,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.03661
+    },
+    {
+      "steps": 7500,
+      "env_steps": 7500,
+      "feat_mean": 0.43,
+      "feat_max": 5.223,
+      "tanh_saturated_fraction": 0.0312,
+      "tanh_saturated_by_layer": [
+        0.0625,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.000188,
+      "cross_frame_tv_mean": 0.00268,
+      "entropy_mean_nats": 2.6145,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.63175
+    },
+    {
+      "steps": 8000,
+      "env_steps": 8000,
+      "feat_mean": 0.346,
+      "feat_max": 4.296,
+      "tanh_saturated_fraction": 0.0078,
+      "tanh_saturated_by_layer": [
+        0.0156,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.000253,
+      "cross_frame_tv_mean": 0.002777,
+      "entropy_mean_nats": 2.6225,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.85373
+    },
+    {
+      "steps": 8500,
+      "env_steps": 8500,
+      "feat_mean": 0.8703,
+      "feat_max": 9.422,
+      "tanh_saturated_fraction": 0.184,
+      "tanh_saturated_by_layer": [
+        0.368,
+        0.0
+      ],
+      "cross_frame_kl_max": 8e-06,
+      "cross_frame_tv_mean": 0.000662,
+      "entropy_mean_nats": 2.6678,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00514
+    },
+    {
+      "steps": 9000,
+      "env_steps": 9000,
+      "feat_mean": 0.9205,
+      "feat_max": 9.375,
+      "tanh_saturated_fraction": 0.2441,
+      "tanh_saturated_by_layer": [
+        0.4883,
+        0.0
+      ],
+      "cross_frame_kl_max": 3e-06,
+      "cross_frame_tv_mean": 0.000494,
+      "entropy_mean_nats": 2.659,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.01467
+    },
+    {
+      "steps": 9500,
+      "env_steps": 9500,
+      "feat_mean": 0.73,
+      "feat_max": 8.427,
+      "tanh_saturated_fraction": 0.1441,
+      "tanh_saturated_by_layer": [
+        0.2883,
+        0.0
+      ],
+      "cross_frame_kl_max": 5e-06,
+      "cross_frame_tv_mean": 0.000465,
+      "entropy_mean_nats": 2.6584,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.01284
+    },
+    {
+      "steps": 10000,
+      "env_steps": 10000,
+      "feat_mean": 1.1543,
+      "feat_max": 13.009,
+      "tanh_saturated_fraction": 0.3828,
+      "tanh_saturated_by_layer": [
+        0.7656,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 0.00016,
+      "entropy_mean_nats": 2.6498,
+      "distinct_argmax_actions": 1,
+      "v_std": 1e-05
+    },
+    {
+      "steps": 10500,
+      "env_steps": 10500,
+      "feat_mean": 1.2152,
+      "feat_max": 13.74,
+      "tanh_saturated_fraction": 0.4062,
+      "tanh_saturated_by_layer": [
+        0.8125,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 3.9e-05,
+      "entropy_mean_nats": 2.666,
+      "distinct_argmax_actions": 1,
+      "v_std": 1e-05
+    },
+    {
+      "steps": 11000,
+      "env_steps": 11000,
+      "feat_mean": 1.2196,
+      "feat_max": 13.817,
+      "tanh_saturated_fraction": 0.407,
+      "tanh_saturated_by_layer": [
+        0.8141,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 3.5e-05,
+      "entropy_mean_nats": 2.6752,
+      "distinct_argmax_actions": 1,
+      "v_std": 1e-05
+    },
+    {
+      "steps": 11500,
+      "env_steps": 11500,
+      "feat_mean": 1.1995,
+      "feat_max": 13.727,
+      "tanh_saturated_fraction": 0.4062,
+      "tanh_saturated_by_layer": [
+        0.8125,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 2.9e-05,
+      "entropy_mean_nats": 2.6667,
+      "distinct_argmax_actions": 1,
+      "v_std": 6e-05
+    },
+    {
+      "steps": 12000,
+      "env_steps": 12000,
+      "feat_mean": 1.1863,
+      "feat_max": 13.643,
+      "tanh_saturated_fraction": 0.4066,
+      "tanh_saturated_by_layer": [
+        0.8133,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 3e-05,
+      "entropy_mean_nats": 2.6623,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00013
+    },
+    {
+      "steps": 12500,
+      "env_steps": 12500,
+      "feat_mean": 1.1843,
+      "feat_max": 13.652,
+      "tanh_saturated_fraction": 0.4008,
+      "tanh_saturated_by_layer": [
+        0.8016,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 2.6e-05,
+      "entropy_mean_nats": 2.6668,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00021
+    },
+    {
+      "steps": 13000,
+      "env_steps": 13000,
+      "feat_mean": 1.1441,
+      "feat_max": 13.238,
+      "tanh_saturated_fraction": 0.4047,
+      "tanh_saturated_by_layer": [
+        0.8094,
+        0.0
+      ],
+      "cross_frame_kl_max": 1e-06,
+      "cross_frame_tv_mean": 0.000351,
+      "entropy_mean_nats": 2.6423,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00495
+    },
+    {
+      "steps": 13500,
+      "env_steps": 13500,
+      "feat_mean": 1.1179,
+      "feat_max": 11.944,
+      "tanh_saturated_fraction": 0.3906,
+      "tanh_saturated_by_layer": [
+        0.7812,
+        0.0
+      ],
+      "cross_frame_kl_max": 3e-06,
+      "cross_frame_tv_mean": 0.000476,
+      "entropy_mean_nats": 2.6129,
+      "distinct_argmax_actions": 1,
+      "v_std": 5e-05
+    },
+    {
+      "steps": 14000,
+      "env_steps": 14000,
+      "feat_mean": 1.0966,
+      "feat_max": 11.756,
+      "tanh_saturated_fraction": 0.4004,
+      "tanh_saturated_by_layer": [
+        0.7852,
+        0.0156
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 8.8e-05,
+      "entropy_mean_nats": 2.6298,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00012
+    },
+    {
+      "steps": 14500,
+      "env_steps": 14500,
+      "feat_mean": 1.0939,
+      "feat_max": 11.765,
+      "tanh_saturated_fraction": 0.418,
+      "tanh_saturated_by_layer": [
+        0.8203,
+        0.0156
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 0.000108,
+      "entropy_mean_nats": 2.6358,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00018
+    },
+    {
+      "steps": 15000,
+      "env_steps": 15000,
+      "feat_mean": 1.0962,
+      "feat_max": 11.911,
+      "tanh_saturated_fraction": 0.4199,
+      "tanh_saturated_by_layer": [
+        0.8242,
+        0.0156
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 4e-05,
+      "entropy_mean_nats": 2.6378,
+      "distinct_argmax_actions": 1,
+      "v_std": 8e-05
+    },
+    {
+      "steps": 15500,
+      "env_steps": 15500,
+      "feat_mean": 1.0065,
+      "feat_max": 11.44,
+      "tanh_saturated_fraction": 0.3922,
+      "tanh_saturated_by_layer": [
+        0.7688,
+        0.0156
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 4.8e-05,
+      "entropy_mean_nats": 2.6101,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00852
+    },
+    {
+      "steps": 16000,
+      "env_steps": 16000,
+      "feat_mean": 0.9502,
+      "feat_max": 15.337,
+      "tanh_saturated_fraction": 0.3438,
+      "tanh_saturated_by_layer": [
+        0.6719,
+        0.0156
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 0.000165,
+      "entropy_mean_nats": 2.6078,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00107
+    },
+    {
+      "steps": 16500,
+      "env_steps": 16500,
+      "feat_mean": 0.9737,
+      "feat_max": 15.875,
+      "tanh_saturated_fraction": 0.3887,
+      "tanh_saturated_by_layer": [
+        0.7617,
+        0.0156
+      ],
+      "cross_frame_kl_max": 3e-06,
+      "cross_frame_tv_mean": 0.000417,
+      "entropy_mean_nats": 2.5814,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00017
+    },
+    {
+      "steps": 17000,
+      "env_steps": 17000,
+      "feat_mean": 0.9532,
+      "feat_max": 15.382,
+      "tanh_saturated_fraction": 0.4078,
+      "tanh_saturated_by_layer": [
+        0.8,
+        0.0156
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 0.000111,
+      "entropy_mean_nats": 2.4731,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00569
+    },
+    {
+      "steps": 17500,
+      "env_steps": 17500,
+      "feat_mean": 0.8545,
+      "feat_max": 13.466,
+      "tanh_saturated_fraction": 0.373,
+      "tanh_saturated_by_layer": [
+        0.7305,
+        0.0156
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 6.5e-05,
+      "entropy_mean_nats": 2.3024,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00176
+    },
+    {
+      "steps": 18000,
+      "env_steps": 18000,
+      "feat_mean": 0.7921,
+      "feat_max": 12.101,
+      "tanh_saturated_fraction": 0.332,
+      "tanh_saturated_by_layer": [
+        0.6484,
+        0.0156
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 7.8e-05,
+      "entropy_mean_nats": 2.3289,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00714
+    },
+    {
+      "steps": 18500,
+      "env_steps": 18500,
+      "feat_mean": 0.535,
+      "feat_max": 8.781,
+      "tanh_saturated_fraction": 0.1113,
+      "tanh_saturated_by_layer": [
+        0.2227,
+        0.0
+      ],
+      "cross_frame_kl_max": 6e-06,
+      "cross_frame_tv_mean": 0.00061,
+      "entropy_mean_nats": 2.468,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.01317
+    },
+    {
+      "steps": 19000,
+      "env_steps": 19000,
+      "feat_mean": 0.4635,
+      "feat_max": 7.897,
+      "tanh_saturated_fraction": 0.0609,
+      "tanh_saturated_by_layer": [
+        0.1219,
+        0.0
+      ],
+      "cross_frame_kl_max": 1e-05,
+      "cross_frame_tv_mean": 0.000726,
+      "entropy_mean_nats": 2.5631,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00859
+    },
+    {
+      "steps": 19500,
+      "env_steps": 19500,
+      "feat_mean": 0.2847,
+      "feat_max": 4.165,
+      "tanh_saturated_fraction": 0.0039,
+      "tanh_saturated_by_layer": [
+        0.0078,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.000896,
+      "cross_frame_tv_mean": 0.006007,
+      "entropy_mean_nats": 2.4864,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.07196
+    },
+    {
+      "steps": 20000,
+      "env_steps": 20000,
+      "feat_mean": 0.3077,
+      "feat_max": 4.682,
+      "tanh_saturated_fraction": 0.0059,
+      "tanh_saturated_by_layer": [
+        0.0117,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.002247,
+      "cross_frame_tv_mean": 0.010078,
+      "entropy_mean_nats": 2.4811,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.0479
+    },
+    {
+      "steps": 20500,
+      "env_steps": 20500,
+      "feat_mean": 0.5625,
+      "feat_max": 7.138,
+      "tanh_saturated_fraction": 0.1723,
+      "tanh_saturated_by_layer": [
+        0.3445,
+        0.0
+      ],
+      "cross_frame_kl_max": 2e-06,
+      "cross_frame_tv_mean": 0.000589,
+      "entropy_mean_nats": 2.3995,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00615
+    },
+    {
+      "steps": 21000,
+      "env_steps": 21000,
+      "feat_mean": 0.6829,
+      "feat_max": 8.464,
+      "tanh_saturated_fraction": 0.2793,
+      "tanh_saturated_by_layer": [
+        0.5586,
+        0.0
+      ],
+      "cross_frame_kl_max": 2e-06,
+      "cross_frame_tv_mean": 0.000301,
+      "entropy_mean_nats": 2.4774,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00114
+    },
+    {
+      "steps": 21500,
+      "env_steps": 21500,
+      "feat_mean": 0.7027,
+      "feat_max": 8.642,
+      "tanh_saturated_fraction": 0.3125,
+      "tanh_saturated_by_layer": [
+        0.625,
+        0.0
+      ],
+      "cross_frame_kl_max": 2e-06,
+      "cross_frame_tv_mean": 0.000243,
+      "entropy_mean_nats": 2.5028,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00068
+    },
+    {
+      "steps": 22000,
+      "env_steps": 22000,
+      "feat_mean": 0.709,
+      "feat_max": 8.675,
+      "tanh_saturated_fraction": 0.3203,
+      "tanh_saturated_by_layer": [
+        0.6406,
+        0.0
+      ],
+      "cross_frame_kl_max": 1e-06,
+      "cross_frame_tv_mean": 0.000179,
+      "entropy_mean_nats": 2.4122,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00072
+    },
+    {
+      "steps": 22500,
+      "env_steps": 22500,
+      "feat_mean": 1.0923,
+      "feat_max": 13.434,
+      "tanh_saturated_fraction": 0.459,
+      "tanh_saturated_by_layer": [
+        0.918,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 6.9e-05,
+      "entropy_mean_nats": 2.4369,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00074
+    },
+    {
+      "steps": 23000,
+      "env_steps": 23000,
+      "feat_mean": 1.1419,
+      "feat_max": 14.101,
+      "tanh_saturated_fraction": 0.4648,
+      "tanh_saturated_by_layer": [
+        0.9297,
+        0.0
+      ],
+      "cross_frame_kl_max": 1e-06,
+      "cross_frame_tv_mean": 0.000284,
+      "entropy_mean_nats": 2.472,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00534
+    },
+    {
+      "steps": 23500,
+      "env_steps": 23500,
+      "feat_mean": 1.1151,
+      "feat_max": 14.667,
+      "tanh_saturated_fraction": 0.4277,
+      "tanh_saturated_by_layer": [
+        0.8555,
+        0.0
+      ],
+      "cross_frame_kl_max": 1e-06,
+      "cross_frame_tv_mean": 0.000188,
+      "entropy_mean_nats": 2.4547,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00033
+    },
+    {
+      "steps": 24000,
+      "env_steps": 24000,
+      "feat_mean": 1.1196,
+      "feat_max": 14.975,
+      "tanh_saturated_fraction": 0.4258,
+      "tanh_saturated_by_layer": [
+        0.8516,
+        0.0
+      ],
+      "cross_frame_kl_max": 1e-06,
+      "cross_frame_tv_mean": 0.000199,
+      "entropy_mean_nats": 2.4607,
+      "distinct_argmax_actions": 1,
+      "v_std": 1e-05
+    },
+    {
+      "steps": 24500,
+      "env_steps": 24500,
+      "feat_mean": 1.1241,
+      "feat_max": 15.273,
+      "tanh_saturated_fraction": 0.4238,
+      "tanh_saturated_by_layer": [
+        0.8477,
+        0.0
+      ],
+      "cross_frame_kl_max": 1e-06,
+      "cross_frame_tv_mean": 0.000294,
+      "entropy_mean_nats": 2.461,
+      "distinct_argmax_actions": 1,
+      "v_std": 1e-05
+    },
+    {
+      "steps": 25000,
+      "env_steps": 25000,
+      "feat_mean": 1.0034,
+      "feat_max": 13.874,
+      "tanh_saturated_fraction": 0.4043,
+      "tanh_saturated_by_layer": [
+        0.8086,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 5.9e-05,
+      "entropy_mean_nats": 2.4947,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00792
+    },
+    {
+      "steps": 25500,
+      "env_steps": 25500,
+      "feat_mean": 0.9089,
+      "feat_max": 11.733,
+      "tanh_saturated_fraction": 0.3496,
+      "tanh_saturated_by_layer": [
+        0.6992,
+        0.0
+      ],
+      "cross_frame_kl_max": 1e-06,
+      "cross_frame_tv_mean": 0.000196,
+      "entropy_mean_nats": 2.4339,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.0004
+    },
+    {
+      "steps": 26000,
+      "env_steps": 26000,
+      "feat_mean": 0.7914,
+      "feat_max": 10.381,
+      "tanh_saturated_fraction": 0.2852,
+      "tanh_saturated_by_layer": [
+        0.5703,
+        0.0
+      ],
+      "cross_frame_kl_max": 2e-06,
+      "cross_frame_tv_mean": 0.000333,
+      "entropy_mean_nats": 2.3121,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00847
+    },
+    {
+      "steps": 26500,
+      "env_steps": 26500,
+      "feat_mean": 0.8448,
+      "feat_max": 10.29,
+      "tanh_saturated_fraction": 0.3125,
+      "tanh_saturated_by_layer": [
+        0.625,
+        0.0
+      ],
+      "cross_frame_kl_max": 1e-06,
+      "cross_frame_tv_mean": 0.00021,
+      "entropy_mean_nats": 2.2634,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.0008
+    },
+    {
+      "steps": 27000,
+      "env_steps": 27000,
+      "feat_mean": 0.812,
+      "feat_max": 9.795,
+      "tanh_saturated_fraction": 0.3066,
+      "tanh_saturated_by_layer": [
+        0.6133,
+        0.0
+      ],
+      "cross_frame_kl_max": 1e-06,
+      "cross_frame_tv_mean": 0.000259,
+      "entropy_mean_nats": 2.3271,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00176
+    },
+    {
+      "steps": 27500,
+      "env_steps": 27500,
+      "feat_mean": 0.6959,
+      "feat_max": 8.517,
+      "tanh_saturated_fraction": 0.223,
+      "tanh_saturated_by_layer": [
+        0.4461,
+        0.0
+      ],
+      "cross_frame_kl_max": 8e-06,
+      "cross_frame_tv_mean": 0.000778,
+      "entropy_mean_nats": 2.3632,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00059
+    },
+    {
+      "steps": 28000,
+      "env_steps": 28000,
+      "feat_mean": 0.6544,
+      "feat_max": 8.357,
+      "tanh_saturated_fraction": 0.2051,
+      "tanh_saturated_by_layer": [
+        0.3945,
+        0.0156
+      ],
+      "cross_frame_kl_max": 4e-06,
+      "cross_frame_tv_mean": 0.000432,
+      "entropy_mean_nats": 2.4563,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00214
+    },
+    {
+      "steps": 28500,
+      "env_steps": 28500,
+      "feat_mean": 0.7098,
+      "feat_max": 10.537,
+      "tanh_saturated_fraction": 0.25,
+      "tanh_saturated_by_layer": [
+        0.4922,
+        0.0078
+      ],
+      "cross_frame_kl_max": 8.1e-05,
+      "cross_frame_tv_mean": 0.001957,
+      "entropy_mean_nats": 2.4668,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.01552
+    },
+    {
+      "steps": 29000,
+      "env_steps": 29000,
+      "feat_mean": 0.8154,
+      "feat_max": 14.072,
+      "tanh_saturated_fraction": 0.4102,
+      "tanh_saturated_by_layer": [
+        0.8086,
+        0.0117
+      ],
+      "cross_frame_kl_max": 4e-06,
+      "cross_frame_tv_mean": 0.000626,
+      "entropy_mean_nats": 2.4868,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00265
+    },
+    {
+      "steps": 29500,
+      "env_steps": 29500,
+      "feat_mean": 0.7982,
+      "feat_max": 13.816,
+      "tanh_saturated_fraction": 0.4219,
+      "tanh_saturated_by_layer": [
+        0.8438,
+        0.0
+      ],
+      "cross_frame_kl_max": 6e-06,
+      "cross_frame_tv_mean": 0.000505,
+      "entropy_mean_nats": 2.381,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.0047
+    },
+    {
+      "steps": 30000,
+      "env_steps": 30000,
+      "feat_mean": 0.7371,
+      "feat_max": 11.89,
+      "tanh_saturated_fraction": 0.4238,
+      "tanh_saturated_by_layer": [
+        0.8477,
+        0.0
+      ],
+      "cross_frame_kl_max": 4e-06,
+      "cross_frame_tv_mean": 0.000454,
+      "entropy_mean_nats": 2.2972,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00466
+    },
+    {
+      "steps": 30500,
+      "env_steps": 30500,
+      "feat_mean": 0.6693,
+      "feat_max": 10.993,
+      "tanh_saturated_fraction": 0.377,
+      "tanh_saturated_by_layer": [
+        0.7539,
+        0.0
+      ],
+      "cross_frame_kl_max": 3e-06,
+      "cross_frame_tv_mean": 0.000598,
+      "entropy_mean_nats": 2.2841,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00341
+    },
+    {
+      "steps": 31000,
+      "env_steps": 31000,
+      "feat_mean": 0.7167,
+      "feat_max": 11.034,
+      "tanh_saturated_fraction": 0.373,
+      "tanh_saturated_by_layer": [
+        0.7461,
+        0.0
+      ],
+      "cross_frame_kl_max": 6e-06,
+      "cross_frame_tv_mean": 0.0006,
+      "entropy_mean_nats": 2.3381,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.07679
+    },
+    {
+      "steps": 31500,
+      "env_steps": 31500,
+      "feat_mean": 0.5795,
+      "feat_max": 8.068,
+      "tanh_saturated_fraction": 0.3031,
+      "tanh_saturated_by_layer": [
+        0.6062,
+        0.0
+      ],
+      "cross_frame_kl_max": 8.9e-05,
+      "cross_frame_tv_mean": 0.001801,
+      "entropy_mean_nats": 2.4069,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.25651
+    },
+    {
+      "steps": 32000,
+      "env_steps": 32000,
+      "feat_mean": 0.5253,
+      "feat_max": 6.097,
+      "tanh_saturated_fraction": 0.2562,
+      "tanh_saturated_by_layer": [
+        0.5125,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.000538,
+      "cross_frame_tv_mean": 0.004279,
+      "entropy_mean_nats": 2.4068,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.39342
+    },
+    {
+      "steps": 32500,
+      "env_steps": 32500,
+      "feat_mean": 0.6074,
+      "feat_max": 8.383,
+      "tanh_saturated_fraction": 0.2637,
+      "tanh_saturated_by_layer": [
+        0.5156,
+        0.0117
+      ],
+      "cross_frame_kl_max": 0.001585,
+      "cross_frame_tv_mean": 0.009816,
+      "entropy_mean_nats": 2.4376,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.13009
+    },
+    {
+      "steps": 33000,
+      "env_steps": 33000,
+      "feat_mean": 0.7517,
+      "feat_max": 9.508,
+      "tanh_saturated_fraction": 0.3027,
+      "tanh_saturated_by_layer": [
+        0.5898,
+        0.0156
+      ],
+      "cross_frame_kl_max": 0.000864,
+      "cross_frame_tv_mean": 0.007502,
+      "entropy_mean_nats": 2.545,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00476
+    },
+    {
+      "steps": 33500,
+      "env_steps": 33500,
+      "feat_mean": 0.4087,
+      "feat_max": 5.646,
+      "tanh_saturated_fraction": 0.1187,
+      "tanh_saturated_by_layer": [
+        0.2258,
+        0.0117
+      ],
+      "cross_frame_kl_max": 0.001416,
+      "cross_frame_tv_mean": 0.011082,
+      "entropy_mean_nats": 2.5453,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.05956
+    },
+    {
+      "steps": 34000,
+      "env_steps": 34000,
+      "feat_mean": 0.7565,
+      "feat_max": 9.901,
+      "tanh_saturated_fraction": 0.318,
+      "tanh_saturated_by_layer": [
+        0.6203,
+        0.0156
+      ],
+      "cross_frame_kl_max": 0.000243,
+      "cross_frame_tv_mean": 0.00315,
+      "entropy_mean_nats": 2.5173,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.0056
+    },
+    {
+      "steps": 34500,
+      "env_steps": 34500,
+      "feat_mean": 0.7323,
+      "feat_max": 10.235,
+      "tanh_saturated_fraction": 0.2992,
+      "tanh_saturated_by_layer": [
+        0.5828,
+        0.0156
+      ],
+      "cross_frame_kl_max": 0.000103,
+      "cross_frame_tv_mean": 0.002403,
+      "entropy_mean_nats": 2.4973,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.0082
+    },
+    {
+      "steps": 35000,
+      "env_steps": 35000,
+      "feat_mean": 0.8525,
+      "feat_max": 11.547,
+      "tanh_saturated_fraction": 0.3863,
+      "tanh_saturated_by_layer": [
+        0.757,
+        0.0156
+      ],
+      "cross_frame_kl_max": 2.8e-05,
+      "cross_frame_tv_mean": 0.001061,
+      "entropy_mean_nats": 2.3663,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00051
+    },
+    {
+      "steps": 35500,
+      "env_steps": 35500,
+      "feat_mean": 0.5046,
+      "feat_max": 7.326,
+      "tanh_saturated_fraction": 0.1836,
+      "tanh_saturated_by_layer": [
+        0.3672,
+        0.0
+      ],
+      "cross_frame_kl_max": 7.3e-05,
+      "cross_frame_tv_mean": 0.002401,
+      "entropy_mean_nats": 2.343,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.02903
+    },
+    {
+      "steps": 36000,
+      "env_steps": 36000,
+      "feat_mean": 0.4528,
+      "feat_max": 6.506,
+      "tanh_saturated_fraction": 0.1348,
+      "tanh_saturated_by_layer": [
+        0.2539,
+        0.0156
+      ],
+      "cross_frame_kl_max": 0.006701,
+      "cross_frame_tv_mean": 0.014274,
+      "entropy_mean_nats": 2.3823,
+      "distinct_argmax_actions": 2,
+      "v_std": 0.78419
+    },
+    {
+      "steps": 36500,
+      "env_steps": 36500,
+      "feat_mean": 0.3192,
+      "feat_max": 4.825,
+      "tanh_saturated_fraction": 0.0598,
+      "tanh_saturated_by_layer": [
+        0.1195,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.002112,
+      "cross_frame_tv_mean": 0.012765,
+      "entropy_mean_nats": 2.4503,
+      "distinct_argmax_actions": 1,
+      "v_std": 1.02102
+    },
+    {
+      "steps": 37000,
+      "env_steps": 37000,
+      "feat_mean": 0.3953,
+      "feat_max": 5.795,
+      "tanh_saturated_fraction": 0.168,
+      "tanh_saturated_by_layer": [
+        0.3359,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.001798,
+      "cross_frame_tv_mean": 0.011853,
+      "entropy_mean_nats": 2.536,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.19269
+    },
+    {
+      "steps": 37500,
+      "env_steps": 37500,
+      "feat_mean": 0.2978,
+      "feat_max": 4.692,
+      "tanh_saturated_fraction": 0.1109,
+      "tanh_saturated_by_layer": [
+        0.2219,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.004162,
+      "cross_frame_tv_mean": 0.013041,
+      "entropy_mean_nats": 2.5939,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.7064
+    },
+    {
+      "steps": 38000,
+      "env_steps": 38000,
+      "feat_mean": 0.5855,
+      "feat_max": 8.378,
+      "tanh_saturated_fraction": 0.2734,
+      "tanh_saturated_by_layer": [
+        0.5469,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.000393,
+      "cross_frame_tv_mean": 0.005279,
+      "entropy_mean_nats": 2.5487,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.02315
+    },
+    {
+      "steps": 38500,
+      "env_steps": 38500,
+      "feat_mean": 1.067,
+      "feat_max": 14.593,
+      "tanh_saturated_fraction": 0.4551,
+      "tanh_saturated_by_layer": [
+        0.9102,
+        0.0
+      ],
+      "cross_frame_kl_max": 4e-06,
+      "cross_frame_tv_mean": 0.000393,
+      "entropy_mean_nats": 2.5693,
+      "distinct_argmax_actions": 1,
+      "v_std": 5e-05
+    },
+    {
+      "steps": 39000,
+      "env_steps": 39000,
+      "feat_mean": 1.078,
+      "feat_max": 14.863,
+      "tanh_saturated_fraction": 0.4609,
+      "tanh_saturated_by_layer": [
+        0.9219,
+        0.0
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 0.0001,
+      "entropy_mean_nats": 2.572,
+      "distinct_argmax_actions": 1,
+      "v_std": 7e-05
+    },
+    {
+      "steps": 39500,
+      "env_steps": 39500,
+      "feat_mean": 0.9887,
+      "feat_max": 13.987,
+      "tanh_saturated_fraction": 0.4395,
+      "tanh_saturated_by_layer": [
+        0.8789,
+        0.0
+      ],
+      "cross_frame_kl_max": 1e-06,
+      "cross_frame_tv_mean": 0.000136,
+      "entropy_mean_nats": 2.5585,
+      "distinct_argmax_actions": 1,
+      "v_std": 6e-05
+    },
+    {
+      "steps": 40000,
+      "env_steps": 40000,
+      "feat_mean": 0.9832,
+      "feat_max": 14.122,
+      "tanh_saturated_fraction": 0.4434,
+      "tanh_saturated_by_layer": [
+        0.8867,
+        0.0
+      ],
+      "cross_frame_kl_max": 2e-06,
+      "cross_frame_tv_mean": 0.000252,
+      "entropy_mean_nats": 2.5826,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00114
+    },
+    {
+      "steps": 40500,
+      "env_steps": 40500,
+      "feat_mean": 1.1607,
+      "feat_max": 16.308,
+      "tanh_saturated_fraction": 0.4668,
+      "tanh_saturated_by_layer": [
+        0.9336,
+        0.0
+      ],
+      "cross_frame_kl_max": 1e-05,
+      "cross_frame_tv_mean": 0.001035,
+      "entropy_mean_nats": 2.5817,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.0
+    },
+    {
+      "steps": 41000,
+      "env_steps": 41000,
+      "feat_mean": 1.1703,
+      "feat_max": 16.46,
+      "tanh_saturated_fraction": 0.4629,
+      "tanh_saturated_by_layer": [
+        0.9258,
+        0.0
+      ],
+      "cross_frame_kl_max": 9e-06,
+      "cross_frame_tv_mean": 0.000805,
+      "entropy_mean_nats": 2.4967,
+      "distinct_argmax_actions": 1,
+      "v_std": 8e-05
+    },
+    {
+      "steps": 41500,
+      "env_steps": 41500,
+      "feat_mean": 1.1743,
+      "feat_max": 16.45,
+      "tanh_saturated_fraction": 0.4707,
+      "tanh_saturated_by_layer": [
+        0.9414,
+        0.0
+      ],
+      "cross_frame_kl_max": 1e-06,
+      "cross_frame_tv_mean": 0.000163,
+      "entropy_mean_nats": 2.4162,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00042
+    },
+    {
+      "steps": 42000,
+      "env_steps": 42000,
+      "feat_mean": 1.1671,
+      "feat_max": 16.356,
+      "tanh_saturated_fraction": 0.4707,
+      "tanh_saturated_by_layer": [
+        0.9414,
+        0.0
+      ],
+      "cross_frame_kl_max": 1e-06,
+      "cross_frame_tv_mean": 0.000147,
+      "entropy_mean_nats": 2.3538,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00093
+    },
+    {
+      "steps": 42500,
+      "env_steps": 42500,
+      "feat_mean": 1.1266,
+      "feat_max": 15.866,
+      "tanh_saturated_fraction": 0.4664,
+      "tanh_saturated_by_layer": [
+        0.9328,
+        0.0
+      ],
+      "cross_frame_kl_max": 1e-06,
+      "cross_frame_tv_mean": 0.00017,
+      "entropy_mean_nats": 2.3508,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00019
+    },
+    {
+      "steps": 43000,
+      "env_steps": 43000,
+      "feat_mean": 1.0763,
+      "feat_max": 15.264,
+      "tanh_saturated_fraction": 0.457,
+      "tanh_saturated_by_layer": [
+        0.9141,
+        0.0
+      ],
+      "cross_frame_kl_max": 2e-06,
+      "cross_frame_tv_mean": 0.000188,
+      "entropy_mean_nats": 2.3472,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00012
+    },
+    {
+      "steps": 43500,
+      "env_steps": 43500,
+      "feat_mean": 0.8017,
+      "feat_max": 11.623,
+      "tanh_saturated_fraction": 0.4,
+      "tanh_saturated_by_layer": [
+        0.8,
+        0.0
+      ],
+      "cross_frame_kl_max": 2e-06,
+      "cross_frame_tv_mean": 0.000266,
+      "entropy_mean_nats": 2.3011,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00137
+    },
+    {
+      "steps": 44000,
+      "env_steps": 44000,
+      "feat_mean": 0.5606,
+      "feat_max": 8.532,
+      "tanh_saturated_fraction": 0.3066,
+      "tanh_saturated_by_layer": [
+        0.6133,
+        0.0
+      ],
+      "cross_frame_kl_max": 1.5e-05,
+      "cross_frame_tv_mean": 0.000786,
+      "entropy_mean_nats": 2.233,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.01326
+    },
+    {
+      "steps": 44500,
+      "env_steps": 44500,
+      "feat_mean": 0.6056,
+      "feat_max": 9.316,
+      "tanh_saturated_fraction": 0.3281,
+      "tanh_saturated_by_layer": [
+        0.6562,
+        0.0
+      ],
+      "cross_frame_kl_max": 2.1e-05,
+      "cross_frame_tv_mean": 0.000796,
+      "entropy_mean_nats": 2.1749,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00762
+    },
+    {
+      "steps": 45000,
+      "env_steps": 45000,
+      "feat_mean": 0.9076,
+      "feat_max": 13.412,
+      "tanh_saturated_fraction": 0.427,
+      "tanh_saturated_by_layer": [
+        0.8508,
+        0.0031
+      ],
+      "cross_frame_kl_max": 1e-06,
+      "cross_frame_tv_mean": 0.000177,
+      "entropy_mean_nats": 2.2131,
+      "distinct_argmax_actions": 1,
+      "v_std": 5e-05
+    },
+    {
+      "steps": 45500,
+      "env_steps": 45500,
+      "feat_mean": 0.8057,
+      "feat_max": 12.119,
+      "tanh_saturated_fraction": 0.3965,
+      "tanh_saturated_by_layer": [
+        0.7773,
+        0.0156
+      ],
+      "cross_frame_kl_max": 1.2e-05,
+      "cross_frame_tv_mean": 0.000599,
+      "entropy_mean_nats": 2.2798,
+      "distinct_argmax_actions": 1,
+      "v_std": 8e-05
+    },
+    {
+      "steps": 46000,
+      "env_steps": 46000,
+      "feat_mean": 0.7278,
+      "feat_max": 11.117,
+      "tanh_saturated_fraction": 0.3691,
+      "tanh_saturated_by_layer": [
+        0.7227,
+        0.0156
+      ],
+      "cross_frame_kl_max": 3.7e-05,
+      "cross_frame_tv_mean": 0.001172,
+      "entropy_mean_nats": 2.2634,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.00053
+    },
+    {
+      "steps": 46500,
+      "env_steps": 46500,
+      "feat_mean": 1.1939,
+      "feat_max": 17.127,
+      "tanh_saturated_fraction": 0.4531,
+      "tanh_saturated_by_layer": [
+        0.8906,
+        0.0156
+      ],
+      "cross_frame_kl_max": 7e-06,
+      "cross_frame_tv_mean": 0.000436,
+      "entropy_mean_nats": 2.2402,
+      "distinct_argmax_actions": 2,
+      "v_std": 1e-05
+    },
+    {
+      "steps": 47000,
+      "env_steps": 47000,
+      "feat_mean": 1.2721,
+      "feat_max": 18.156,
+      "tanh_saturated_fraction": 0.4531,
+      "tanh_saturated_by_layer": [
+        0.8906,
+        0.0156
+      ],
+      "cross_frame_kl_max": 1.4e-05,
+      "cross_frame_tv_mean": 0.000774,
+      "entropy_mean_nats": 2.234,
+      "distinct_argmax_actions": 1,
+      "v_std": 1e-05
+    },
+    {
+      "steps": 47500,
+      "env_steps": 47500,
+      "feat_mean": 1.2963,
+      "feat_max": 18.487,
+      "tanh_saturated_fraction": 0.4609,
+      "tanh_saturated_by_layer": [
+        0.9062,
+        0.0156
+      ],
+      "cross_frame_kl_max": 1e-06,
+      "cross_frame_tv_mean": 0.000187,
+      "entropy_mean_nats": 2.2337,
+      "distinct_argmax_actions": 1,
+      "v_std": 1e-05
+    },
+    {
+      "steps": 48000,
+      "env_steps": 48000,
+      "feat_mean": 1.3915,
+      "feat_max": 19.694,
+      "tanh_saturated_fraction": 0.4824,
+      "tanh_saturated_by_layer": [
+        0.9492,
+        0.0156
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 4.4e-05,
+      "entropy_mean_nats": 2.1463,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.0
+    },
+    {
+      "steps": 48500,
+      "env_steps": 48500,
+      "feat_mean": 1.4055,
+      "feat_max": 19.87,
+      "tanh_saturated_fraction": 0.4852,
+      "tanh_saturated_by_layer": [
+        0.9547,
+        0.0156
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 3.8e-05,
+      "entropy_mean_nats": 2.0838,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.0
+    },
+    {
+      "steps": 49000,
+      "env_steps": 49000,
+      "feat_mean": 1.3868,
+      "feat_max": 19.612,
+      "tanh_saturated_fraction": 0.4805,
+      "tanh_saturated_by_layer": [
+        0.9453,
+        0.0156
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 3.7e-05,
+      "entropy_mean_nats": 2.0462,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.0
+    },
+    {
+      "steps": 49500,
+      "env_steps": 49500,
+      "feat_mean": 1.2554,
+      "feat_max": 17.934,
+      "tanh_saturated_fraction": 0.4668,
+      "tanh_saturated_by_layer": [
+        0.918,
+        0.0156
+      ],
+      "cross_frame_kl_max": 1e-06,
+      "cross_frame_tv_mean": 0.000123,
+      "entropy_mean_nats": 2.1117,
+      "distinct_argmax_actions": 1,
+      "v_std": 1e-05
+    },
+    {
+      "steps": 50000,
+      "env_steps": 50000,
+      "feat_mean": 1.2628,
+      "feat_max": 18.0,
+      "tanh_saturated_fraction": 0.4902,
+      "tanh_saturated_by_layer": [
+        0.9648,
+        0.0156
+      ],
+      "cross_frame_kl_max": 0.0,
+      "cross_frame_tv_mean": 3.6e-05,
+      "entropy_mean_nats": 2.267,
+      "distinct_argmax_actions": 1,
+      "v_std": 0.0
+    }
+  ],
+  "cross_game": {
+    "games": [
+      "maze",
+      "heist",
+      "bossfight",
+      "starpilot",
+      "dodgeball"
+    ],
+    "observation": "image",
+    "max_pairwise_tv": 0.031949,
+    "feat_mean": 0.5639,
+    "feat_max": 11.479,
+    "distinct_argmax_across_games": 1,
+    "first_tanh_saturated_fraction": 0.5031
+  }
+}
