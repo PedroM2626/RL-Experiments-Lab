@@ -429,11 +429,11 @@ The grid ran: **240 cells** — `16` arms × {`starpilot`, `bossfight`, `dodgeba
 
 **6. What item 9 closes with.** The question was "does the blindness invalidate the rankings?" — and the re-run gives the answer its last piece: the rankings cannot be repaired by re-running them, because under the recipe that makes policies condition, the return ordering changes shape **and still does not track whether the front end is used**. At `100k` on these three games, return is not a measure of the visual architecture under either recipe; the response measure is — and by that measure the study's front ends do differ, verifiably: `cbam`, `classic`, `spatial` and `c_aug_color` sustain reading across every cell, `ae`/`recon`/`lstm_attention` nearly everywhere, while `vit`, `impoola` and `mlp_vector` do not condition under any recipe tested. §3.7 and §3.12 stand as records of what the archived runs returned; the architecture conclusion of this study is the response table, not the return table.
 
-> **Follow-up (14/10/2026):** the dense probe ran on the non-readers — and "do not condition" needed precision: two of their cells are truly blind by two different mechanisms, but four of six read within-game, a third to a tenth of `classic`'s depth, without generalizing across games. §3.6.9.
+> **Follow-up (14/10/2026):** the dense probe ran on all three non-readers — and "do not condition" needed precision: two of their nine cells are truly blind by two different mechanisms (one never ignites, one dies absorbing-ly), one is inert without dying, and the other six read within-game, a third to a tenth of `classic`'s depth, without generalizing across games. §3.6.9, and §3.6.10 for the organ each blindness lives in.
 
 ### 3.6.9. The Non-Readers Under the Probe: Two Blindnesses, Not One (14/10/2026)
 
-§3.6.7 named `vit`, `impoola` and `mlp_vector` non-readers by the **cross-game** measure — five games' initial frames. The question that leaves open: did they *never* condition, or condition and lose it? The dense probe answers it: `vit` and `mlp_vector` on all three grid games, plus `classic` as the reader reference — same recipe as the grid (`16×256`, seed `42`), `100k`, probe every `500` steps, within-game response measured on the held-out random-walk frames (`diagnose_policy_saturation.py`, which gained `--arch classic|vit|mlp`; the `mlp` arm probes the `MlpPolicy` over the 256-D vector observation). Nine curves, **~14 GPU-minutes**. Artifacts: `results/probe_nonreaders_{vit,mlp,classic}_{bossfight,dodgeball,starpilot}.json` (each carries the within-game timeline and the cross-game endpoint).
+§3.6.7 named `vit`, `impoola` and `mlp_vector` non-readers by the **cross-game** measure — five games' initial frames. The question that leaves open: did they *never* condition, or condition and lose it? The dense probe answers it: `vit`, `impoola` and `mlp_vector` on all three grid games, plus `classic` as the reader reference — same recipe as the grid (`16×256`, seed `42`), `100k`, probe every `500` steps, within-game response measured on the held-out random-walk frames (`diagnose_policy_saturation.py`, which gained `--arch classic|vit|mlp|impoola`; the `mlp` arm probes the `MlpPolicy` over the 256-D vector observation). Twelve curves, **~23 GPU-minutes**. Artifacts: `results/probe_nonreaders_{vit,mlp,classic,impoola}_{bossfight,dodgeball,starpilot}.json` (each carries the within-game timeline and the cross-game endpoint).
 
 | probe (grid recipe, seed 42) | within-game TV: init → final (peak) | cross-game TV (argmax) | first `Tanh` sat, final | pattern |
 |---|---|---|---:|---|
@@ -446,6 +446,9 @@ The grid ran: **240 cells** — `16` arms × {`starpilot`, `bossfight`, `dodgeba
 | `mlp_vector` × bossfight | 0.002396 → 0.060599 (0.074403) | 0.106360 (1) | 98.2% | born with 5 argmax, grows |
 | `mlp_vector` × dodgeball | 0.000744 → 0.000000 | 0.036448 (1) | 100.0% | **dies absorbing-ly at 8500**: the §3.6.4 maze death, first time under the wide recipe |
 | `mlp_vector` × starpilot | 0.002259 → 0.042439 (0.053161) | 0.053308 (1) | 98.6% | grows |
+| `impoola` × bossfight | 0.000397 → 0.000325 (0.008743) | 0.000218 (1) | 75.0% | born flat, stays flat: never ignites, never dies |
+| `impoola` × dodgeball | 0.000145 → 0.017502 (0.021441) | 0.078997 (1) | 0.0% | grows 120× — the weak-reader family |
+| `impoola` × starpilot | 0.000615 → 0.020158 (0.066320) | 0.026367 (1) | 0.0% | grows 33× |
 
 *Within-game TV = the probe's cross-frame measure on 20 held-out random-walk frames of the same game; the grid's cross-game TV uses five different games' initial frames. Both are in each artifact.*
 
@@ -459,7 +462,33 @@ The grid ran: **240 cells** — `16` arms × {`starpilot`, `bossfight`, `dodgeba
 
 **5. A cross-script reproduction, for free.** The probe's `classic`×starpilot run — trained by `diagnose_policy_saturation.py`, not by the producers' `train_one` — ends at cross-game TV `0.361022`, 3 argmax, first-Tanh `0.1688`, feature max `11.358`: **identical to the §3.6.6 pilot's `classic` cell on all four fields**. Two scripts, one trajectory; the recipe and the probe are deterministic on this hardware when the GPU is not shared.
 
-**6. What this refines.** §3.6.7's response cliff was measured cross-game and stands; within-game the separation is graded — readers 3–10× deeper, and only `classic` has no dead cell anywhere. The study's non-reader verdict becomes precise: `vit` and `mlp_vector` read within-game shallowly and without cross-game generalization, with one true never-ignites cell (`vit`/bossfight) and one absorbing death (`mlp_vector`/dodgeball) — two blindnesses, not one. `impoola`, the third non-reader, was not probed; its curves would say which family it belongs to.
+**6. `impoola` is the weak-reader family, with one inert cell.** On dodgeball and starpilot it is `vit`'s profile: born small (`0.000145`/`0.000615`), grows **120× and 33×** to `0.017502`/`0.020158`, `201/201` probes alive. Its bossfight cell is a variant the others don't have: born flat (`0.000397`), it neither ignites nor dies — one early excursion to `0.008743` at `8500`, then back to `0.000325` and level to the end, `201/201` alive, the first `Tanh` at 75%. Inertness without collapse. And its starpilot run ends at cross-game TV `0.026367`, 1 argmax, first-`Tanh` `0.0063`, feature max `2.35` — **identical to the §3.6.6 pilot's `impoola` cell on all four fields**: the third cross-script reproduction of this section.
+
+**7. What this refines.** §3.6.7's response cliff was measured cross-game and stands; within-game the separation is graded — readers 3–10× deeper, and only `classic` has no dead cell anywhere. The study's non-reader verdict becomes precise: all three arms read within-game shallowly and without cross-game generalization, on top of three distinct failure shapes — never-ignites (`vit`/bossfight), inert-without-death (`impoola`/bossfight), absorbing death (`mlp_vector`/dodgeball), and the weak-reader baseline elsewhere. §3.6.10 takes the next step down: *which organ* each blindness lives in.
+
+### 3.6.10. Where the Blindness Lives: Front End or Head (14/10/2026)
+
+§3.6.9's blind cells share an endpoint — a frame-invariant action distribution — but two architectures could produce it: the front end collapses its features to frame-invariance (the head never receives a signal), or the features vary and the head learned to ignore them. `diagnose_feature_vs_actor.py` separates the organs: it trains one cell at the grid recipe, then measures, on the same held-out frames the probe uses, (a) the **feature response** — per-dimension cross-frame range normalized by the run's own mean |activation| scale (a shared normalizer, so a dimension oscillating around zero cannot explode the measure), reported as the mean range-over-scale and the fraction of dimensions whose range exceeds that scale — and (b) the **action response** — the probe's cross-frame TV, plus the same pair over the audit's five cross-game initial frames. Seven cells: the blind pair (`vit`/bossfight, `mlp_vector`/dodgeball), the inert cell (`impoola`/bossfight), two weak readers (`vit`/dodgeball, `mlp_vector`/bossfight), and the reader reference on both games. **~13 GPU-minutes.** Artifacts: `results/feature_vs_actor_{arch}_{game}.json`.
+
+| cell | within-game action TV | feature range/scale | dims > scale | cross-game action TV | feature range/scale | locus |
+|---|---:|---:|---:|---:|---:|---|
+| `classic` × bossfight | 0.176353 | 1.3087 | 47.3% | 0.106933 | 2.5164 | both live — the reference |
+| `classic` × dodgeball | 0.057352 | 3.1009 | 56.8% | 0.070866 | 2.5346 | both live |
+| `vit` × bossfight | 0.000006 | **0.1540** | **0.0%** | 0.000005 | 0.1060 | **front end**: features are frame-invariant |
+| `vit` × dodgeball | 0.000007 | **0.1544** | **0.0%** | 0.000004 | 0.0916 | **front end** (this run — see claim 3) |
+| `impoola` × bossfight | 0.000452 | 0.7798 | 26.4% | 0.000101 | 0.5576 | **head**: features vary, actions flat |
+| `mlp_vector` × bossfight | 0.037994 | 1.7995 | 58.2% | 0.043778 | 1.2991 | head uses part of the signal |
+| `mlp_vector` × dodgeball | 0.000000 | 0.8417 | 1.2% | 0.009228 | 1.2991 | **head**: features vary, actions dead |
+
+*`mlp_vector`'s "features" are its raw 256-D observation (its extractor is a flatten), so their variance is structural — which is the point: the signal is right there, and the dead head still ignores it.*
+
+**1. `vit`'s blindness is frontal.** On both cells its features are frame-invariant: mean range-over-scale `0.154`, and **not one of the 512 dimensions** ranges past the activation scale — against `classic`'s `1.31–3.10` and `47–57%`. The scale itself is healthy (`0.44`/`0.38` vs `classic`'s `0.21`/`0.06`), so this is not the feature-magnitude collapse of §3.6.3 — it is a *range* collapse: the ViT front end maps different screens to (nearly) the same vector, and the head never receives anything to use. "Never ignites" (§3.6.9) now has its organ.
+
+**2. `mlp_vector`'s and `impoola`'s blindnesses are in the head.** Their features vary — `mlp_vector`'s structurally (it *is* the observation: range `1.80`/`0.84`, up to 89% of dims over scale across games), `impoola`'s at half the reader's depth (`0.78`, 26.4%) — and their actions sit at `0.000000`–`0.000452` anyway. The absorbing death of §3.6.9 killed the head's *use* of the representation, not the representation.
+
+**3. The knife's edge, seen from inside.** This run's `vit`/dodgeball is feature-flat and action-dead (`0.000007`), while the §3.6.9 probe run — same seed, same recipe, a different GPU schedule — read at `0.015897`: `vit`'s conditioning either survives weakly or collapses, run to run, and the collapse is *frontal both times* — features go frame-invariant first, and the actions die with them. The instability the two runs expose is the same organ §3.6.10 names.
+
+**4. Two anatomies, one endpoint.** `vit` discards the observation before the head sees it; `mlp_vector` and `impoola` receive the observation and discard its use. §3.6.9's "two blindnesses" now have loci, and they predict different fixes: a frontal collapse wants a front-end constraint (the §3.6.3 LayerNorm counterfactual, applied to the ViT), a head-side abandonment wants the objective/coverage levers of §3.6.5. Left open: whether vit's collapse is preventable at all at this budget, and the head-side mechanism that lets a saturated-from-birth head (§3.6.9, claim 4) read on one game and die on another.
 
 ### 3.6.8. The Budget Test: Does 2.5× Training Repair the Return Ranking? (14/10/2026)
 
@@ -769,7 +798,8 @@ py -3.10 audit_suite_validity.py --merge "logs_audit/shards_nenv16_grid/sh-starp
 py -3.10 summarize_grid_nenv16.py  # folds the three fusions into results/suite_validity_nenv16_grid.json (section 3.6.7); --check re-verifies the fold against them
 py -3.10 run_grid_nenv16.py --workers 4 --timesteps 250000 --games starpilot dodgeball --arms classic cbam vit mlp_vector --shards logs_audit/shards_nenv16_250k  # the 3.6.8 budget sweep: 40 cells paired with the 100k grid; merge each game's shards with --key-by-seed, then:
 py -3.10 summarize_budget_nenv16.py  # folds the 250k sweep against the 100k grid into results/suite_validity_nenv16_budget250k.json (section 3.6.8); --check re-verifies
-py -3.10 -u diagnose_policy_saturation.py --game bossfight --timesteps 100000 --probe-every 500 --n-envs 16 --n-steps 256 --arch vit --cross-game --out results/probe_nonreaders_vit_bossfight.json  # one curve of section 3.6.9; the other probes are --arch {classic,mlp} x {bossfight,dodgeball,starpilot}, ~1.5 GPU-minutes each
+py -3.10 -u diagnose_policy_saturation.py --game bossfight --timesteps 100000 --probe-every 500 --n-envs 16 --n-steps 256 --arch vit --cross-game --out results/probe_nonreaders_vit_bossfight.json  # one curve of section 3.6.9; the other probes are --arch {classic,mlp,impoola} x {bossfight,dodgeball,starpilot}, ~1.5 GPU-minutes each
+py -3.10 diagnose_feature_vs_actor.py --game bossfight --arch vit  # one cell of section 3.6.10 (feature response vs action response on the same held-out frames); the other six cells are --arch {classic,mlp,impoola} x the named games, ~1-4 GPU-minutes each
 py -3.10 record_dashboard_video.py --checkpoint logs_audit/models/coinrun_classic.zip --game coinrun --episodes 3 --max-steps 400 --stride 2  # The panel-by-panel clip at the top; refuses an arm with no audit row unless --allow-unaudited is passed
 py -3.10 -u compare_hrl.py --device cuda  # Independent benchmark: HRL vs Flat RL (jumper/plunder)
 py -3.10 -u compare_hrl_learned.py --device cuda  # hrl_learned arm (RUN AFTER compare_hrl.py: both write to results/hrl_results.json)
