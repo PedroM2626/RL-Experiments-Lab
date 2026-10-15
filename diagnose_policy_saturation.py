@@ -63,13 +63,13 @@ class LayerNormExtractor(BaseFeaturesExtractor):
 SATURATION_ZONE = 0.999      # |tanh(x)| above this is numerically saturated
 
 
-def probe_frames(game, seed, n=20, frame_stack=1):
+def probe_frames(game, seed, n=20, frame_stack=1, vector=False):
     """Frames from a policy-independent random walk, so the probe set is not adapted to."""
     rng = np.random.default_rng(seed)
     out = []
     for lvl in range(4):
         env = make_procgen_env(game, num_levels=0, distribution_mode="easy",
-                               seed=seed + lvl, vector=False, frame_stack=frame_stack)
+                               seed=seed + lvl, vector=vector, frame_stack=frame_stack)
         o = env.reset()
         o = o[0] if isinstance(o, tuple) else o
         for _ in range(5):
@@ -85,7 +85,11 @@ def measure(model, frames):
     dev = next(pol.parameters()).device
     tens = [torch.as_tensor(np.expand_dims(f, 0)).to(dev) for f in frames]
     with torch.no_grad():
-        feats = torch.stack([pol.features_extractor(t) for t in tens[:8]])
+        # float() at the measurement site only: the vector arm's extractor is a flatten,
+        # so its uint8 observation comes back out as uint8 and .mean() refuses it. The
+        # cnn arms' features are already float, so this is a no-op for every published
+        # curve -- their reproduction must stay bitwise (tests gate it).
+        feats = torch.stack([pol.features_extractor(t) for t in tens[:8]]).float()
         probs, sat = [], []
         for t in tens:
             f = pol.extract_features(t, pol.pi_features_extractor)
@@ -250,6 +254,13 @@ def main():
                          "objective, active entropy pressure should change whether the "
                          "policy stays responsive")
     ap.add_argument("--device", default="cuda")
+    ap.add_argument("--arch", choices=("classic", "vit", "mlp"), default="classic",
+                    help="which front end to probe. classic = the published extractor "
+                         "(--extractor repo|layernorm applies to it); vit = the ViT front "
+                         "end of the 16-arm comparison, probed because the grid measures "
+                         "it reading nothing on bossfight/dodgeball; mlp = the MlpPolicy "
+                         "over the 256-D downsampled observation (vector obs, frame "
+                         "stacking unavailable there)")
     ap.add_argument("--extractor", choices=("repo", "layernorm"), default="repo",
                     help="repo = the published ClassicCNNExtractor; layernorm = the counterfactual")
     ap.add_argument("--out", default=os.path.join(BASE, "results", "policy_saturation_curve.json"))
@@ -264,12 +275,18 @@ def main():
                          "is not being starved of input change")
     args = ap.parse_args()
 
-    frames = probe_frames(args.game, args.seed + 1000, frame_stack=args.frame_stack)
+    vector = args.arch == "mlp"
+    if vector:
+        assert args.frame_stack == 1 and args.extractor == "repo", \
+            "the mlp arm observes a 256-D vector: no frames to stack, no extractor to swap"
+
+    frames = probe_frames(args.game, args.seed + 1000, frame_stack=args.frame_stack,
+                          vector=vector)
     print(f"probe: {len(frames)} frames de {args.game} (random walk, seed {args.seed + 1000})")
 
     def make_env(rank):
         env = make_procgen_env(args.game, num_levels=200, distribution_mode="easy",
-                               seed=args.seed + rank, vector=False, frame_stack=args.frame_stack)
+                               seed=args.seed + rank, vector=vector, frame_stack=args.frame_stack)
         if args.action_repeat > 1:
             env = VariableRepeatEnv(env, args.action_repeat)
         if args.arm == "rnd":
@@ -279,15 +296,22 @@ def main():
     from stable_baselines3.common.monitor import Monitor
     venv = DummyVecEnv([partial(make_env, rank) for rank in range(args.n_envs)])
 
-    model = PPO("CnnPolicy", venv, verbose=0, learning_rate=3e-4, n_steps=args.n_steps,
+    if args.arch == "vit":
+        from models.combined_extractors import ViTExtractor
+    if vector:
+        policy, pk = "MlpPolicy", {}
+    else:
+        policy = "CnnPolicy"
+        pk = {"features_extractor_class":
+              ViTExtractor if args.arch == "vit"
+              else (LayerNormExtractor if args.extractor == "layernorm" else ClassicCNNExtractor),
+              "features_extractor_kwargs": dict(features_dim=512)}
+    model = PPO(policy, venv, verbose=0, learning_rate=3e-4, n_steps=args.n_steps,
                 batch_size=64,
                 n_epochs=3, gamma=0.99, gae_lambda=0.95, clip_range=0.2, seed=args.seed,
-                ent_coef=args.ent_coef, device=args.device,
-                policy_kwargs={"features_extractor_class":
-                               LayerNormExtractor if args.extractor == "layernorm" else ClassicCNNExtractor,
-                               "features_extractor_kwargs": dict(features_dim=512)})
+                ent_coef=args.ent_coef, device=args.device, policy_kwargs=pk)
     w = Watcher(frames, args.probe_every, args.timesteps)
-    print(f"treinando {args.arm}/{args.extractor} em {args.game}, {args.timesteps} passos, "
+    print(f"treinando {args.arm}/{args.arch} em {args.game}, {args.timesteps} passos, "
           f"n_envs={args.n_envs} x n_steps={args.n_steps} (batch por update "
           f"{args.n_envs * args.n_steps}), device={args.device}")
     row0 = {"steps": 0, "env_steps": 0}
@@ -303,12 +327,14 @@ def main():
     w.flush()
     venv.close()
 
-    cross = cross_game_response(model, frame_stack=args.frame_stack) if args.cross_game else None
+    cross = cross_game_response(model, vector=vector, frame_stack=args.frame_stack) \
+        if args.cross_game else None
     payload = {
         "_provenance": {
             "produced_by": "diagnose_policy_saturation.py",
             "question": "when does the trained policy stop conditioning on the observation",
             "game": args.game, "arm": args.arm, "timesteps": args.timesteps,
+            "arch": args.arch,
             "extractor": args.extractor, "frame_stack": args.frame_stack,
             "n_envs": args.n_envs, "n_steps": args.n_steps,
             "per_update_batch": args.n_envs * args.n_steps,
