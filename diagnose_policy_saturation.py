@@ -36,7 +36,7 @@ from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.vec_env import DummyVecEnv
 
 from compare_action_repeat import VariableRepeatEnv
-from models.combined_extractors import ViTExtractor
+from models.combined_extractors import ViTExtractor, to_chw
 from models.sb3_extractors import ClassicCNNExtractor
 from procgen_wrapper import make_procgen_env
 
@@ -78,6 +78,44 @@ class ViTLayerNormExtractor(ViTExtractor):
 
     def forward(self, o):
         return self.norm(super().forward(o))
+
+
+class ScaledFlattenExtractor(BaseFeaturesExtractor):
+    """The 3.6.11 input-scale lever. mlp_vector is the only arm fed RAW uint8 (feature
+    scale ~ the pixel values, ~120), and its head is saturated from birth -- 91-98% of
+    the first Tanh at step 0. Every CNN front end divides by 255 internally; this is
+    the same fix for the vector arm: the head's first Linear sees [0,1] instead of
+    [0,255], and the birth saturation should not happen.
+    """
+
+    def __init__(self, observation_space, features_dim=None):
+        super().__init__(observation_space, int(np.prod(observation_space.shape)))
+
+    def forward(self, o):
+        return o.float() / 255.0
+
+
+class ViTMaxPoolExtractor(ViTExtractor):
+    """The 3.6.11 upstream suspect. ViTExtractor mean-pools its 16 token vectors
+    (x.mean(dim=1)) -- if only a few patches differ between two frames, the mean dilutes
+    the difference across all tokens, which is one way the frame-invariance of 3.6.10
+    could be created upstream of the output LayerNorm could not touch. Max-pooling per
+    dimension keeps each dimension's strongest token activation, preserving what the
+    mean washes out. Same weights shape, same recipe; only the pooling differs.
+    """
+
+    def forward(self, o):
+        if o.dtype == torch.uint8:
+            o = o.float() / 255.0
+        elif o.max() > 1.5:
+            o = o / 255.0
+        o = to_chw(o)
+        x = self.proj(o)
+        x = x.flatten(2).transpose(1, 2)
+        x = x + self.pos_emb
+        x = self.transformer(x)
+        x = x.amax(dim=1)      # the intervention: max over the 16 tokens, not the mean
+        return self.fc(x)
 
 
 def probe_frames(game, seed, n=20, frame_stack=1, vector=False):
@@ -271,15 +309,18 @@ def main():
                          "objective, active entropy pressure should change whether the "
                          "policy stays responsive")
     ap.add_argument("--device", default="cuda")
-    ap.add_argument("--arch", choices=("classic", "vit", "mlp", "impoola", "vit_ln"),
+    ap.add_argument("--arch", choices=("classic", "vit", "mlp", "impoola", "vit_ln",
+                                       "mlp_scaled", "vit_maxpool"),
                     default="classic",
                     help="which front end to probe. classic = the published extractor "
                          "(--extractor repo|layernorm applies to it); vit/impoola = those "
                          "front ends of the 16-arm comparison, probed because the grid "
                          "measures them among the non-readers; vit_ln = the 3.6.10 "
-                         "counterfactual (ViT + LayerNorm on its features); mlp = the "
-                         "MlpPolicy over the 256-D downsampled observation (vector obs, "
-                         "frame stacking unavailable there)")
+                         "counterfactual (ViT + LayerNorm on its features); vit_maxpool "
+                         "= the 3.6.11 upstream lever (max over tokens instead of mean); "
+                         "mlp = the MlpPolicy over the 256-D downsampled observation "
+                         "(vector obs, frame stacking unavailable there); mlp_scaled = "
+                         "the 3.6.11 input-scale lever on the same vector obs (obs/255)")
     ap.add_argument("--extractor", choices=("repo", "layernorm"), default="repo",
                     help="repo = the published ClassicCNNExtractor; layernorm = the counterfactual")
     ap.add_argument("--out", default=os.path.join(BASE, "results", "policy_saturation_curve.json"))
@@ -294,10 +335,10 @@ def main():
                          "is not being starved of input change")
     args = ap.parse_args()
 
-    vector = args.arch == "mlp"
+    vector = args.arch in ("mlp", "mlp_scaled")
     if vector:
         assert args.frame_stack == 1 and args.extractor == "repo", \
-            "the mlp arm observes a 256-D vector: no frames to stack, no extractor to swap"
+            "the mlp arms observe a 256-D vector: no frames to stack, no extractor to swap"
 
     frames = probe_frames(args.game, args.seed + 1000, frame_stack=args.frame_stack,
                           vector=vector)
@@ -323,8 +364,11 @@ def main():
         front = ImpoolaCNNExtractor
     elif args.arch == "vit_ln":
         front = ViTLayerNormExtractor
+    elif args.arch == "vit_maxpool":
+        front = ViTMaxPoolExtractor
     if vector:
-        policy, pk = "MlpPolicy", {}
+        policy = "MlpPolicy"
+        pk = {} if args.arch == "mlp" else {"features_extractor_class": ScaledFlattenExtractor}
     else:
         policy = "CnnPolicy"
         if front is None:
