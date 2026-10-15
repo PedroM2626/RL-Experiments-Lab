@@ -34,7 +34,8 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
 
-from diagnose_policy_saturation import (LayerNormExtractor, ViTLayerNormExtractor,
+from diagnose_policy_saturation import (LayerNormExtractor, ScaledFlattenExtractor,
+                                         ViTLayerNormExtractor, ViTMaxPoolExtractor,
                                          probe_frames, cross_game_response)
 from models.sb3_extractors import ClassicCNNExtractor
 from procgen_wrapper import make_procgen_env
@@ -100,7 +101,8 @@ def cross_frames(games, seed=1042, vector=False):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--game", default="bossfight")
-    ap.add_argument("--arch", choices=("classic", "vit", "mlp", "impoola", "vit_ln"),
+    ap.add_argument("--arch", choices=("classic", "vit", "mlp", "impoola", "vit_ln",
+                                       "mlp_scaled", "vit_maxpool"),
                     default="vit")
     ap.add_argument("--timesteps", type=int, default=100000)
     ap.add_argument("--seed", type=int, default=42)
@@ -110,7 +112,7 @@ def main():
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
 
-    vector = args.arch == "mlp"
+    vector = args.arch in ("mlp", "mlp_scaled")
     frames = probe_frames(args.game, args.seed + 1000, vector=vector)
     cg_frames = cross_frames(("maze", "heist", "bossfight", "starpilot", "dodgeball"),
                              vector=vector)
@@ -129,8 +131,11 @@ def main():
         front = ImpoolaCNNExtractor
     elif args.arch == "vit_ln":
         front = ViTLayerNormExtractor
+    elif args.arch == "vit_maxpool":
+        front = ViTMaxPoolExtractor
     if vector:
-        policy, pk = "MlpPolicy", {}
+        policy = "MlpPolicy"
+        pk = {} if args.arch == "mlp" else {"features_extractor_class": ScaledFlattenExtractor}
     else:
         policy = "CnnPolicy"
         if front is None:
