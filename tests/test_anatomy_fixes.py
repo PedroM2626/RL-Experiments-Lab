@@ -182,7 +182,7 @@ def test_the_response_scorecard_matches_the_grid(readme):
 def test_section_prose_carries_the_measured_numbers(readme):
     for s in (
         "**~35 GPU-minutes**",
-        "first dead probe at `16500`",
+        "repeats bare `vit`'s death on every seed tested (**3/3** dead",
         "peak `0.007601` at `29000`, dead at `41000`",
         "from `0.154` to **`0.247`**/`0.1168`",
         "normalizes an almost-invariant vector, and an almost-invariant vector is what comes out",
