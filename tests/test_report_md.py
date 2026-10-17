@@ -109,7 +109,7 @@ def test_the_bug_section_matches_the_rescue(report):
 
 def test_the_honesty_and_answer_sections_carry_the_established_facts(report):
     for s in (
-        "~165 GPU-minutes",
+        "~56 GPU-hours",
         "every claim recomputed from committed artifacts by CI on every push",
         "4/5",
         "was its seed's",
@@ -117,5 +117,10 @@ def test_the_honesty_and_answer_sections_carry_the_established_facts(report):
         "one division by 255",
         "starves each update of coverage",
         "the response measure does",
+        "`100k`, `250k` and `500k`",
+        "`0.254 → 0.538 → 0.682`",
+        "reads deeply and scores `1.14`",
+        "reads just as deeply and scores `0.02`",
+        "reads nothing at all and scores `0.64`",
     ):
         assert s in report, f"lost: {s!r}"
