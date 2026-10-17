@@ -1,0 +1,460 @@
+{
+ "_provenance": {
+  "produced_by": "summarize_budget500k.py",
+  "question": "what do return and response do at 5x the published budget, and does bossfight ever leave zero",
+  "recipe": "n_envs=16 x n_steps=256, seeds 42-46, paired with the 100k grid (all games) and the 250k sweep (starpilot/dodgeball)",
+  "arms": [
+   "classic",
+   "cbam",
+   "vit",
+   "mlp_vector"
+  ],
+  "games": [
+   "starpilot",
+   "dodgeball",
+   "bossfight"
+  ]
+ },
+ "arms": {
+  "classic": {
+   "reads": true,
+   "starpilot": {
+    "returns_100k": [
+     5.2,
+     3.5,
+     1.7,
+     1.8,
+     3.1
+    ],
+    "returns_500k": [
+     2.8,
+     3.5,
+     2.6,
+     3.2,
+     2.6
+    ],
+    "mean_100k": 3.06,
+    "mean_500k": 2.94,
+    "delta_vs_100k": -0.12,
+    "paired_deltas_vs_100k": [
+     -2.4,
+     0.0,
+     0.9,
+     1.4,
+     -0.5
+    ],
+    "tv_mean_100k": 0.280602,
+    "tv_mean_500k": 0.648337,
+    "tv_cells_500k_over_0p1": 5,
+    "mean_250k": 3.04,
+    "returns_250k": [
+     4.3,
+     3.3,
+     2.0,
+     3.2,
+     2.4
+    ],
+    "delta_vs_250k": -0.1,
+    "tv_mean_250k": 0.45106
+   },
+   "dodgeball": {
+    "returns_100k": [
+     1.4,
+     0.2,
+     0.8,
+     0.6,
+     1.0
+    ],
+    "returns_500k": [
+     0.0,
+     0.4,
+     0.6,
+     1.0,
+     2.8
+    ],
+    "mean_100k": 0.8,
+    "mean_500k": 0.96,
+    "delta_vs_100k": 0.16,
+    "paired_deltas_vs_100k": [
+     -1.4,
+     0.2,
+     -0.2,
+     0.4,
+     1.8
+    ],
+    "tv_mean_100k": 0.14602,
+    "tv_mean_500k": 0.350584,
+    "tv_cells_500k_over_0p1": 5,
+    "mean_250k": 1.04,
+    "returns_250k": [
+     1.0,
+     0.6,
+     1.2,
+     1.0,
+     1.4
+    ],
+    "delta_vs_250k": -0.08,
+    "tv_mean_250k": 0.267309
+   },
+   "bossfight": {
+    "returns_100k": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ],
+    "returns_500k": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.1
+    ],
+    "mean_100k": 0.0,
+    "mean_500k": 0.02,
+    "delta_vs_100k": 0.02,
+    "paired_deltas_vs_100k": [
+     0.0,
+     0.0,
+     0.0,
+     0.0,
+     0.1
+    ],
+    "tv_mean_100k": 0.253766,
+    "tv_mean_500k": 0.441471,
+    "tv_cells_500k_over_0p1": 5
+   }
+  },
+  "cbam": {
+   "reads": true,
+   "starpilot": {
+    "returns_100k": [
+     3.5,
+     2.2,
+     2.5,
+     2.0,
+     2.5
+    ],
+    "returns_500k": [
+     2.9,
+     3.7,
+     2.2,
+     2.0,
+     3.8
+    ],
+    "mean_100k": 2.54,
+    "mean_500k": 2.92,
+    "delta_vs_100k": 0.38,
+    "paired_deltas_vs_100k": [
+     -0.6,
+     1.5,
+     -0.3,
+     0.0,
+     1.3
+    ],
+    "tv_mean_100k": 0.253881,
+    "tv_mean_500k": 0.681832,
+    "tv_cells_500k_over_0p1": 5,
+    "mean_250k": 2.36,
+    "returns_250k": [
+     2.2,
+     2.1,
+     1.9,
+     2.2,
+     3.4
+    ],
+    "delta_vs_250k": 0.56,
+    "tv_mean_250k": 0.538095
+   },
+   "dodgeball": {
+    "returns_100k": [
+     3.8,
+     0.6,
+     1.0,
+     1.0,
+     2.4
+    ],
+    "returns_500k": [
+     0.8,
+     1.2,
+     2.4,
+     0.4,
+     1.6
+    ],
+    "mean_100k": 1.76,
+    "mean_500k": 1.28,
+    "delta_vs_100k": -0.48,
+    "paired_deltas_vs_100k": [
+     -3.0,
+     0.6,
+     1.4,
+     -0.6,
+     -0.8
+    ],
+    "tv_mean_100k": 0.174159,
+    "tv_mean_500k": 0.394287,
+    "tv_cells_500k_over_0p1": 5,
+    "mean_250k": 1.76,
+    "returns_250k": [
+     2.6,
+     0.6,
+     1.4,
+     2.6,
+     1.6
+    ],
+    "delta_vs_250k": -0.48,
+    "tv_mean_250k": 0.280417
+   },
+   "bossfight": {
+    "returns_100k": [
+     0.0,
+     0.3,
+     0.0,
+     0.1,
+     1.1
+    ],
+    "returns_500k": [
+     1.5,
+     0.2,
+     1.2,
+     1.7,
+     1.1
+    ],
+    "mean_100k": 0.3,
+    "mean_500k": 1.14,
+    "delta_vs_100k": 0.84,
+    "paired_deltas_vs_100k": [
+     1.5,
+     -0.1,
+     1.2,
+     1.6,
+     0.0
+    ],
+    "tv_mean_100k": 0.21202,
+    "tv_mean_500k": 0.439787,
+    "tv_cells_500k_over_0p1": 5
+   }
+  },
+  "vit": {
+   "reads": false,
+   "starpilot": {
+    "returns_100k": [
+     6.4,
+     1.7,
+     2.2,
+     1.5,
+     2.7
+    ],
+    "returns_500k": [
+     2.5,
+     2.4,
+     3.5,
+     2.5,
+     3.1
+    ],
+    "mean_100k": 2.9,
+    "mean_500k": 2.8,
+    "delta_vs_100k": -0.1,
+    "paired_deltas_vs_100k": [
+     -3.9,
+     0.7,
+     1.3,
+     1.0,
+     0.4
+    ],
+    "tv_mean_100k": 0.07431,
+    "tv_mean_500k": 0.058964,
+    "tv_cells_500k_over_0p1": 1,
+    "mean_250k": 2.36,
+    "returns_250k": [
+     2.2,
+     2.9,
+     2.4,
+     1.7,
+     2.6
+    ],
+    "delta_vs_250k": 0.44,
+    "tv_mean_250k": 0.078657
+   },
+   "dodgeball": {
+    "returns_100k": [
+     2.8,
+     2.2,
+     2.4,
+     1.2,
+     1.6
+    ],
+    "returns_500k": [
+     0.8,
+     1.6,
+     1.0,
+     2.4,
+     1.6
+    ],
+    "mean_100k": 2.04,
+    "mean_500k": 1.48,
+    "delta_vs_100k": -0.56,
+    "paired_deltas_vs_100k": [
+     -2.0,
+     -0.6,
+     -1.4,
+     1.2,
+     0.0
+    ],
+    "tv_mean_100k": 6e-05,
+    "tv_mean_500k": 1e-06,
+    "tv_cells_500k_over_0p1": 0,
+    "mean_250k": 1.36,
+    "returns_250k": [
+     1.0,
+     0.0,
+     1.4,
+     2.4,
+     2.0
+    ],
+    "delta_vs_250k": 0.12,
+    "tv_mean_250k": 0.0
+   },
+   "bossfight": {
+    "returns_100k": [
+     0.0,
+     0.0,
+     1.5,
+     2.4,
+     0.0
+    ],
+    "returns_500k": [
+     0.0,
+     0.0,
+     1.7,
+     1.5,
+     0.0
+    ],
+    "mean_100k": 0.78,
+    "mean_500k": 0.64,
+    "delta_vs_100k": -0.14,
+    "paired_deltas_vs_100k": [
+     0.0,
+     0.0,
+     0.2,
+     -0.9,
+     0.0
+    ],
+    "tv_mean_100k": 1e-06,
+    "tv_mean_500k": 0.0,
+    "tv_cells_500k_over_0p1": 0
+   }
+  },
+  "mlp_vector": {
+   "reads": false,
+   "starpilot": {
+    "returns_100k": [
+     1.8,
+     2.4,
+     2.7,
+     2.7,
+     2.2
+    ],
+    "returns_500k": [
+     4.8,
+     2.4,
+     1.8,
+     1.8,
+     2.9
+    ],
+    "mean_100k": 2.36,
+    "mean_500k": 2.74,
+    "delta_vs_100k": 0.38,
+    "paired_deltas_vs_100k": [
+     3.0,
+     0.0,
+     -0.9,
+     -0.9,
+     0.7
+    ],
+    "tv_mean_100k": 0.058618,
+    "tv_mean_500k": 0.091609,
+    "tv_cells_500k_over_0p1": 3,
+    "mean_250k": 2.84,
+    "returns_250k": [
+     2.6,
+     2.6,
+     2.3,
+     2.9,
+     3.8
+    ],
+    "delta_vs_250k": -0.1,
+    "tv_mean_250k": 0.120391
+   },
+   "dodgeball": {
+    "returns_100k": [
+     2.8,
+     0.6,
+     2.0,
+     0.8,
+     2.0
+    ],
+    "returns_500k": [
+     1.2,
+     1.6,
+     1.0,
+     0.4,
+     1.6
+    ],
+    "mean_100k": 1.64,
+    "mean_500k": 1.16,
+    "delta_vs_100k": -0.48,
+    "paired_deltas_vs_100k": [
+     -1.6,
+     1.0,
+     -1.0,
+     -0.4,
+     -0.4
+    ],
+    "tv_mean_100k": 0.049736,
+    "tv_mean_500k": 8e-05,
+    "tv_cells_500k_over_0p1": 0,
+    "mean_250k": 1.24,
+    "returns_250k": [
+     0.4,
+     0.8,
+     1.6,
+     1.6,
+     1.8
+    ],
+    "delta_vs_250k": -0.08,
+    "tv_mean_250k": 0.002116
+   },
+   "bossfight": {
+    "returns_100k": [
+     0.0,
+     0.0,
+     0.1,
+     1.4,
+     0.0
+    ],
+    "returns_500k": [
+     0.1,
+     1.5,
+     1.4,
+     1.4,
+     0.1
+    ],
+    "mean_100k": 0.3,
+    "mean_500k": 0.9,
+    "delta_vs_100k": 0.6,
+    "paired_deltas_vs_100k": [
+     0.1,
+     1.5,
+     1.3,
+     0.0,
+     0.1
+    ],
+    "tv_mean_100k": 0.109759,
+    "tv_mean_500k": 0.155674,
+    "tv_cells_500k_over_0p1": 3
+   }
+  }
+ }
+}
