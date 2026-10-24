@@ -7,7 +7,6 @@ Uses saved .zip models from new_archs (75) and maze_heist (40). No retraining.
 Saves results/re_eval_results.json incrementally after each model.
 """
 import os, json, glob, argparse
-import numpy as np, torch
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.monitor import Monitor

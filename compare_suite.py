@@ -3,7 +3,7 @@ Procgen Suite: bossfight + starpilot + dodgeball for entire benchmark
 - Runs World Models (4) + Procgen CNN (4) + Augment (3) on each game, 5 seeds, 50k (fast suite) or 100k
 - For overnight run: ~8h (50k) or ~12h (100k)
 """
-import os, json, argparse, itertools
+import os, json, argparse
 from datetime import datetime
 import numpy as np, torch
 from stable_baselines3 import PPO

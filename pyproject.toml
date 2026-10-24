@@ -12,6 +12,13 @@ authors = [{ name = "Pedro Morato Lahoz" }]
 # stacks need conflicting numpy/gym versions (see README section 13.2), and neither
 # is installable as a PEP 621 extra here because torch must come from the cu121 index.
 
+# Lint gate (added 24/10/2026): the pyflakes rules that are mechanically safe.
+# F841 (unused locals) is known debt -- 17 sites across the frozen study and port
+# code, each needing manual judgment (some look like intentional construction-
+# with-side-effect patterns) -- and is deliberately NOT selected until that pass.
+[tool.ruff.lint]
+select = ["F401", "F541", "F811"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]

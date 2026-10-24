@@ -17,7 +17,6 @@ import jax.numpy as jnp
 import numpy as np
 import optax
 
-from jax_port.backbones import BACKBONES
 
 
 class QNet(nn.Module):

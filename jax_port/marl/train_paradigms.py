@@ -15,7 +15,6 @@ import json
 import os
 import time
 
-import flax.linen as nn
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -28,7 +27,7 @@ from jax_port.marl.paradigms import (AgentEncoder, AttnCritic, JointBackbone,
 from jax_port.marl.ppo_marl import CentralCritic, make_update_float
 from jax_port.marl.smax_vec import SmaxVec
 from jax_port.networks import ActorCritic
-from jax_port.ppo import compute_gae, make_optimizer
+from jax_port.ppo import make_optimizer
 
 
 

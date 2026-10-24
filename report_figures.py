@@ -16,7 +16,6 @@ import argparse
 import json
 import os
 import re
-import sys
 
 import matplotlib
 matplotlib.use("Agg")
@@ -222,8 +221,8 @@ def main():
         if name in REBUILDABLE:
             continue
         print(f"  {name:34s} {script:26s} writes {produced}  [{source}]")
-    print(f"\nReproduction commands: README section 5. Data source per figure: "
-          f"results/*.json (see README section 4).")
+    print("\nReproduction commands: README section 5. Data source per figure: "
+          "results/*.json (see README section 4).")
 
 
 if __name__ == "__main__":

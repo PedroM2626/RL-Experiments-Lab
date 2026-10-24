@@ -10,11 +10,10 @@ import argparse
 from datetime import datetime
 import numpy as np
 import torch
-import gymnasium as gym
 from stable_baselines3 import PPO
-from stable_baselines3.common.vec_env import DummyVecEnv, VecTransposeImage
+from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3.common.callbacks import EvalCallback, StopTrainingOnRewardThreshold
+from stable_baselines3.common.callbacks import EvalCallback
 
 from env_setup import create_fast_env
 from models.sb3_extractors import ClassicCNNExtractor, AttentionCNNExtractor

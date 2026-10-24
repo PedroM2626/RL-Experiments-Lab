@@ -10,7 +10,6 @@ Implements:
 - Probability of Improvement (Mann-Whitney / Wilcoxon style U-statistic)
 """
 
-import math
 from typing import Callable, Dict, List, Optional, Tuple, Union
 import numpy as np
 

@@ -9,7 +9,6 @@ failing in the middle of a study run.
 """
 
 import argparse
-import copy
 import math
 
 import numpy as np

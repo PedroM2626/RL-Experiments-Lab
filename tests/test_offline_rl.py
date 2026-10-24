@@ -1,7 +1,6 @@
 """Unit tests for compare_offline_rl.py architectures and dataset."""
 
 import numpy as np
-import pytest
 import torch
 
 from compare_offline_rl import (

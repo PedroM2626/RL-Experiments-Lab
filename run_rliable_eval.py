@@ -15,13 +15,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from rliable_metrics import (
-    NUM_BOOTSTRAPS,
     compute_iqm,
     compute_trimmed_mean,
     compute_mean,
     compute_median,
     stratified_bootstrap_ci,
-    compute_performance_profile,
     compute_performance_profile_ci,
     compute_probability_of_improvement,
 )

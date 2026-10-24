@@ -30,7 +30,6 @@ def test_cross_game_response_keys():
         raise ImportError(f"procgen missing: {e}")
     import jax
     import jax.numpy as jnp
-    import optax
     from jax_port.backbones import BACKBONES
     from jax_port.networks import ActorCritic
     from jax_port.ppo import make_optimizer, make_update_fn

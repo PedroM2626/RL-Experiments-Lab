@@ -34,7 +34,7 @@ from stable_baselines3 import PPO
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.vec_env import DummyVecEnv
 
-from diagnose_policy_saturation import (LayerNormExtractor, ScaledFlattenExtractor,
+from diagnose_policy_saturation import (ScaledFlattenExtractor,
                                          ViTLayerNormExtractor, ViTMaxPoolExtractor,
                                          probe_frames, cross_game_response)
 from models.sb3_extractors import ClassicCNNExtractor

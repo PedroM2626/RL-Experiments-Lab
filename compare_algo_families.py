@@ -10,7 +10,7 @@ INDEPENDENT Benchmark: Value-based vs Policy-based (Section 12 of README).
 - Output: logs_algo/algo_zips + results/algo_families_results.json (incremental, error retry)
 """
 import os, json, argparse
-import numpy as np, torch
+import torch
 from stable_baselines3 import DQN, PPO, A2C
 from sb3_contrib import QRDQN
 from stable_baselines3.common.vec_env import DummyVecEnv

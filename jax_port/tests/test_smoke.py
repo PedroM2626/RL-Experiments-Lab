@@ -7,7 +7,6 @@ venv + GPU. Usage: python -m jax_port.tests.test_smoke
 import math
 import os
 import tempfile
-import types
 
 
 def test_smoke_train():

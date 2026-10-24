@@ -100,7 +100,7 @@ def test_the_bug_section_matches_the_rescue(report):
         assert s in report, f"bug section lost: {s!r}"
     runs = []
     for s in (42, 43, 44, 45, 46):
-        fn = f"probe_mlpscaled_dodgeball.json" if s == 42 else f"probe_mlpscaled_dodgeball_seed{s}.json"
+        fn = "probe_mlpscaled_dodgeball.json" if s == 42 else f"probe_mlpscaled_dodgeball_seed{s}.json"
         c = _load(fn)["curve"]
         assert all(r["cross_frame_tv_mean"] >= 5e-5 for r in c), f"s{s} died"
     best = _load("probe_mlpscaled_bossfight_seed44.json")["cross_game"]["max_pairwise_tv"]

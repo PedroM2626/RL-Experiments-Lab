@@ -4,7 +4,7 @@ Real-time side-by-side visualization: 2-4 Procgen agents playing simultaneously
 - If model.zip does not exist, uses random agent for demonstration
 - Python 3.10 + procgen 0.10.7
 """
-import os, argparse, glob, time
+import os, argparse, glob
 import numpy as np
 import cv2
 from procgen_wrapper import make_procgen_env

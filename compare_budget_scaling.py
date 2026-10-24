@@ -7,7 +7,7 @@ Budget Scaling (Roadmap 6.1 item #6): does the top architectures' advantage pers
 - Output: logs_budget/budget_zips + results/budget_results.json (incremental, resume-safe, error retry)
 """
 import os, json, argparse
-import numpy as np, torch
+import torch
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.monitor import Monitor

@@ -9,12 +9,10 @@ import argparse
 from datetime import datetime
 import numpy as np
 import torch
-import gym
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3.common.callbacks import EvalCallback
 
 from procgen_wrapper import make_procgen_env
 from models.sb3_extractors import ClassicCNNExtractor, AttentionCNNExtractor

@@ -10,7 +10,6 @@ feature-flat and action-dead where the 3.6.9 probe run of the same seed read.
 """
 import json
 import os
-import sys
 
 import pytest
 

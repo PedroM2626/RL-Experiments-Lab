@@ -12,7 +12,6 @@ lr=3e-4, gamma=0.99, lambda=0.95, clip=0.2, epochs=3, num_envs=64, rollout=128, 
 import argparse
 import json
 import os
-import sys
 import time
 
 import jax

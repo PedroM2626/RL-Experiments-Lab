@@ -13,7 +13,6 @@ compared steps that do not line up.
 """
 import json
 import os
-import re
 import sys
 
 import pytest

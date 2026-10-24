@@ -170,7 +170,7 @@ def test_marl_sequential_buffer():
         assert np.all(diffs == 1.0), f"Sequence time steps are not contiguous: {times}"
 
     # Verify end-to-end forward/backward with update function
-    from jax_port.marl.recurrent import REC_H, RecurrentQ, make_ql_seq_update
+    from jax_port.marl.recurrent import REC_H
     from jax_port.ppo import make_optimizer
     qnet = RecurrentQ(n_actions=5)
     mixer = QMixer(n_agents=A)

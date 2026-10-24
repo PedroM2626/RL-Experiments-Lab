@@ -112,7 +112,7 @@ class MARLSequentialBuffer:
 def train_recurrent_ql(args):
     """Recurrent VDN/QMIX (GRU-128): rollout with carry, updates in
     sequences L=32 (h0=zero, documented approximation), remainder identical."""
-    from flax.serialization import from_bytes, to_bytes
+    from flax.serialization import from_bytes
     from jax_port.marl.recurrent import REC_H, RecurrentQ, make_ql_seq_update
     jax.config.update("jax_compilation_cache_dir",
                       os.environ.get("JAX_PORT_CACHE", "/tmp/jax_port_cache"))

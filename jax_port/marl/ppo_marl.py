@@ -25,7 +25,7 @@ from jax_port.backbones import MlpBackbone
 from jax_port.marl.recurrent import RecurrentAC, make_ppo_seq_update
 from jax_port.marl.smax_vec import SmaxVec
 from jax_port.networks import ActorCritic
-from jax_port.ppo import compute_gae, make_optimizer
+from jax_port.ppo import make_optimizer
 
 
 def make_update_float(model, optimizer, clip_range=0.2, vf_coef=0.5,

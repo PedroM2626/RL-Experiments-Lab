@@ -24,7 +24,6 @@ Usage (inside the port venv; PYTHONPATH is the checkout root):
         --out jax_port/response_maze_classic_s42.json
 """
 
-import argparse
 import json
 
 import jax

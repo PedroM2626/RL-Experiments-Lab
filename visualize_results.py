@@ -3,8 +3,6 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 from tensorboard.backend.event_processing import event_accumulator
-import seaborn as sns
-from pathlib import Path
 
 
 def load_tensorboard_logs(log_dir):

@@ -19,7 +19,7 @@ import glob
 import json
 import os
 
-from jax_port.stats import auc_norm, rank_cells
+from jax_port.stats import rank_cells
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 GRADE_DEFAULT = os.path.join(BASE, "results_grade")
@@ -162,9 +162,9 @@ def guard_no_data_loss(out_path, rep, force):
               "than this run could load:")
         for suite, (old, new) in sorted(thinner.items()):
             print(f"  {suite:16s} committed={old:4d} this run={new:4d}")
-        print(f"The raw grid is not part of the repository (results_grade/ is git-ignored). "
-              f"Point --results_root at a directory of cell JSONs, or pass --force to accept "
-              f"the reduced analysis.")
+        print("The raw grid is not part of the repository (results_grade/ is git-ignored). "
+              "Point --results_root at a directory of cell JSONs, or pass --force to accept "
+              "the reduced analysis.")
         raise SystemExit(1)
 
 

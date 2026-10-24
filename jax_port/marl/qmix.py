@@ -11,7 +11,6 @@ import jax
 import jax.numpy as jnp
 import optax
 
-from jax_port.marl.ppo_marl import ActorOnly
 
 
 class QMixer(nn.Module):

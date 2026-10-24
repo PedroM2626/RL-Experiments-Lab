@@ -6,7 +6,6 @@ Re-evaluation with 100 episodes (upgrade of the 30 eps protocol) — without ret
 - Saves results/eval100_results.json incrementally (resume-safe)
 """
 import os, json, glob, argparse
-import numpy as np, torch
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.monitor import Monitor
