@@ -70,7 +70,7 @@ def get_obs(obs_d, mode):
     return to_vector(rgb) if mode == "vector" else rgb
 
 
-def train(args):
+def train(args, return_state=False):
     jax.config.update("jax_compilation_cache_dir",
                       os.environ.get("JAX_PORT_CACHE", "/tmp/jax_port_cache"))
     rng = np.random.default_rng(args.seed)
@@ -370,10 +370,21 @@ def train(args):
     if "eval_train" in out and "eval_unseen" in out:
         out["gen_gap"] = round(out["eval_train"]["mean"]
                                 - out["eval_unseen"]["mean"], 3)
+    if getattr(args, "response", False):
+        # the audit's validity measure (README 3.6.2), ported: does THIS policy read its
+        # observation at all? Opt-in because it builds one Procgen env per probe game; a
+        # run_grade cell that does not ask for it keeps its exact old output.
+        from jax_port.response import cross_game_response
+        assert not mem_mode, "--response: the memory-carried (transformer_xl) path is not measured"
+        out["cross_game_response"] = cross_game_response(
+            state, forward_fn, mode,
+            games=getattr(args, "response_games", None) or None,
+            probe_seed=getattr(args, "probe_seed", 1042), device=device)
+        print("cross_game_response:", json.dumps(out["cross_game_response"]))
     with open(args.out, "w") as fh:
         json.dump(out, fh, indent=2)
     print(json.dumps(out, indent=2))
-    return out
+    return (out, state) if return_state else out
 
 
 def evaluate(state, forward_fn, args, device, mode, num_levels, seed,
@@ -472,6 +483,14 @@ def build_parser():
     ap.add_argument("--eval-det-eps", type=int, default=0)
     ap.add_argument("--eval-train-eps", type=int, default=0)
     ap.add_argument("--eval-envs", type=int, default=8)
+    ap.add_argument("--response", action="store_true",
+                    help="attach the audit's cross-game response measure (README 3.6.2) to "
+                         "this run's JSON: five games' initial frames, max pairwise TV of "
+                         "the action distributions -- the port of "
+                         "diagnose_policy_saturation.cross_game_response (jax_port.response)")
+    ap.add_argument("--response-games", nargs="*",
+                    default=["maze", "heist", "bossfight", "starpilot", "dodgeball"])
+    ap.add_argument("--probe-seed", type=int, default=1042)
     ap.add_argument("--out", default="jax_port/pa2_train.json")
     return ap
 

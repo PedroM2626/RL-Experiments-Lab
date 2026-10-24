@@ -23,6 +23,7 @@ CASES = [
     ("temporal", "jax_port.tests.test_temporal", "run_all", True),
     ("exploration", "jax_port.tests.test_exploration", "run_all", True),
     ("marl", "jax_port.tests.test_marl", "run_all", True),
+    ("response", "jax_port.tests.test_response", "run_all", True),
 ]
 
 

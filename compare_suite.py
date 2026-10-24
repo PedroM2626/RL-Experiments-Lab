@@ -14,14 +14,17 @@ from procgen_wrapper import make_procgen_env
 from models.world_model_extractors import VAEExtractor, AEExtractor, ReconExtractor, ContrastiveExtractor
 from models.sb3_extractors import ClassicCNNExtractor, AttentionCNNExtractor
 from compare_augment_contrastive import ContrastiveCrop, ContrastiveColor, ContrastiveNoise
+from response_guard import attach_response, warn_if_blind, warn_thin_recipe
 
-def train_one(game, extractor_class, kwargs, timesteps, seed, log_dir, device, vector=False, n_envs=1, n_steps=256):
+def train_one(game, extractor_class, kwargs, timesteps, seed, log_dir, device, vector=False, n_envs=1, n_steps=256, vector_scale=False):
     # n_envs/n_steps default to the published recipe (1 x 256), so every existing call and
     # artifact is untouched. The pilot raises them (README 3.6.6): each env gets its own
     # level stream (seed + rank) -- N envs on one seed would be N copies of one trajectory.
-    def make_env(rank): return Monitor(make_procgen_env(game, num_levels=200, distribution_mode='easy', seed=seed + rank, vector=vector))
+    # vector_scale=False keeps the raw-uint8 vector the published mlp_vector arm was
+    # trained on (its input-scaling defect is README 3.6.12); mlp_scaled passes True.
+    def make_env(rank): return Monitor(make_procgen_env(game, num_levels=200, distribution_mode='easy', seed=seed + rank, vector=vector, vector_scale=vector_scale))
     vec = DummyVecEnv([(lambda r=rank: make_env(r)) for rank in range(n_envs)])
-    eval_env = DummyVecEnv([lambda: Monitor(make_procgen_env(game, num_levels=0, distribution_mode='easy', seed=seed+1000, vector=vector))])
+    eval_env = DummyVecEnv([lambda: Monitor(make_procgen_env(game, num_levels=0, distribution_mode='easy', seed=seed+1000, vector=vector, vector_scale=vector_scale))])
     if vector:
         policy, pk = "MlpPolicy", {}
     else:
@@ -49,6 +52,7 @@ def run_suite(games, timesteps, seeds, log_dir, device):
     augment_configs=AUGMENT_CONFIGS
 
     all_results={}
+    warn_thin_recipe()  # 3.6.4/3.6.5: this producer's 1x256 default trains blind policies
     for game in games:
         print(f"\n{'#'*70}\n# GAME {game} suite\n{'#'*70}")
         # World Models
@@ -59,7 +63,8 @@ def run_suite(games, timesteps, seeds, log_dir, device):
                 print(f"\n[{game}] wm {key} seed {seed}")
                 try:
                     m,s,model = train_one(game, cls, kw, timesteps, seed, log_dir, device, vector=False)
-                    print(f"-> {m:.2f}"); all_results[gk].append({'seed':seed,'mean_reward':m})
+                    resp = attach_response(model, vector=False); warn_if_blind(resp, f"{gk}_seed{seed}")
+                    print(f"-> {m:.2f}"); all_results[gk].append({'seed':seed,'mean_reward':m,'response':resp})
                     try: model.save(os.path.join(comp_dir, f"{gk}_seed{seed}.zip"))
                     except Exception as e: print(f"WARNING: checkpoint save failed for {gk}_seed{seed}: {e}")
                 except Exception as e:
@@ -72,7 +77,8 @@ def run_suite(games, timesteps, seeds, log_dir, device):
                 print(f"\n[{game}] cnn {key} seed {seed}")
                 try:
                     m,s,model = train_one(game, cls, kw, timesteps, seed, log_dir, device, vector=vec)
-                    print(f"-> {m:.2f}"); all_results[gk].append({'seed':seed,'mean_reward':m})
+                    resp = attach_response(model, vector=vec); warn_if_blind(resp, f"{gk}_seed{seed}")
+                    print(f"-> {m:.2f}"); all_results[gk].append({'seed':seed,'mean_reward':m,'response':resp})
                     try: model.save(os.path.join(comp_dir, f"{gk}_seed{seed}.zip"))
                     except Exception as e: print(f"WARNING: checkpoint save failed for {gk}_seed{seed}: {e}")
                 except Exception as e:
@@ -91,7 +97,8 @@ def run_suite(games, timesteps, seeds, log_dir, device):
                 print(f"\n[{game}] aug {key} seed {seed}")
                 try:
                     m,s,model = train_one(game, cls, dict(features_dim=512), timesteps, seed, log_dir, device, vector=False)
-                    print(f"-> {m:.2f}"); all_results[gk].append({'seed':seed,'mean_reward':m})
+                    resp = attach_response(model, vector=False); warn_if_blind(resp, f"{gk}_seed{seed}")
+                    print(f"-> {m:.2f}"); all_results[gk].append({'seed':seed,'mean_reward':m,'response':resp})
                     try: model.save(os.path.join(comp_dir, f"{gk}_seed{seed}.zip"))
                     except Exception as e: print(f"WARNING: checkpoint save failed for {gk}_seed{seed}: {e}")
                 except Exception as e:

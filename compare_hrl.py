@@ -21,6 +21,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.evaluation import evaluate_policy
 from procgen_wrapper import make_procgen_env
+from response_guard import attach_response, warn_if_blind, warn_thin_recipe
 
 DUR = 4  # primitive frames per skill / action-repeat
 FRAMES = 100_000
@@ -110,6 +111,7 @@ def main():
         with open(out_path) as f: results = json.load(f)
 
     jobs = [(g, arm, s) for g in args.games for arm in args.arms for s in args.seeds]
+    warn_thin_recipe()  # 3.6.4/3.6.5: this benchmark trains on the single-stream recipe
     print(f"{len(jobs)} jobs ({args.games} × {args.arms} × {args.seeds}), device={device}, {FRAMES//1000}k frames/arm")
     for i, (game, arm, seed) in enumerate(jobs):
         name = f"{game}_{arm}_seed{seed}"
@@ -118,11 +120,12 @@ def main():
         try:
             model = train_one(game, arm, seed, args.log_dir, device)
             m_st, m_dt, m_tr = eval_model(model, game, arm, seed)
+            resp = attach_response(model, vector=False); warn_if_blind(resp, name)
             try: model.save(os.path.join(zip_dir, f"{name}.zip"))
             except Exception as e: print(f"  zip save failed: {e}")
             results[name] = {'stoch_unseen': round(m_st, 3), 'det_unseen': round(m_dt, 3),
                              'stoch_train': round(m_tr, 3), 'gen_gap': round(m_tr - m_st, 3),
-                             'n_unseen': 100, 'n_train': 15, 'frames': FRAMES}
+                             'n_unseen': 100, 'n_train': 15, 'frames': FRAMES, 'response': resp}
             print(f"  stoch={m_st:.2f} det={m_dt:.2f} train={m_tr:.2f} gap={m_tr-m_st:+.2f}")
         except Exception as e:
             import traceback; traceback.print_exc()

@@ -34,15 +34,32 @@ import time
 
 import compare_new_archs as CNA
 import compare_suite as CS
+from compare_augment_contrastive import ContrastivePixelDrop
 from diagnose_policy_saturation import cross_game_response
+from models.world_model_extractors import ReconBottleneckExtractor
 
 BASE = os.path.dirname(os.path.abspath(__file__))
-# (arm, family, extractor class, kwargs, vector) -- assembled from the producers themselves
-ARMS = ([(k, "world_model", cls, kw, False) for k, cls, kw in CS.WORLD_CONFIGS]
-        + [(k, "procgen_cnn", cls, kw, vec) for k, cls, kw, vec in CS.PROCGEN_CONFIGS]
-        + [(k, "augment", cls, kw, False) for k, cls, kw in CS.AUGMENT_CONFIGS]
-        + [(k, "new_arch", cls, kw, False) for k, cls, kw in CNA.NEW_ARCH_CONFIGS])
+# (arm, family, extractor class, kwargs, vector, vector_scale) -- assembled from the
+# producers themselves. The sixteen published arms carry vector_scale=False, which is
+# exactly what 3.6.2/3.6.7 measured. mlp_scaled is the 3.6.12 input-scale lever as a
+# full grid arm: the same 256-D vector observation, scaled to [0,1] float32 by the
+# wrapper (procgen_wrapper.ProcgenVectorWrapper(scale=True)) -- it is opt-in, not part
+# of the published sixteen, so the default audit and every merged artifact are unchanged.
+ARMS = ([(k, "world_model", cls, kw, False, False) for k, cls, kw in CS.WORLD_CONFIGS]
+        + [(k, "procgen_cnn", cls, kw, vec, False) for k, cls, kw, vec in CS.PROCGEN_CONFIGS]
+        + [("mlp_scaled", "procgen_cnn", None, {}, True, True)]
+        + [("recon_bottleneck", "world_model", ReconBottleneckExtractor,
+            dict(features_dim=512, latent_dim=128), False, False)]
+        + [(k, "augment", cls, kw, False, False) for k, cls, kw in CS.AUGMENT_CONFIGS]
+        + [("c_aug_noise_drop", "augment", ContrastivePixelDrop, dict(features_dim=512), False, False)]
+        + [(k, "new_arch", cls, kw, False, False) for k, cls, kw in CNA.NEW_ARCH_CONFIGS])
 BY_NAME = {a[0]: a for a in ARMS}
+# the three opt-in arms added after the audit: the 3.6.12 input-scale lever and the two
+# genuinely-distinct variants of the same-program pairs (README 3.6.2). They are available
+# by name so a future grid can measure 17 distinct front ends; the default audit and every
+# merged artifact still cover exactly the published sixteen.
+EXTRA_ARMS = {"mlp_scaled", "recon_bottleneck", "c_aug_noise_drop"}
+PUBLISHED_ARMS = [a[0] for a in ARMS if a[0] not in EXTRA_ARMS]
 
 
 def load(out):
@@ -96,7 +113,7 @@ def steps_logged(log_dir):
 
 
 def run_arm(name, game, timesteps, seed, device, n_envs=1, n_steps=256):
-    _, family, cls, kw, vector = BY_NAME[name]
+    _, family, cls, kw, vector, vector_scale = BY_NAME[name]
     # Safe point for gym3 finalizers. Each arm builds ~7 Procgen envs (train, eval, five
     # cross-game probes) at n_envs=1 -- 22 at the pilot's 16 -- and gym3's Libenv.__del__
     # closes the C handle through cffi; when the gc triggers that collector while the
@@ -111,9 +128,11 @@ def run_arm(name, game, timesteps, seed, device, n_envs=1, n_steps=256):
                                          n_envs=n_envs, n_steps=n_steps)
     else:
         mean, std, model = CS.train_one(game, cls, kw, timesteps, seed, "logs_audit",
-                                        device, vector=vector, n_envs=n_envs, n_steps=n_steps)
-    resp = cross_game_response(model, vector=vector)
-    return {"family": family, "vector_obs": vector, "return_10eps": round(float(mean), 3),
+                                        device, vector=vector, n_envs=n_envs, n_steps=n_steps,
+                                        vector_scale=vector_scale)
+    resp = cross_game_response(model, vector=vector, vector_scale=vector_scale)
+    return {"family": family, "vector_obs": vector, "vector_scale": vector_scale,
+            "return_10eps": round(float(mean), 3),
             "std_10eps": round(float(std), 3),
             "seconds": round(time.time() - t0, 1), "n_envs": n_envs, "n_steps": n_steps,
             **resp}
@@ -178,7 +197,9 @@ def main():
                          "own level stream, per-update batch 4096 (3.6.6)")
     ap.add_argument("--n-steps", type=int, default=256,
                     help="rollout length per env per update, the published 256 by default")
-    ap.add_argument("--configs", nargs="*", default=[a[0] for a in ARMS])
+    ap.add_argument("--configs", nargs="*", default=PUBLISHED_ARMS,
+                    help="the sixteen published arms by default; mlp_scaled (the 3.6.12 "
+                         "input-scale lever) is available by naming it")
     ap.add_argument("--out", default=None)
     ap.add_argument("--merge", default=None, metavar="GLOB",
                     help="fuse shard files into --out instead of training")

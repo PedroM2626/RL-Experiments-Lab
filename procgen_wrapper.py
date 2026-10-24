@@ -51,13 +51,24 @@ class ProcgenVectorWrapper(gymn.Env):
     Non-vision variation of the same Procgen task: returns a flattened downsampled vector.
     Same game environment, but observation is a 256D vector (downsampled 16x16 grayscale flatten).
     Enables direct comparison between CNN and MLP in the identical environment.
+
+    scale=True (the fixed input path, README 3.6.12) returns float32 in [0,1]: the
+    mlp_vector arm of the published study was the only arm fed raw uint8, and that
+    saturated 91-98% of its head's first Tanh at initialization -- obs/255 rescues it on
+    every seed. scale=False keeps the legacy uint8 [0,255] observation the published
+    cells were trained on; make_procgen_env defaults to it so those cells stay
+    reproducible, and the audit's mlp_scaled arm is the one that opts in.
     """
-    def __init__(self, env, downsample=16):
+    def __init__(self, env, downsample=16, scale=True):
         super().__init__()
         self.env = env
         self.downsample = downsample
+        self.scale = scale
         # vector = downsample * downsample
-        self.observation_space = gymn.spaces.Box(low=0, high=255, shape=(downsample*downsample,), dtype=np.uint8)
+        if scale:
+            self.observation_space = gymn.spaces.Box(low=0.0, high=1.0, shape=(downsample*downsample,), dtype=np.float32)
+        else:
+            self.observation_space = gymn.spaces.Box(low=0, high=255, shape=(downsample*downsample,), dtype=np.uint8)
         self.action_space = gymn.spaces.Discrete(env.action_space.n)
 
     def reset(self, **kwargs):
@@ -79,17 +90,23 @@ class ProcgenVectorWrapper(gymn.Env):
         else:
             gray = obs
         small = cv2.resize(gray, (self.downsample, self.downsample), interpolation=cv2.INTER_AREA)
-        return small.flatten().astype(np.uint8)
+        flat = small.flatten()
+        if self.scale:
+            return flat.astype(np.float32) / 255.0
+        return flat.astype(np.uint8)
 
 
-def make_procgen_env(game='coinrun', num_levels=200, distribution_mode='easy', seed=0, frame_stack=1, vector=False):
+def make_procgen_env(game='coinrun', num_levels=200, distribution_mode='easy', seed=0, frame_stack=1, vector=False, vector_scale=False):
     """
     Procgen Environment Factory
     game: coinrun, starpilot, bossfight, dodgeball, etc.
     vector=False -> 64x64x3 image (Vision), True -> 256D vector (Non-vision)
+    vector_scale=False (default) keeps the legacy raw-uint8 vector of the published
+    mlp_vector arm, so every archived cell stays reproducible; pass vector_scale=True
+    for the fixed [0,1] float32 observation (README 3.6.12, the mlp_scaled arm).
     """
     env = gym.make(f'procgen:procgen-{game}-v0', num_levels=num_levels, start_level=0, distribution_mode=distribution_mode, rand_seed=seed)
     if vector:
-        return ProcgenVectorWrapper(env)
+        return ProcgenVectorWrapper(env, scale=vector_scale)
     else:
         return ProcgenGymWrapper(env, frame_stack=frame_stack)

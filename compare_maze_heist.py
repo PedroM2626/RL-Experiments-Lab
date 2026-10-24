@@ -21,18 +21,23 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from procgen_wrapper import make_procgen_env
 from models.sb3_extractors import ClassicCNNExtractor
 from models.bonuses import ICMWrapper, RNDWrapper, NGUWrapper
+from response_guard import attach_response, warn_if_blind, warn_thin_recipe
 
 WRAPPERS = {'icm': ICMWrapper, 'rnd': RNDWrapper, 'ngu': NGUWrapper}
 
 
-def train_one(game, wrapper, timesteps, seed, log_dir, device, eval_eps, run_name, normalize=False):
-    def make_env():
-        env=make_procgen_env(game, num_levels=200, distribution_mode='easy', seed=seed, vector=False)
+def train_one(game, wrapper, timesteps, seed, log_dir, device, eval_eps, run_name, normalize=False, n_envs=1, n_steps=256):
+    # n_envs=1 is the published recipe; --n-envs 16 with the default n_steps=256 is the
+    # responsive recipe of README 3.6.7 (per-rank level streams, per-update batch 4096).
+    # The 3.6.1 scaled-bonus arms were measured at 1 env -- a 16-env run is therefore a
+    # NEW arm, and it writes to its own run directory (see main()).
+    def make_env(rank):
+        env=make_procgen_env(game, num_levels=200, distribution_mode='easy', seed=seed + rank, vector=False)
         if wrapper: env=WRAPPERS[wrapper](env, normalize=normalize)
         return Monitor(env)
-    vec=DummyVecEnv([make_env])
+    vec=DummyVecEnv([(lambda r=rank: make_env(r)) for rank in range(n_envs)])
     eval_env=DummyVecEnv([lambda: Monitor(make_procgen_env(game, num_levels=0, distribution_mode='easy', seed=seed+1000, vector=False))])
-    model=PPO("CnnPolicy", vec, verbose=0, learning_rate=3e-4, n_steps=256, batch_size=64, n_epochs=3, gamma=0.99, gae_lambda=0.95, clip_range=0.2, seed=seed, device=device, policy_kwargs={"features_extractor_class": ClassicCNNExtractor, "features_extractor_kwargs": dict(features_dim=512)}, tensorboard_log=log_dir)
+    model=PPO("CnnPolicy", vec, verbose=0, learning_rate=3e-4, n_steps=n_steps, batch_size=64, n_epochs=3, gamma=0.99, gae_lambda=0.95, clip_range=0.2, seed=seed, device=device, policy_kwargs={"features_extractor_class": ClassicCNNExtractor, "features_extractor_kwargs": dict(features_dim=512)}, tensorboard_log=log_dir)
     t0=time.time()
     # tb_log_name carries the config because scorecard_analysis.py must attribute each
     # learning curve to the arm that produced it; the default "PPO_n" numbering only
@@ -41,8 +46,22 @@ def train_one(game, wrapper, timesteps, seed, log_dir, device, eval_eps, run_nam
     model.learn(total_timesteps=timesteps, tb_log_name=run_name)
     bonus=None
     if wrapper:
-        # env_method reaches the innermost wrapper through Monitor's attribute proxying
-        st = vec.env_method('stats')[0]
+        # env_method reaches the innermost wrapper through Monitor's attribute proxying;
+        # at n_envs>1 every env carries its own wrapper (its own trailing window), so the
+        # cell's bookkeeping is the step-weighted aggregate over all of them
+        stats_all = vec.env_method('stats')
+        steps = sum(s['steps'] for s in stats_all)
+        st = {
+            'wrapper': stats_all[0]['wrapper'], 'steps': steps,
+            'bonus_applied': sum(s['bonus_applied'] for s in stats_all),
+            'bonus_ratio': sum(s['bonus_applied'] for s in stats_all) / max(1, steps),
+            'intrinsic_mean': sum(s['intrinsic_mean'] * s['steps'] for s in stats_all) / max(1, steps),
+            'effective_bonus': sum(s['effective_bonus'] * s['steps'] for s in stats_all) / max(1, steps),
+            'effective_max': max(s['effective_max'] for s in stats_all),
+            'normalized': stats_all[0]['normalized'],
+            'norm_window': stats_all[0]['norm_window'], 'clip': stats_all[0]['clip'],
+            'beta': stats_all[0]['beta'], 'n_envs': len(stats_all),
+        }
         print(f"[{game}_{wrapper}] intrinsic bonus applied on {st['bonus_applied']}/{st['steps']} steps, "
               f"raw mean={st['intrinsic_mean']:.5f}, injected per step mean={st['effective_bonus']:.3e} "
               f"max={st['effective_max']:.3e}")
@@ -99,6 +118,11 @@ def main():
                              'reward, so flipping this changes what the arm IS, not whether it works')
     parser.add_argument('--resume', type=str, default=None,
                         help='existing run directory to continue (its completed cells are kept and skipped)')
+    parser.add_argument('--n-envs', type=int, default=1,
+                        help='parallel envs per run; 1 is the published recipe, 16 is the responsive '
+                             'recipe of README 3.6.7 (per-rank level streams seed+rank)')
+    parser.add_argument('--n-steps', type=int, default=256,
+                        help='rollout length per env per update (the published 256)')
     args=parser.parse_args()
     for w in args.arms:
         if w not in WRAPPERS and w!='ppo':
@@ -113,15 +137,18 @@ def main():
     else:
         ts=datetime.now().strftime("%Y%m%d_%H%M%S")
         # the normalized arms are a different benchmark, not a re-run of the same one, so the
-        # run directory says which: cells_measured() globs the parent and must not merge them
-        comp_dir=os.path.join(args.log_dir, f"maze_heist_{'_'.join(args.games)}_{'_'.join(args.arms)}{'_norm' if args.normalize else ''}_{ts}")
+        # run directory says which: cells_measured() globs the parent and must not merge them;
+        # a 16-env run is yet another arm definition, so it gets its own name too
+        comp_dir=os.path.join(args.log_dir, f"maze_heist_{'_'.join(args.games)}_{'_'.join(args.arms)}{'_norm' if args.normalize else ''}{'_nenv%d' % args.n_envs if args.n_envs > 1 else ''}_{ts}")
     os.makedirs(comp_dir, exist_ok=True)
     protocol={'timesteps': args.timesteps, 'seeds': args.seeds, 'games': args.games,
               'arms': args.arms, 'eval_episodes': args.eval_eps,
               'eval_levels': 'unseen (num_levels=0, seed+1000)',
               'train_levels': 200, 'distribution_mode': 'easy',
+              'n_envs': args.n_envs, 'n_steps': args.n_steps,
               'intrinsic_beta': 0.01, 'bonus_normalized': bool(args.normalize),
               'torch': torch.__version__, 'device': device}
+    warn_thin_recipe(args.n_envs)
     results={}
     done=set()
     prior=os.path.join(comp_dir,'comparison_results.json')
@@ -145,10 +172,11 @@ def main():
                 print(f"\n{'='*60}\n{gk} seed {seed} {game}\n{'='*60}")
                 results[gk]=[c for c in results[gk] if c['seed']!=seed]
                 try:
-                    mean,std,model,bonus,secs=train_one(game, w if w!='ppo' else None, args.timesteps, seed, args.log_dir, device, args.eval_eps, f"{gk}_seed{seed}", args.normalize)
+                    mean,std,model,bonus,secs=train_one(game, w if w!='ppo' else None, args.timesteps, seed, args.log_dir, device, args.eval_eps, f"{gk}_seed{seed}", args.normalize, n_envs=args.n_envs, n_steps=args.n_steps)
+                    resp = attach_response(model, vector=False); warn_if_blind(resp, f"{gk}_seed{seed}")
                     print(f"{gk} seed {seed}: {mean:.2f} +/- {std:.2f} in {secs}s")
                     results[gk].append({'seed': seed, 'mean_reward': mean, 'std_reward': std,
-                                        'seconds': secs, 'bonus': bonus})
+                                        'seconds': secs, 'bonus': bonus, 'response': resp})
                     try: model.save(os.path.join(comp_dir, f"{gk}_seed{seed}.zip"))
                     except Exception as e: print(f"WARNING: checkpoint save failed for {gk}_seed{seed}: {e}")
                 except Exception as e:

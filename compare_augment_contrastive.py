@@ -35,6 +35,23 @@ class ContrastiveNoise(ContrastiveExtractor):
     # arm of compare_world_models.py — documented as a duplicate in README section 6.1
     pass
 
+
+class ContrastivePixelDrop(ContrastiveExtractor):
+    # the c_aug_noise slot as a genuinely distinct program (added 24/10/2026): the
+    # published ContrastiveNoise subclassed with 'pass', an exact duplicate of the
+    # contrastive arm (README 3.6.2, verified bitwise under one seed). This variant
+    # replaces the additive 0.01-Gaussian with pixel dropout: each pixel is zeroed
+    # independently with p=drop_p during training — a strictly stronger corruption the
+    # base arm's jitter cannot express. Opt-in audit arm 'c_aug_noise_drop'; the
+    # published 'c_aug_noise' arm is untouched.
+    def __init__(self, observation_space, features_dim=512, drop_p=0.1):
+        super().__init__(observation_space, features_dim)
+        self.drop_p = drop_p
+
+    def augment(self, obs):
+        keep = (torch.rand_like(obs) >= self.drop_p).float()
+        return obs * keep
+
 def train_one(game, num_levels, cls, timesteps, seed, log_dir, device):
     def make_env(): return Monitor(make_procgen_env(game, num_levels=num_levels, distribution_mode='easy', seed=seed, vector=False))
     vec = DummyVecEnv([make_env])

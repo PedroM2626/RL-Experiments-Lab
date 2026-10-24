@@ -1,0 +1,139 @@
+{
+  "_provenance": {
+    "produced_by": "audit_suite_validity.py",
+    "question": "does each of the 16 published arms condition on its observation",
+    "training": "compare_suite.train_one / compare_new_archs.train_one, recipe recorded in n_envs/n_steps",
+    "response_measure": "max pairwise total variation across five games' initial frames (diagnose_policy_saturation.cross_game_response)",
+    "note": "TV near 0 means the policy emits the same action distribution for five different games; it is not a measure of skill",
+    "game": "dodgeball",
+    "timesteps": 100000,
+    "seed": 42,
+    "n_envs": 16,
+    "n_steps": 256,
+    "shards_merged": [
+      "logs_audit/shards_mlpscaled\\sh-dodgeball-s42-mlp_scaled.json",
+      "logs_audit/shards_mlpscaled\\sh-dodgeball-s43-mlp_scaled.json",
+      "logs_audit/shards_mlpscaled\\sh-dodgeball-s44-mlp_scaled.json",
+      "logs_audit/shards_mlpscaled\\sh-dodgeball-s45-mlp_scaled.json",
+      "logs_audit/shards_mlpscaled\\sh-dodgeball-s46-mlp_scaled.json"
+    ],
+    "rows": "arm@seed, one shard per seed"
+  },
+  "arms": {
+    "mlp_scaled@42": {
+      "family": "procgen_cnn",
+      "vector_obs": true,
+      "vector_scale": true,
+      "return_10eps": 0.8,
+      "std_10eps": 0.98,
+      "seconds": 82.3,
+      "n_envs": 16,
+      "n_steps": 256,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "vector",
+      "max_pairwise_tv": 0.017074,
+      "feat_mean": 0.4698,
+      "feat_max": 0.996,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 0.1875
+    },
+    "mlp_scaled@43": {
+      "family": "procgen_cnn",
+      "vector_obs": true,
+      "vector_scale": true,
+      "return_10eps": 2.0,
+      "std_10eps": 2.0,
+      "seconds": 84.8,
+      "n_envs": 16,
+      "n_steps": 256,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "vector",
+      "max_pairwise_tv": 0.006789,
+      "feat_mean": 0.4698,
+      "feat_max": 0.996,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 0.1437
+    },
+    "mlp_scaled@44": {
+      "family": "procgen_cnn",
+      "vector_obs": true,
+      "vector_scale": true,
+      "return_10eps": 1.6,
+      "std_10eps": 1.96,
+      "seconds": 58.2,
+      "n_envs": 16,
+      "n_steps": 256,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "vector",
+      "max_pairwise_tv": 0.008738,
+      "feat_mean": 0.4698,
+      "feat_max": 0.996,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 0.275
+    },
+    "mlp_scaled@45": {
+      "family": "procgen_cnn",
+      "vector_obs": true,
+      "vector_scale": true,
+      "return_10eps": 2.0,
+      "std_10eps": 1.789,
+      "seconds": 59.1,
+      "n_envs": 16,
+      "n_steps": 256,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "vector",
+      "max_pairwise_tv": 0.025153,
+      "feat_mean": 0.4698,
+      "feat_max": 0.996,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 0.1094
+    },
+    "mlp_scaled@46": {
+      "family": "procgen_cnn",
+      "vector_obs": true,
+      "vector_scale": true,
+      "return_10eps": 2.2,
+      "std_10eps": 2.272,
+      "seconds": 60.3,
+      "n_envs": 16,
+      "n_steps": 256,
+      "games": [
+        "maze",
+        "heist",
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ],
+      "observation": "vector",
+      "max_pairwise_tv": 0.016219,
+      "feat_mean": 0.4698,
+      "feat_max": 0.996,
+      "distinct_argmax_across_games": 1,
+      "first_tanh_saturated_fraction": 0.1625
+    }
+  }
+}

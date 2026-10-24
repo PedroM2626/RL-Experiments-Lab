@@ -130,6 +130,8 @@ def main():
         "architectures": {},
         "canonical_architectures": {},
         "canonical_exclusions": {},
+        "best_anchored_architectures": {},
+        "best_anchored_exclusions": {},
         "probability_of_improvement": {},
     }
 
@@ -154,6 +156,40 @@ def main():
         raise RuntimeError("canonical normalization requested, but no game has a valid random/reference pair")
     for g, why in results["canonical_exclusions"].items():
         print(f"NOTE: '{g}' excluded from canonical normalization — {why}")
+
+    # 3b. Best-measured anchor (added 24/10/2026). The canonical formula needs an expert
+    # ceiling per game, and the reference architecture is not one on every game
+    # (dodgeball: cnn_classic does not beat the random policy, section 18.1). The best
+    # measured policy of this dataset is a defensible ceiling FOR THIS DATASET'S OWN
+    # comparison -- stated as such, never as a human or near-optimal ceiling: a
+    # normalized score above 1 means "beat the best measured arm of this study".
+    best_means, best_arch = {}, {}
+    for g in all_games:
+        cand = [(float(np.mean(data[a][g])), a) for a in all_archs if g in data.get(a, {})]
+        if not cand:
+            continue
+        m, a = max(cand)
+        best_means[g], best_arch[g] = m, a
+    best_anchored_games = []
+    for g in all_games:
+        r_mean = random_baselines.get(g, {}).get("mean")
+        if r_mean is None:
+            results["best_anchored_exclusions"][g] = "no empirical random baseline"
+            continue
+        if g not in best_means:
+            results["best_anchored_exclusions"][g] = "no measured runs"
+            continue
+        if best_means[g] - r_mean <= 1e-4:
+            results["best_anchored_exclusions"][g] = (
+                f"no measured architecture beats the random anchor "
+                f"(best {best_arch[g]} mean {best_means[g]:.3f} vs random {r_mean:.3f})")
+            continue
+        best_anchored_games.append(g)
+    results["best_anchored_games"] = best_anchored_games
+    results["best_anchor"] = {g: {"arch": best_arch[g], "mean": round(best_means[g], 3)}
+                              for g in best_anchored_games}
+    for g, why in results["best_anchored_exclusions"].items():
+        print(f"NOTE: '{g}' excluded from best-anchored normalization — {why}")
 
     # Focus on the 3-game suite architectures (evaluated across bossfight, starpilot, dodgeball)
     suite_archs = [a for a in all_archs if set(SUITE_GAMES).issubset(data[a].keys())]
@@ -191,6 +227,18 @@ def main():
                 "canonical_iqm": round(c_iqm, 4),
                 "canonical_ci95": [round(c_lo, 4), round(c_hi, 4)],
                 "games": list(canonical_games),
+            }
+        best_suite_games = [g for g in SUITE_GAMES if g in best_anchored_games]
+        if best_suite_games:
+            best_subset = {}
+            for g in best_suite_games:
+                r_mean = random_baselines[g]["mean"]
+                best_subset[g] = (data[a][g] - r_mean) / (best_means[g] - r_mean)
+            b_iqm, (b_lo, b_hi) = stratified_bootstrap_ci(best_subset, metric_fn=compute_iqm)
+            results["best_anchored_architectures"][a] = {
+                "best_anchored_iqm": round(b_iqm, 4),
+                "best_anchored_ci95": [round(b_lo, 4), round(b_hi, 4)],
+                "games": list(best_suite_games),
             }
         suite_eval.append((a, iqm_est, iqm_lo, iqm_hi, trim_est, trim_lo, trim_hi, mean_norm))
 

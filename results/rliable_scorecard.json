@@ -9,12 +9,12 @@
       "max": 1.78
     },
     "heist": {
-      "min": 0.1,
-      "max": 1.4
+      "min": 0.3,
+      "max": 2.4
     },
     "maze": {
-      "min": 0.8,
-      "max": 3.8
+      "min": 1.2,
+      "max": 4.2
     },
     "starpilot": {
       "min": 0.28,
@@ -713,6 +713,204 @@
   "canonical_exclusions": {
     "dodgeball": "cnn_classic mean 0.960 does not exceed random 0.960"
   },
+  "best_anchored_architectures": {
+    "aug_color": {
+      "best_anchored_iqm": 0.0956,
+      "best_anchored_ci95": [
+        -0.4105,
+        0.4373
+      ],
+      "games": [
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ]
+    },
+    "aug_crop": {
+      "best_anchored_iqm": 0.2803,
+      "best_anchored_ci95": [
+        -0.1454,
+        0.792
+      ],
+      "games": [
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ]
+    },
+    "aug_noise": {
+      "best_anchored_iqm": 0.0693,
+      "best_anchored_ci95": [
+        -0.5619,
+        0.3611
+      ],
+      "games": [
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ]
+    },
+    "cnn_cbam": {
+      "best_anchored_iqm": 0.6414,
+      "best_anchored_ci95": [
+        0.0617,
+        1.0733
+      ],
+      "games": [
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ]
+    },
+    "cnn_classic": {
+      "best_anchored_iqm": 0.2394,
+      "best_anchored_ci95": [
+        -0.016,
+        0.5346
+      ],
+      "games": [
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ]
+    },
+    "cnn_mlp_vector": {
+      "best_anchored_iqm": 0.5302,
+      "best_anchored_ci95": [
+        0.2149,
+        1.423
+      ],
+      "games": [
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ]
+    },
+    "cnn_spatial": {
+      "best_anchored_iqm": 0.3626,
+      "best_anchored_ci95": [
+        0.0599,
+        0.8019
+      ],
+      "games": [
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ]
+    },
+    "impala": {
+      "best_anchored_iqm": 0.1851,
+      "best_anchored_ci95": [
+        -0.1371,
+        0.4909
+      ],
+      "games": [
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ]
+    },
+    "impoola": {
+      "best_anchored_iqm": 0.2172,
+      "best_anchored_ci95": [
+        -0.1149,
+        0.677
+      ],
+      "games": [
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ]
+    },
+    "lstm_attention": {
+      "best_anchored_iqm": 0.3864,
+      "best_anchored_ci95": [
+        0.0629,
+        0.7931
+      ],
+      "games": [
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ]
+    },
+    "resnet18": {
+      "best_anchored_iqm": 0.7157,
+      "best_anchored_ci95": [
+        -0.0683,
+        1.7487
+      ],
+      "games": [
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ]
+    },
+    "vit": {
+      "best_anchored_iqm": -0.1654,
+      "best_anchored_ci95": [
+        -0.8247,
+        0.3934
+      ],
+      "games": [
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ]
+    },
+    "wm_ae": {
+      "best_anchored_iqm": 0.028,
+      "best_anchored_ci95": [
+        -0.263,
+        0.428
+      ],
+      "games": [
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ]
+    },
+    "wm_contrastive": {
+      "best_anchored_iqm": 0.0693,
+      "best_anchored_ci95": [
+        -0.5619,
+        0.3611
+      ],
+      "games": [
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ]
+    },
+    "wm_recon": {
+      "best_anchored_iqm": 0.2736,
+      "best_anchored_ci95": [
+        -0.1312,
+        0.7572
+      ],
+      "games": [
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ]
+    },
+    "wm_vae": {
+      "best_anchored_iqm": 0.217,
+      "best_anchored_ci95": [
+        -0.1561,
+        0.6443
+      ],
+      "games": [
+        "bossfight",
+        "starpilot",
+        "dodgeball"
+      ]
+    }
+  },
+  "best_anchored_exclusions": {
+    "heist": "no measured architecture beats the random anchor (best rnd mean 1.040 vs random 2.800)",
+    "maze": "no measured architecture beats the random anchor (best ngu mean 2.760 vs random 4.400)"
+  },
   "probability_of_improvement": {
     "resnet18_vs_cnn_mlp_vector": {
       "p": 0.413,
@@ -858,5 +1056,24 @@
   "canonical_games": [
     "bossfight",
     "starpilot"
-  ]
+  ],
+  "best_anchored_games": [
+    "bossfight",
+    "dodgeball",
+    "starpilot"
+  ],
+  "best_anchor": {
+    "bossfight": {
+      "arch": "aug_crop",
+      "mean": 0.676
+    },
+    "dodgeball": {
+      "arch": "resnet18",
+      "mean": 1.156
+    },
+    "starpilot": {
+      "arch": "cnn_mlp_vector",
+      "mean": 2.666
+    }
+  }
 }

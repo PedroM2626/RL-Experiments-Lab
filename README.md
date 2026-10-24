@@ -64,8 +64,11 @@ The tables above rank by *return*; §3.6 established that at this budget return 
 | `mlp_vector` | 3/15 | 0.072704 |
 | `impoola` | 3/15 | 0.088043 |
 | `vit` | 1/15 | 0.024790 |
+| `mlp_scaled` † | 7/15 | 0.135081 |
 
 `vae` has 14, not 15 cells: its `bossfight`/seed-42 training diverged to `NaN` (§3.6.7). The cliff between 13/15 and 3/15 is the architecture result this study set out to produce and only obtained once the response measure existed; what the cells' *returns* did under the same recipe is in §3.6.7 — they did not track this table. **The ten-minute narrative of the whole diagnostic arc (§3.6.2–§3.6.12) is [REPORT.md](REPORT.md)** — every number in it gated on the same artifacts as this document.
+
+`mlp_scaled` († added 24/10/2026) is not one of the published sixteen: it is the §3.6.12 input-scale rescue run as a full audit arm — the same `256-D` vector observation as `mlp_vector`, divided by `255` in the wrapper (`procgen_wrapper.ProcgenVectorWrapper(scale=True)`; the raw path stays the factory default so every published cell remains reproducible). At the audit's own protocol it more than doubles the arm's responsive cells (`7/15` against the raw arm's `3/15`, TV mean `0.135081` against `0.072704`) with the birth saturation gone (first `Tanh` `2–28%` on every cell, against `91–98%` at birth for the raw arm) — and it carries the arc's one caveat: on `dodgeball` it reads *within* the game but stays below the cross-game threshold on all five seeds (`0/5`), the §3.6.10 within-game-reader pattern. Data: `results/suite_validity_nenv16_mlp_scaled.json` (`summarize_mlpscaled_grid.py --check` gated; §3.6.12).
 
 ---
 
@@ -287,6 +290,8 @@ All three main-suite games collapse; `coinrun` does not. Across these five runs 
 **A second, separate defect: the `vae` arm diverges to `NaN` on `bossfight`.** At seed `42` the run stopped with `ValueError: Expected parameter logits (Tensor of shape (1, 15)) ... found invalid values: tensor([[nan, nan, ...]])`, and the artifact records `39680` of `100000` steps logged before it died — so the action logits went `NaN` **during training** and the cell never reached its budget (§6 item 9). The audit writes it as an error instead of scoring it `0.00`, and three independent runs of that cell produced the same message at the same step. It is not a property of the extractor: the same arm at seeds `43` and `44` completes `100000` steps and measures normally (`0.000013` and `0.037041` cross-game TV, feature max `65.04` and `40.47`; `results/suite_validity_bossfight_vae_seeds.json`). Nor is it one bad draw: `dodgeball` at seed `42` trains to completion but drives its own extractor features to `72202032513024.0` (`7.2e13`, against `233.98` for the same arm on `starpilot`). So `vae`'s row in §3.3/§5.2 rests on an arm that today either dies mid-run or reaches a $10^{13}$ latent, depending on the game.
 
 **Two pairs of the sixteen are the same program.** `contrastive`/`c_aug_noise` is the documented case (§5.2 note). `ae`/`recon` is a second one: as `models/world_model_extractors.py` stands, `ReconExtractor` and `AEExtractor` build the same modules in the same order and differ only by an attribute name (`fc` → `fc_enc`) — verified by rebuilding both under one seed: identical parameter count (`1201923`), bitwise-equal weights, bitwise-equal `forward` output. Each pair was trained in a separate process and returned rows identical to the last digit (`1.40` / `0.000000` / `174.74` and `3.30` / `0.004306` / `247.39`), which also says the pipeline is reproducible on this hardware. The headline comparison is therefore `14` distinct visual front ends, not `16`; in the archived grid these two arms report `1.13` vs `1.05`, so those archived numbers did not come from the file now in the tree.
+
+> **Follow-up (24/10/2026): the pair facts are now a gate, and both slots have genuinely distinct opt-in variants.** `tests/test_distinct_arms.py` rebuilds both pairs under one seed and asserts the bitwise equality above, so the `14`-front-end count can no longer drift silently. The registry also carries the two slots as distinct programs, available by name to a future grid without touching any published arm: `recon_bottleneck` (`models/world_model_extractors.py`) gives `recon` the narrower path its docstring always claimed — encode → `128-D` bottleneck → `512` — and `c_aug_noise_drop` (`compare_augment_contrastive.py:ContrastivePixelDrop`) replaces the inherited `0.01` jitter with pixel dropout (`p=0.1`), a corruption the base arm cannot express. With `mlp_scaled` (§3.6.12) the registry now exposes `17` distinct front ends; the default audit and every merged artifact still cover exactly the published sixteen.
 
 **What this does and does not say about §3.7 and §3.12.** It is a measurement of the recipe, re-run today, not a measurement of the archived numbers — those weights no longer exist. What it establishes is that the recipe used for the 16-architecture comparison produces state-independent policies on all three of its games: the audit now covers `48` of the comparison's own cells (`16` arms `×` `bossfight`/`starpilot`/`dodgeball`), and every one of the `47` that reached its budget emits a single argmax for five different games. The rankings there are therefore **unverified**, not confirmed: a comparison of policies that do not read the observation cannot attribute a difference to the visual architecture. What the audit does *not* do is restore the archived table — it does not re-run the `5`-seed grid, and it says nothing about why the policies collapse (§6 item 9).
 
@@ -557,6 +562,12 @@ The two anatomies survive replication: `vit`'s frontal collapse is 9/10 cells ac
 
 **3. What this closes, and the one-line status of the whole arc.** The two anatomies of §3.6.10 now have their mechanisms graded: the head-side one is **caused** (input scale, demonstrated by rescue), the frontal one is **robust** (three single-stage interventions, three refutations, each localizing the collapse deeper). Together with §3.6.11's five-seed replication, the mechanism question that opened as "why do the SB3 policies ignore the observation?" now ends at a pair of one-sentence answers: *the recipe starved the update of coverage (§3.6.4–§3.6.5), and the arms that still went blind under the fix did so through two specific, mapped, differentially-fixable defects — one of which was a bug.*
 
+> **Follow-up (24/10/2026): the rescue is now a first-class pipeline arm, and the grid confirms it at the audit's own protocol.** The obs/255 fix lived only in the probe script's registry; it is now in the shared wrapper (`ProcgenVectorWrapper(scale=True)`, with the raw path kept as the factory default so every published cell stays reproducible) and the audit exposes it as an opt-in `mlp_scaled` arm. Re-run as the full grid — 3 games × 5 seeds at the `16×256` recipe, `15` cells, `0.39` GPU-hours, `0` errors — the scaled arm reads on **`7/15` cells against the raw arm's `3/15`** (TV mean `0.135081` vs `0.072704`), born unsaturated everywhere (first `Tanh` `2–28%`); `bossfight` `4/5` responsive (TVs `0.094–0.281`), `starpilot` `3/5` (`0.064–0.424`, seed 46 at `0.424` — past `classic`'s own `0.275`), and the caveat the probes could not see: `dodgeball` `0/5` (TVs `0.007–0.025`) — the scaled arm is a *within-game* reader there, the §3.6.10 pattern, not a non-reader. Returns move inside noise (`starpilot 2.72` vs raw `2.36`, `bossfight 0.50` vs `0.30`, `dodgeball 1.72` vs `1.64`). Artifacts: `results/suite_validity_nenv16_mlp_scaled.json` (+ the three per-game fusions), folded by `summarize_mlpscaled_grid.py` from `logs_audit/shards_mlpscaled/` (`--check` gated).
+
+![occlusion attribution over the key cells](results/occlusion_maps.png)
+
+> **Where a reader reads (24/10/2026): occlusion attribution over the eight key cells.** `diagnose_occlusion.py` slides a zeroed `16×16` patch over the `64×64` frame (a `4×4` grid of sites; the vector arm occludes the matching `4×4` blocks of its `16×16` downsample) on `12` held-out random-walk frames per cell and measures how much each site moves the action distribution. The eight committed key-cell checkpoints of §4 separate on three rungs: the readers are structured — `classic`/bossfight mean site TV `0.040` with a `0.181` max site, `classic`/dodgeball `0.046`, `mlp_scaled`/bossfight `0.025`; the blind cells are flat at `0.00001–0.0002` — `vit` on both games, `impoola`/bossfight, and the raw `mlp_vector` cell; and the within-game caveat gets its number: `mlp_scaled`/dodgeball sits **two orders of magnitude above the flat `vit`/`impoola` cells** (`0.00126` against `0.00001–0.00002`), still `8×` above the least-flat blind cell (the raw `mlp_vector` cell at `0.00016`), and `20–35×` below the readers — it reads its screen, locally, without generalizing across games, which is §3.6.10's category made quantitative. Data: `results/occlusion_summary.json` (`diagnose_occlusion.py --check` re-measures the committed checkpoints).
+
 ### 3.6.8. The Budget Test: Does 2.5× Training Repair the Return Ranking? (14/10/2026)
 
 §3.6.7 left one escape hatch open: maybe return fails to track the front end *only* because `100k` is too little. The test is cheap and pairs perfectly — the same cells, same recipe, same seeds, only the budget changed: four arms × {`starpilot`, `dodgeball`} × seeds `42–46` re-trained at **`250k`**, against their own `100k` rows from the §3.6.7 grid. The arms are the contrast the question needs: the two that never read (`vit`, `mlp_vector`) and two that read on every measured cell (`classic`, `cbam`). Artifacts: `results/suite_validity_nenv16_{starpilot,dodgeball}_250k.json` (the sweep's per-game fusions) folded against the grid by `summarize_budget_nenv16.py` into `results/suite_validity_nenv16_budget250k.json` (`--check` gated). Cost: **40 cells, 67 min of wall clock at 4 workers** (4.17 h of summed cell time). `bossfight` is excluded on purpose: at `100k` every arm scores `0.00–0.78` there, so it carries almost no signal to double.
@@ -798,6 +809,7 @@ For each architecture evaluated across the 3 core suite games (`bossfight`, `sta
 >    Every pairwise comparison among the top 5 falls inside $[0.36, 0.64]$ with CIs crossing $0.5$ — no architecture in this benchmark is demonstrably superior to another.
 > 3. **Performance Profiles:** The cumulative performance profile (see Figure 4.9, `results/rliable_profile.png`) demonstrates that `cnn_mlp_vector` and `resnet18` dominate higher normalized return thresholds ($\tau > 0.6$), whereas `lstm_attention`, `cnn_spatial`, and `cnn_cbam` show higher probability mass at moderate thresholds ($\tau \approx 0.5$). Data serialized in `results/rliable_scorecard.json`.
 > 4. **Canonical (Agarwal) normalization covers only 2 of the 3 suite games:** `dodgeball` is excluded because the reference architecture `cnn_classic` does not beat the empirical random policy there (see section 18.1). `maze` and `heist` are excluded because no `cnn_classic` arm was ever trained on them. A previously published `classic_means` value of `1.0` for those two games was a silent code fallback, not a measurement; it has been removed.
+   **Updated (24/10/2026):** `run_rliable_eval.py` now also computes a *best-anchored* canonical normalization — the same Agarwal formula with the best measured policy of this dataset as the per-game ceiling (`results/rliable_scorecard.json` → `best_anchored_architectures`), stated as a dataset-relative ceiling and never a human one: a normalized score above `1` means "beat the best measured arm of this study". It covers **all 3 suite games** — `dodgeball` enters with `resnet18` at `1.156` as its ceiling (against the random anchor's `0.960`) — while `maze`/`heist` remain excluded under a sharper reason: no measured architecture beats the random anchor there at all (`maze` best `ngu 2.760` vs random `4.400`; `heist` best `rnd 1.040` vs `2.800`), which is §18.1's finding expressed as an eligibility rule. The classic-anchored block is unchanged beside it.
 
 
 ---
@@ -816,7 +828,7 @@ All generated visual artifacts and figures are versioned under `results/`.
 | `coinrun_50k_cnn_vs_mlp.png` (4.1), `bossfight_100k_world_models.png` (4.2) | `report_figures.py` | `results/legacy_records.json` (per-seed values of the pruned runs) | ✅ `py -3.10 report_figures.py` |
 | `rliable_profile.png` (4.9) | `run_rliable_eval.py` | `results/eval100_results.json` + `results/random_baselines.json` | ✅ `py -3.10 run_rliable_eval.py` |
 | `symbolic_regression_*.png` (21.3–21.5) | `symbolic_regression.py` | `jax_port/cells_summary.json` → `results/symbolic_regression.json` | ✅ `py -3.10 symbolic_regression.py` |
-| `suite_*` (4.3), `bossfight_hard_100k.png` (4.4), `new_archs_*` (4.5), `maze_heist_*` (4.6), `global_16.png` (4.7) | `compare_suite.py`, `compare_bossfight_hard.py`, `compare_new_archs.py`, `compare_maze_heist.py`, `compare_combined.py` | their `logs_*/<run>/` directories, which are git-ignored and were pruned | ❌ needs the benchmark re-run (commands in section 5); the files below are the originals from those runs |
+| `suite_*` (4.3), `bossfight_hard_100k.png` (4.4), `new_archs_*` (4.5), `maze_heist_*` (4.6), `global_16.png` (4.7) | `compare_suite.py`, `compare_bossfight_hard.py`, `compare_new_archs.py`, `compare_maze_heist.py`, `compare_combined.py` | their `logs_*/<run>/` directories, which are git-ignored and were pruned | ❌ needs the benchmark re-run (commands in section 5); the files below are the originals from those runs — and their rankings are the state-independent policies of §3.6.2, so they stand as the archived record, not as architecture results |
 
 `py -3.10 report_figures.py --check` fails if this README embeds a figure that is not in the repository, or one with no recorded producer in the table above. It runs as a step in `.github/workflows/tests.yml` and is asserted again in `tests/test_report_figures.py`, so a figure can no longer drift away from its data silently. Regenerating 4.1/4.2 in place reproduces the same means and per-seed values; the error bars are sample standard deviations (`ddof=1`, matching section 3.8) and therefore slightly wider than the population standard deviations quoted in section 7.
 
@@ -827,20 +839,30 @@ All generated visual artifacts and figures are versioned under `results/`.
 ![Bossfight 100k — World Models](results/bossfight_100k_world_models.png)
 
 ### 4.3. Suite 100k — 3 Games × 11 Architectures
+
+> ⚠️ **Archived ranking (§3.6.2–3.6.5):** these runs trained under the single-stream `1×256` recipe, and the audit measured every re-run of that recipe as producing state-independent policies — the bars are the historical record, not an architecture result.
 | Bossfight | Starpilot | Dodgeball |
 |---|---|---|
 | ![Suite Bossfight](results/suite_bossfight.png) | ![Suite Starpilot](results/suite_starpilot.png) | ![Suite Dodgeball](results/suite_dodgeball.png) |
 
 ### 4.4. Bossfight HARD 100k — Stress Test
+
+> ⚠️ **Archived ranking (§3.6.2–3.6.5):** these runs trained under the single-stream `1×256` recipe, and the audit measured every re-run of that recipe as producing state-independent policies — the bars are the historical record, not an architecture result.
 ![Bossfight HARD 100k](results/bossfight_hard_100k.png)
 
 ### 4.5. New Archs 100k — 5 New Architectures × 3 Games
+
+> ⚠️ **Archived ranking (§3.6.2–3.6.5):** these runs trained under the single-stream `1×256` recipe, and the audit measured every re-run of that recipe as producing state-independent policies — the bars are the historical record, not an architecture result.
 ![New Archs Bossfight](results/new_archs_bossfight.png) | ![New Archs Starpilot](results/new_archs_starpilot.png) | ![New Archs Dodgeball](results/new_archs_dodgeball.png)
 
 ### 4.6. Maze+Heist 100k — PPO vs ICM/RND/NGU
+
+> ⚠️ **Archived ranking (§3.6.2–3.6.5):** these runs trained under the single-stream `1×256` recipe, and the audit measured every re-run of that recipe as producing state-independent policies — the bars are the historical record, not an architecture result.
 ![Maze](results/maze_heist_maze_plot.png) | ![Heist](results/maze_heist_heist_plot.png)
 
 ### 4.7. Global 16 — 3-Game Average
+
+> ⚠️ **Archived ranking (§3.6.2–3.6.5):** these runs trained under the single-stream `1×256` recipe, and the audit measured every re-run of that recipe as producing state-independent policies — the bars are the historical record, not an architecture result.
 ![Global 16](results/global_16.png)
 
 ### 4.8. Videos
@@ -893,6 +915,8 @@ py -3.10 -u diagnose_policy_saturation.py --game maze --timesteps 50000 --probe-
 py -3.10 summarize_dense_multiseed.py  # folds the dense-probe runs (7 arms x 5 seeds + 3 levers x 2) into results/policy_saturation_dense_multiseed.json (sections 3.6.5); --check re-verifies the fold against the per-run files
 py -3.10 -u audit_suite_validity.py --game starpilot --n-envs 16 --n-steps 256 --configs classic --out logs_audit/shards_nenv16/sh-classic.json  # one cell of the 3.6.6 pilot (one arm per process -- the cffi deadlock note); the 16 shards are fused by --merge "logs_audit/shards_nenv16/sh-*.json" --out results/suite_validity_starpilot_nenv16.json, and the producers' train_one gained n_envs/n_steps (defaults = the published 1x256, untouched)
 py -3.10 run_grid_nenv16.py --workers 6  # the full 240-cell re-run of section 3.6.7 (16 arms x 3 games x seeds 42-46 at 16x256): resume-safe, one process per cell (concurrent processes must not share a JSON -- a violation cost two rows once), holds keep-awake, --status shows progress
+py -3.10 run_grid_nenv16.py --workers 4 --arms mlp_scaled --shards logs_audit/shards_mlpscaled  # the 3.6.12 input-scale rescue as a full audit arm (15 cells, ~24 min); merge each game's shards with audit_suite_validity.py --merge ... --key-by-seed, then:
+py -3.10 summarize_mlpscaled_grid.py  # folds the three fusions into results/suite_validity_nenv16_mlp_scaled.json (3.6.12 follow-up, section 0.1 row); --check re-verifies
 py -3.10 audit_suite_validity.py --merge "logs_audit/shards_nenv16_grid/sh-starpilot-s*-*.json" --key-by-seed --out results/suite_validity_nenv16_starpilot.json  # one of the three per-game fusions (bossfight/dodgeball identical), then:
 py -3.10 summarize_grid_nenv16.py  # folds the three fusions into results/suite_validity_nenv16_grid.json (section 3.6.7); --check re-verifies the fold against them
 py -3.10 run_grid_nenv16.py --workers 4 --timesteps 250000 --games starpilot dodgeball --arms classic cbam vit mlp_vector --shards logs_audit/shards_nenv16_250k  # the 3.6.8 budget sweep: 40 cells paired with the 100k grid; merge each game's shards with --key-by-seed, then:
@@ -925,6 +949,8 @@ py -3.10 -u lr_sensitivity.py --device cuda  # Learning rate sensitivity test fo
 ---
 
 ## 6. Offline RL Benchmark (Completed 25/09/2026)
+
+> ⚠️ **Validity scope (added 24/10/2026):** the dataset was collected with the single-stream recipe (`DummyVecEnv` of one, `compare_offline_rl.py`), and §3.6.2–3.6.5 measured every arm of that recipe as emitting a near-constant action marginal. The BC/IQL/CQL/DT comparison below is a comparison of offline learners on the dataset they were given — it stands as that — but it cannot attribute differences to visual processing either; and the models here are not SB3 `BaseAlgorithm`s, so `response_guard.py` does not attach to them. A response-measured offline benchmark is an open item.
 
 > **Note:** Paths such as `D:\mario-ds`, `D:\mujoco-walker`, `D:\Imitation-player`, and `D:\mario64ds-rl` refer to **external reference codebases** outside this repository — they are not required to reproduce the benchmarks above.
 
@@ -1080,7 +1106,9 @@ Rendered on demand via `visualize_side_by_side.py` (commands documented in secti
 
 ---
 
-## 11. Independent Benchmark — HRL vs Flat RL (`jumper`/`plunder`)
+## 11. Independent Benchmark — HRL vs Flat RL (jumper/plunder)
+
+> ⚠️ **Validity note (added 24/10/2026):** every arm here trains on the single-stream recipe (`DummyVecEnv` of one, `compare_hrl.py:74`), which §3.6.4–3.6.5 measured to kill observation-conditioning below ~4 distinct levels per update — the same caveat §3.13 carries. The temporal-abstraction findings stand as measurements of what each arm's *policy* does under this recipe; these arms were never audited with the cross-game response measure, so they must not be read as evidence about the visual/hierarchical front ends. The producers now print the thin-recipe warning and (since 24/10/2026) attach a `response_guard.py` row to every future run, so a re-run can carry the audit cheaply.
 
 > ⚠️ **Separated from the primary study:** Not incorporated into the scorecard of sections 3.x/6.1; tracked under dedicated logs/results (`logs_hrl/`, `results/hrl_results.json`).
 
@@ -1130,7 +1158,9 @@ To isolate these factors, we executed an action-repeat parameter sweep across $k
 
 ---
 
-## 12. Independent Benchmark — Value-Based vs Policy-Based (`starpilot`/`dodgeball`/`bossfight`)
+## 12. Independent Benchmark — Value-Based vs Policy-Based (starpilot/dodgeball/bossfight)
+
+> ⚠️ **Validity note (added 24/10/2026):** every arm here trains on the single-stream recipe (`DummyVecEnv` of one, `compare_algo_families.py:76`) — the same caveat §3.13 carries, and these arms were never audited with the cross-game response measure. The policy-vs-value conclusion stands as a measurement of this recipe's arms. Since 24/10/2026 the producer attaches a `response_guard.py` row to every future run (for the value-based arms it is a documented softmax-over-q pseudo-distribution, since DQN/QR-DQN have no stochastic head), so a re-run answers "were these policies even reading the screen?" for free.
 
 > ⚠️ **Separated from the primary study** (which compared *architectures* with fixed `PPO`): Here, the independent variable is the **algorithmic optimization family**. Tracked in separate directories (`logs_algo/`, `results/algo_families_results.json`).
 
@@ -1312,6 +1342,7 @@ Each component of the original study corresponds to a JAX module in `jax_port/`,
 | Statistics: CI/Cohen/AUC (§3.8–3.9) | `stats.py` (Student's t, Cohen's d, trapezoidal integration) | `test_stats` validated against analytical values |
 | Grids + budget scaling + hard + pilot + extensions (§2–3.13) | `run_grade.py` (suites: main/exploration/algo/hrl/budget/hard/pilot/spr/gnn/aux, `--distribution`, resume via `master.json`) + `spr.py` + `contrast.py` | Mini-grid 26/26 cells verified (§15.4.1) |
 | Controlled SB3 vs JAX Benchmark (§15.3) | `bench_sb3_paired.py` + `paired_*.json` | Arms A/B/C empirically profiled |
+| Cross-game response measure (§3.6.2, §0.1) | `jax_port/response.py` + `train.py --response` (added 24/10/2026) | `test_response`: TV helper + full-measure smoke on a built policy (§19); in-venv smoke: `classic`/maze 20k steps → TV `0.139`, `2` argmax, responsive |
 
 #### 15.4.1. Empirical Test Evidence (05/09/2026, `/root/procgen-jax`, RTX 4070)
 - `test_stats`: `STATS_OK` across both environments (Win py3.10 and Linux venv).
@@ -1616,13 +1647,14 @@ The repository contains automated unit tests across both PyTorch and JAX backend
 - **Figure Provenance Tests (`tests/test_report_figures.py`):** the set of figures embedded in this README must equal the `PROVENANCE` map, each entry must name a script that still exists and a real data source, and the figures claimed rebuildable must have their per-seed arrays present (5 seeds each) in `results/legacy_records.json`.
 - **Symbolic Regression Tests (`tests/test_symbolic_regression.py`):** eleven cases guarding section 21. The important one is not about search quality but about validity: it perturbs every measured return and asserts the feature matrix is bit-identical afterwards, which is what proves `gen_gap` (train − unseen) never leaked into the inputs. Also covered: an unmapped configuration raises instead of being silently dropped, Wilson intervals behave and widen with fewer trials, the complexity-vs-error and inversion helpers, and **a real gplearn fit** — the guard that would have caught the `scikit-learn` 1.7 incompatibility at CI time rather than twenty minutes into a study run.
 
-- **JAX Port Test Suite (`python -m jax_port.tests.run_tests`)** — six registered modules, each SKIP-ponly on a missing optional dependency:
+- **JAX Port Test Suite (`python -m jax_port.tests.run_tests`)** — seven registered modules, each SKIP-ponly on a missing optional dependency:
   - `test_stats`: Student-t CI, Cohen's d, AUC normalization and the top-1-vs-top-2 CI-overlap predicate (both the separated and the indistinguishable case).
   - `test_parity`: old-gym Procgen vs the JAX env on observations, rewards and autoreset over 200 steps.
   - `test_zoo`: all 13 backbones forward-pass with shape and parameter-count checks.
   - `test_smoke`: end-to-end PPO training run; its arguments are built by `train.build_parser()` so a flag rename cannot leave a stale hand-built namespace behind.
   - `test_temporal`: memory-backbone shapes and `StackVec` stacking — previously orphaned, never invoked by the runner.
   - `test_marl`: `run_all()` executes **all five** cases — `MARLSequentialBuffer` temporal integrity and per-environment isolation, recurrent Q-learning Bellman target masking and gradient updates, battle metrics and win-rate accounting, adapter autoreset, and the finite-loss sweep over the seven algorithms. Before 23/09/2026 the runner registered only `test_losses`, while this section cited the other four as validation evidence.
+  - `test_response` (added 24/10/2026): the port of the audit's cross-game response measure (`jax_port/response.py`, the §3.6.2/§0.1 instrument, so a port grid can carry response rows the way `audit_suite_validity.py` does). The numpy TV helper — the scorecard threshold's own arithmetic — runs without procgen and is therefore exercised in the CI port job; the full measure on a freshly built `classic` policy needs the port venv's procgen and SKIPs without it (verified in-venv on 24/10/2026, both cases green; a 20k-step `--response` smoke on `maze` reads its observation, TV `0.139`).
 
 ---
 

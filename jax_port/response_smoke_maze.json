@@ -1,0 +1,62 @@
+{
+  "game": "maze",
+  "seed": 42,
+  "algo": "ppo",
+  "extractor": "classic",
+  "stack": 1,
+  "obs_mode": "pixels",
+  "augment": "none",
+  "explore": "none",
+  "explore_stats": null,
+  "aux": "none",
+  "timesteps": 20480,
+  "wall_s": 21.1,
+  "sps": 969.4,
+  "train_episodes": 58,
+  "train_ret_mean20": 4.5,
+  "curve": [
+    {
+      "steps": 10240,
+      "ret20": 4.0
+    },
+    {
+      "steps": 20480,
+      "ret20": 4.5
+    }
+  ],
+  "aux_loss_mean": null,
+  "hparams": {
+    "algo": "ppo",
+    "lr": 0.0003,
+    "gamma": 0.99,
+    "lambda": 0.95,
+    "clip": 0.2,
+    "epochs": 3,
+    "num_envs": 16,
+    "rollout": 128,
+    "minibatch": 512
+  },
+  "phase_s": {
+    "rollout": 10.24,
+    "gae": 0.52,
+    "update": 10.33
+  },
+  "eval_unseen": {
+    "mean": 10.0,
+    "eps": 10
+  },
+  "cross_game_response": {
+    "games": [
+      "maze",
+      "heist",
+      "bossfight",
+      "starpilot",
+      "dodgeball"
+    ],
+    "observation": "pixels",
+    "max_pairwise_tv": 0.139,
+    "distinct_argmax_across_games": 2,
+    "v_std_across_games": 0.33161,
+    "responsive": true
+  }
+}

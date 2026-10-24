@@ -5,6 +5,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  schedule:
+    # Mondays 03:00 UTC: dependency drift is this repo's known fragility (the
+    # scikit-learn<1.6 cap for gplearn 0.4.2, section 21.8), and a silent break
+    # must surface on a schedule, not at the next study run.
+    - cron: "0 3 * * 1"
 
 jobs:
   study:

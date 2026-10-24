@@ -17,6 +17,7 @@ from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.evaluation import evaluate_policy
 from procgen_wrapper import make_procgen_env
+from response_guard import attach_response, warn_if_blind, warn_thin_recipe
 
 def make_algo(name, env, seed, device, log_dir, value_lr=1e-4):
     if name == 'ppo':   # identical hyperparameters to main study
@@ -67,6 +68,7 @@ def main():
         with open(out_path) as f: results = json.load(f)
 
     jobs = [(g, a, s) for g in args.games for a in args.algos for s in args.seeds]
+    warn_thin_recipe()  # 3.6.4/3.6.5: every arm here trains on one env
     print(f"{len(jobs)} jobs ({args.games} × {args.algos} × {args.seeds}), device={device}, {args.timesteps} steps")
     for i, (game, algo, seed) in enumerate(jobs):
         name = f"{game}_{algo}_seed{seed}"
@@ -78,11 +80,12 @@ def main():
             model.learn(total_timesteps=args.timesteps)
             vec.close()
             m_st, m_dt, m_tr = eval_model(model, game, seed)
+            resp = attach_response(model, vector=False); warn_if_blind(resp, name)
             try: model.save(os.path.join(zip_dir, f"{name}.zip"))
             except Exception as e: print(f"  zip save failed: {e}")
             results[name] = {'stoch_unseen': round(m_st, 3), 'det_unseen': round(m_dt, 3),
                              'stoch_train': round(m_tr, 3), 'gen_gap': round(m_tr - m_st, 3),
-                             'n_unseen': 100, 'n_train': 15}
+                             'n_unseen': 100, 'n_train': 15, 'response': resp}
             print(f"  stoch={m_st:.2f} det={m_dt:.2f} train={m_tr:.2f} gap={m_tr-m_st:+.2f}")
         except Exception as e:
             import traceback; traceback.print_exc()

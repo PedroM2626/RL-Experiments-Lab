@@ -190,7 +190,7 @@ GAMES_FOR_CROSS_CHECK = ("maze", "heist", "bossfight", "starpilot", "dodgeball")
 
 
 def cross_game_response(model, games=GAMES_FOR_CROSS_CHECK, seed=1042, vector=False,
-                        frame_stack=1):
+                        frame_stack=1, vector_scale=False):
     """Total variation between the action distributions of five DIFFERENT games.
 
     Within one Procgen game consecutive frames barely differ (a 300-step random walk in maze
@@ -200,6 +200,9 @@ def cross_game_response(model, games=GAMES_FOR_CROSS_CHECK, seed=1042, vector=Fa
 
     vector=True feeds the same games through the 256-D downsampled observation, because the
     mlp_vector arm's input space is a vector and would otherwise reject every frame.
+    vector_scale must match the arm's training scale (False = the published raw-uint8
+    observation, True = the 3.6.12 fixed [0,1] float32 one); a probe frame in the wrong
+    scale would saturate or deaden the head and report a response that is not there.
     """
     import numpy as _np
     pol = model.policy
@@ -207,7 +210,8 @@ def cross_game_response(model, games=GAMES_FOR_CROSS_CHECK, seed=1042, vector=Fa
     probs, sat, feats = [], [], []
     for g in games:
         env = make_procgen_env(g, num_levels=0, distribution_mode="easy", seed=seed,
-                               vector=vector, frame_stack=frame_stack)
+                               vector=vector, frame_stack=frame_stack,
+                               vector_scale=vector_scale)
         o = env.reset()
         o = o[0] if isinstance(o, tuple) else o
         env.close()

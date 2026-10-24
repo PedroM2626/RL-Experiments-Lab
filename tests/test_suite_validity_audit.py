@@ -17,7 +17,7 @@ sys.path.insert(0, ROOT)
 
 import compare_new_archs as CNA  # noqa: E402
 import compare_suite as CS  # noqa: E402
-from audit_suite_validity import ARMS, BY_NAME, merge  # noqa: E402
+from audit_suite_validity import ARMS, BY_NAME, EXTRA_ARMS, PUBLISHED_ARMS, merge  # noqa: E402
 
 PUBLISHED = (
     [k for k, _cls, _kw in CS.WORLD_CONFIGS]
@@ -27,11 +27,19 @@ PUBLISHED = (
 
 
 def test_audit_covers_exactly_the_sixteen_published_arms():
-    assert len(ARMS) == 16, f"the headline comparison is 16 architectures, found {len(ARMS)}"
-    assert set(BY_NAME) == set(PUBLISHED), (
-        f"audit-only: {sorted(set(BY_NAME) - set(PUBLISHED))}; "
-        f"published-only: {sorted(set(PUBLISHED) - set(BY_NAME))}")
-    assert len(BY_NAME) == len(PUBLISHED) == len(set(PUBLISHED)), "duplicate arm name"
+    """Since 24/10/2026 the registry also carries opt-in arms added after the audit
+    (mlp_scaled, the 3.6.12 input-scale lever; recon_bottleneck and
+    c_aug_noise_drop, the distinct variants of the same-program pairs). The DEFAULT
+    audit must still cover exactly the published sixteen, and every extra arm must
+    be declared in EXTRA_ARMS so the two sets cannot drift apart."""
+    assert len(PUBLISHED_ARMS) == 16, (
+        f"the headline comparison is 16 architectures, found {len(PUBLISHED_ARMS)}")
+    assert set(PUBLISHED_ARMS) == set(PUBLISHED), (
+        f"audit-only: {sorted(set(PUBLISHED_ARMS) - set(PUBLISHED))}; "
+        f"published-only: {sorted(set(PUBLISHED) - set(PUBLISHED_ARMS))}")
+    assert set(BY_NAME) == set(PUBLISHED) | EXTRA_ARMS
+    assert len(BY_NAME) == len(set(BY_NAME)), "duplicate arm name"
+    assert EXTRA_ARMS == {"mlp_scaled", "recon_bottleneck", "c_aug_noise_drop"}
 
 
 def test_audit_reuses_the_producers_and_does_not_rebuild_ppo():
@@ -51,8 +59,9 @@ def test_audit_reuses_the_producers_and_does_not_rebuild_ppo():
 
 
 def test_every_arm_names_an_importable_extractor_or_the_vector_case():
-    for name, family, cls, kwargs, vector in ARMS:
+    for name, family, cls, kwargs, vector, vector_scale in ARMS:
         assert family in {"world_model", "procgen_cnn", "augment", "new_arch"}, name
+        assert isinstance(vector_scale, bool), name  # 6th field since 24/10/2026
         if vector:
             assert cls is None and kwargs == {}, f"{name}: vector arm should pass no extractor"
         else:

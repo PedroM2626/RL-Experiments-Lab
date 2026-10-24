@@ -77,6 +77,12 @@ PROVENANCE = {
     "anatomy_matrix.png": ("report_diagnostics_figures.py", "results/anatomy_matrix.png",
                            "results/feature_vs_actor_{classic,vit,mlp,impoola}_{bossfight,dodgeball}.json "
                            "+ the 12 multi-seed feature_vs_actor_*_seed4[3-6].json"),
+    # Occlusion attribution over the eight committed key-cell checkpoints (24/10/2026):
+    # where a reader reads, and the flatness of the blind cells -- inference only, so a
+    # rebuild re-measures the committed weights rather than retraining them.
+    "occlusion_maps.png": ("diagnose_occlusion.py", "results/occlusion_maps.png",
+                           "results/models/*.zip (the section 4 key cells) + "
+                           "results/occlusion_summary.json"),
 }
 
 # The eight reference clips at the top of the README. Each is produced by

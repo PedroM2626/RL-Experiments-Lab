@@ -14,6 +14,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.evaluation import evaluate_policy
 from procgen_wrapper import make_procgen_env
 from models.combined_extractors import ResNet18Extractor
+from response_guard import attach_response, warn_if_blind, warn_thin_recipe
 
 CONFIGS = [
     ('resnet18', ResNet18Extractor, dict(features_dim=512), False),
@@ -64,6 +65,7 @@ def main():
 
     jobs = [(g, key, cls, kw, vec, b, s)
             for b in args.budgets for g in args.games for key, cls, kw, vec in CONFIGS for s in args.seeds]
+    warn_thin_recipe()  # 3.6.4/3.6.5: this benchmark trains on the single-stream recipe
     print(f"{len(jobs)} jobs ({len(args.budgets)} budgets × {args.games} × {len(CONFIGS)} configs × {args.seeds}), device={device}")
     for i, (game, key, cls, kw, vec, budget, seed) in enumerate(jobs):
         name = f"{game}_{key}_b{budget//1000}k_seed{seed}"
@@ -72,11 +74,12 @@ def main():
         try:
             model = train_one(game, cls, kw, vec, budget, seed, args.log_dir, device)
             m_st, m_dt, m_tr = eval_model(model, game, seed, vec)
+            resp = attach_response(model, vector=vec); warn_if_blind(resp, name)
             try: model.save(os.path.join(zip_dir, f"{name}.zip"))
             except Exception as e: print(f"  zip save failed: {e}")
             results[name] = {'stoch_unseen': round(m_st, 3), 'det_unseen': round(m_dt, 3),
                              'stoch_train': round(m_tr, 3), 'gen_gap': round(m_tr - m_st, 3),
-                             'n_unseen': 100, 'n_train': 15, 'budget': budget}
+                             'n_unseen': 100, 'n_train': 15, 'budget': budget, 'response': resp}
             print(f"  stoch={m_st:.2f} det={m_dt:.2f} train={m_tr:.2f} gap={m_tr-m_st:+.2f}")
         except Exception as e:
             import traceback; traceback.print_exc()

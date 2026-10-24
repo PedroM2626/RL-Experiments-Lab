@@ -159,6 +159,26 @@ def update(meta, low, opt_m, opt_l, meta_b, low_b, device):
             nn.utils.clip_grad_norm_(low.parameters(), 0.5)
             opt_l.step()
 
+def meta_response(meta, device, seed=1042,
+                   games=('maze', 'heist', 'bossfight', 'starpilot', 'dodgeball')):
+    """Cross-game TV of the meta-controller's skill distribution -- the hierarchy's
+    analogue of response_guard's measure: does the TOP level read the frame?"""
+    probs = []
+    for g in games:
+        env = make_procgen_env(g, num_levels=0, distribution_mode='easy', seed=seed, vector=False)
+        o = env.reset(); o = o[0] if isinstance(o, tuple) else o
+        env.close()
+        with torch.no_grad():
+            logits, _ = meta(to_t(o, device))
+            p = torch.softmax(logits, dim=-1).cpu().numpy()[0]
+        probs.append(p / p.sum())
+    P = np.stack(probs)
+    tv = max(float(0.5 * np.abs(P[i] - P[j]).sum())
+             for i in range(len(P)) for j in range(i + 1, len(P)))
+    return {'max_pairwise_tv': round(tv, 6),
+            'distinct_argmax_across_games': int(len(set(int(x) for x in P.argmax(1)))),
+            'responsive': bool(tv >= 0.1)}
+
 def eval_hierarchy(meta, low, game, seed, num_levels, n_eps, det):
     env = make_procgen_env(game, num_levels=num_levels, distribution_mode='easy',
                            seed=seed + 1000 if num_levels == 0 else seed, vector=False)
@@ -228,13 +248,19 @@ def main():
             m_st = eval_hierarchy(meta, low, game, seed, 0, 100, det=False)
             m_dt = eval_hierarchy(meta, low, game, seed, 0, 100, det=True)
             m_tr = eval_hierarchy(meta, low, game, seed, 200, 15, det=False)
+            resp = meta_response(meta, device)
+            if resp['responsive']:
+                print(f"  response ok: meta-controller cross-game TV {resp['max_pairwise_tv']:.6f}")
+            else:
+                print(f"  WARNING: {name} meta-controller does not read its observation "
+                      f"(cross-game TV {resp['max_pairwise_tv']:.6f}) -- README 3.6.2-3.6.5")
             try:
                 torch.save({'meta': meta.state_dict(), 'low': low.state_dict()},
                            os.path.join(zip_dir, f"{name}.pt"))
             except Exception as e: print(f"  save failed: {e}")
             results[name] = {'stoch_unseen': round(m_st, 3), 'det_unseen': round(m_dt, 3),
                              'stoch_train': round(m_tr, 3), 'gen_gap': round(m_tr - m_st, 3),
-                             'n_unseen': 100, 'n_train': 15, 'frames': FRAMES}
+                             'n_unseen': 100, 'n_train': 15, 'frames': FRAMES, 'response': resp}
             print(f"  stoch={m_st:.2f} det={m_dt:.2f} train={m_tr:.2f} gap={m_tr-m_st:+.2f}")
         except Exception as e:
             import traceback; traceback.print_exc()

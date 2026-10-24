@@ -18,6 +18,7 @@ from stable_baselines3.common.callbacks import EvalCallback
 
 from procgen_wrapper import make_procgen_env
 from models.sb3_extractors import ClassicCNNExtractor, AttentionCNNExtractor
+from response_guard import attach_response, warn_if_blind, warn_thin_recipe
 
 # For procgen vector, we use MlpPolicy
 
@@ -91,14 +92,16 @@ def main():
     ]
 
     results = {}
+    warn_thin_recipe()  # 3.6.4/3.6.5: this producer's 1x256 default trains blind policies
     for obs_type, use_vector, extractor_class, extractor_kwargs, key in configs:
         results[key] = []
         for seed in args.seeds:
             print(f"\n{'='*60}\n{key} seed {seed} ({obs_type}) game {args.game}\n{'='*60}")
             try:
                 mean, std, model = train_one(args.game, args.num_levels, args.distribution, use_vector, extractor_class, extractor_kwargs, args.timesteps, seed, args.log_dir, device)
+                resp = attach_response(model, vector=use_vector); warn_if_blind(resp, f"{key}_seed{seed}")
                 print(f"{key} seed {seed}: {mean:.2f} +/- {std:.2f}")
-                results[key].append({'seed': seed, 'mean_reward': mean, 'std_reward': std})
+                results[key].append({'seed': seed, 'mean_reward': mean, 'std_reward': std, 'response': resp})
                 try: model.save(os.path.join(comp_dir, f"{key}_seed{seed}.zip"))
                 except Exception as e: print(f"WARNING: checkpoint save failed for {key}_seed{seed}: {e}")
             except Exception as e:

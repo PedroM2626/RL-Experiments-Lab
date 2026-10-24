@@ -190,6 +190,26 @@ class ReconExtractor(_ExtractorBase):
         return self.fc_enc(self.encode(observations))
 
 
+class ReconBottleneckExtractor(ReconExtractor):
+    """The `recon` arm as a genuinely distinct program (added 24/10/2026).
+
+    In the published grid `recon` and `ae` built the same modules in the same order
+    and differed only by an attribute name, so the pair was one front end measured
+    twice (README 3.6.2, verified bitwise under one seed). This variant gives recon
+    the bottleneck its docstring always claimed it had: encode -> 128-D bottleneck
+    -> features_dim, a strictly narrower information path than the direct 512-D
+    projection of ae. It is the opt-in audit arm `recon_bottleneck`; the published
+    `recon` arm is untouched, so every archived cell stays reproducible.
+    """
+    def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 512,
+                 latent_dim: int = 128):
+        super().__init__(observation_space, features_dim)
+        self.latent_dim = latent_dim
+        self.fc_enc = nn.Sequential(nn.Linear(self.n_flat, latent_dim), nn.ReLU(),
+                                    nn.Linear(latent_dim, features_dim), nn.ReLU())
+        self.decoder = _NatureCNNDecoder(64, features_dim, self._shape, self.n_input)
+
+
 class ContrastiveExtractor(_ExtractorBase):
     """Noise-perturbed CNN representation extractor (the benchmark's `contrastive` arm).
 

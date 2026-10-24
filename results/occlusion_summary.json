@@ -1,0 +1,306 @@
+{
+ "_provenance": {
+  "produced_by": "diagnose_occlusion.py",
+  "question": "where on the frame does a reader policy read; is a non-reader flat everywhere",
+  "checkpoints": "results/models/*.zip (the section 4 key cells)",
+  "measure": "mean TV of the action distribution between each occluded 16x16 site and the unoccluded baseline, over 12 held-out random-walk frames"
+ },
+ "cells": [
+  {
+   "cell": "classic_bossfight",
+   "game": "bossfight",
+   "frames": 12,
+   "grid": 4,
+   "patch": 16,
+   "patch_map": [
+    [
+     0.012465,
+     0.008568,
+     0.012472,
+     0.003853
+    ],
+    [
+     0.077785,
+     0.180816,
+     0.06345,
+     0.01555
+    ],
+    [
+     0.023952,
+     0.128612,
+     0.079872,
+     0.013988
+    ],
+    [
+     0.002597,
+     0.005922,
+     0.012613,
+     0.001492
+    ]
+   ],
+   "occlusion_sensitivity": 0.04025,
+   "occlusion_max_site": 0.180816,
+   "cross_game_tv": 0.27553,
+   "responsive": true
+  },
+  {
+   "cell": "classic_dodgeball",
+   "game": "dodgeball",
+   "frames": 12,
+   "grid": 4,
+   "patch": 16,
+   "patch_map": [
+    [
+     0.033451,
+     0.061092,
+     0.046123,
+     0.011385
+    ],
+    [
+     0.037658,
+     0.093864,
+     0.107596,
+     0.017973
+    ],
+    [
+     0.022468,
+     0.082428,
+     0.078394,
+     0.044247
+    ],
+    [
+     0.015202,
+     0.029883,
+     0.026205,
+     0.02657
+    ]
+   ],
+   "occlusion_sensitivity": 0.045909,
+   "occlusion_max_site": 0.107596,
+   "cross_game_tv": 0.117489,
+   "responsive": true
+  },
+  {
+   "cell": "mlp_scaled_bossfight",
+   "game": "bossfight",
+   "frames": 12,
+   "grid": 4,
+   "patch": 16,
+   "patch_map": [
+    [
+     0.028671,
+     0.025422,
+     0.026332,
+     0.012931
+    ],
+    [
+     0.012321,
+     0.052241,
+     0.03929,
+     0.007163
+    ],
+    [
+     0.010799,
+     0.063426,
+     0.043405,
+     0.019009
+    ],
+    [
+     0.009826,
+     0.013882,
+     0.02209,
+     0.007771
+    ]
+   ],
+   "occlusion_sensitivity": 0.024661,
+   "occlusion_max_site": 0.063426,
+   "cross_game_tv": 0.23054,
+   "responsive": true
+  },
+  {
+   "cell": "mlp_scaled_dodgeball",
+   "game": "dodgeball",
+   "frames": 12,
+   "grid": 4,
+   "patch": 16,
+   "patch_map": [
+    [
+     0.001731,
+     0.000597,
+     0.000658,
+     0.000402
+    ],
+    [
+     0.001342,
+     0.001213,
+     0.001074,
+     0.00213
+    ],
+    [
+     0.002189,
+     0.001644,
+     0.001248,
+     0.001775
+    ],
+    [
+     0.001587,
+     0.000725,
+     0.00069,
+     0.001138
+    ]
+   ],
+   "occlusion_sensitivity": 0.001259,
+   "occlusion_max_site": 0.002189,
+   "cross_game_tv": 0.020624,
+   "responsive": false
+  },
+  {
+   "cell": "vit_bossfight",
+   "game": "bossfight",
+   "frames": 12,
+   "grid": 4,
+   "patch": 16,
+   "patch_map": [
+    [
+     1.2e-05,
+     9e-06,
+     9e-06,
+     1.2e-05
+    ],
+    [
+     1.1e-05,
+     1.3e-05,
+     1e-05,
+     8e-06
+    ],
+    [
+     8e-06,
+     1e-05,
+     9e-06,
+     8e-06
+    ],
+    [
+     1.1e-05,
+     1e-05,
+     1.2e-05,
+     9e-06
+    ]
+   ],
+   "occlusion_sensitivity": 1e-05,
+   "occlusion_max_site": 1.3e-05,
+   "cross_game_tv": 1.8e-05,
+   "responsive": false
+  },
+  {
+   "cell": "vit_dodgeball",
+   "game": "dodgeball",
+   "frames": 12,
+   "grid": 4,
+   "patch": 16,
+   "patch_map": [
+    [
+     2.2e-05,
+     1.2e-05,
+     2.2e-05,
+     1.8e-05
+    ],
+    [
+     1.7e-05,
+     2.1e-05,
+     1.8e-05,
+     1.7e-05
+    ],
+    [
+     1.9e-05,
+     1.8e-05,
+     2e-05,
+     2.1e-05
+    ],
+    [
+     1.3e-05,
+     2e-05,
+     2.5e-05,
+     3.1e-05
+    ]
+   ],
+   "occlusion_sensitivity": 2e-05,
+   "occlusion_max_site": 3.1e-05,
+   "cross_game_tv": 5.1e-05,
+   "responsive": false
+  },
+  {
+   "cell": "impoola_bossfight",
+   "game": "bossfight",
+   "frames": 12,
+   "grid": 4,
+   "patch": 16,
+   "patch_map": [
+    [
+     6e-06,
+     1.6e-05,
+     1.9e-05,
+     1.1e-05
+    ],
+    [
+     5e-06,
+     9.7e-05,
+     1.2e-05,
+     2.7e-05
+    ],
+    [
+     1.3e-05,
+     3.4e-05,
+     1.9e-05,
+     2e-06
+    ],
+    [
+     7e-06,
+     3.1e-05,
+     6e-06,
+     5.5e-05
+    ]
+   ],
+   "occlusion_sensitivity": 2.2e-05,
+   "occlusion_max_site": 9.7e-05,
+   "cross_game_tv": 0.000218,
+   "responsive": false
+  },
+  {
+   "cell": "mlp_dodgeball",
+   "game": "dodgeball",
+   "frames": 12,
+   "grid": 4,
+   "patch": 16,
+   "patch_map": [
+    [
+     0.0,
+     0.0,
+     1.5e-05,
+     0.0
+    ],
+    [
+     0.000544,
+     0.0,
+     0.001094,
+     0.0
+    ],
+    [
+     0.0,
+     0.0,
+     4.7e-05,
+     0.000827
+    ],
+    [
+     0.0,
+     0.0,
+     0.0,
+     0.0
+    ]
+   ],
+   "occlusion_sensitivity": 0.000158,
+   "occlusion_max_site": 0.001094,
+   "cross_game_tv": 0.036448,
+   "responsive": false
+  }
+ ]
+}
