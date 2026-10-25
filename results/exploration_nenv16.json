@@ -1,0 +1,1590 @@
+{
+  "_provenance": {
+    "produced_by": "summarize_exploration_nenv16.py",
+    "benchmark": "scaled-bonus arms AND fresh ppo control at the responsive recipe: compare_maze_heist.py --normalize --n-envs 16 (16 parallel envs, per-rank level streams, n_steps=256, per-update batch 4096 -- README 3.6.7's grid recipe)",
+    "question": "does the scaled curiosity bonus separate from PPO among policies that actually read their observation",
+    "protocol": "200 train levels, 100k steps, easy, 100 eps stoch on unseen levels (num_levels=0, eval seed +1000)",
+    "control": "trained fresh: the recipe changed, so the 1-env ppo rows of 3.6.1/exploration_remeasure.json are a different arm and are NOT reused here",
+    "response_measure": "response_guard.py over diagnose_policy_saturation.cross_game_response (five games' initial frames)",
+    "seeds_present": [
+      42,
+      43,
+      44,
+      45,
+      46
+    ],
+    "cells": 40
+  },
+  "per_seed": {
+    "maze_ppo": {
+      "source_runs": [
+        "maze_heist_maze_heist_ppo_norm_nenv16_20261024_144354"
+      ],
+      "cells": [
+        {
+          "seed": 42,
+          "mean_reward_100eps": 4.2,
+          "std_reward": 4.935585071701226,
+          "seconds": 732.0,
+          "bonus": null,
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.061034,
+            "feat_mean": 0.2208,
+            "feat_max": 3.078,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0469,
+            "responsive": false
+          }
+        },
+        {
+          "seed": 43,
+          "mean_reward_100eps": 3.9,
+          "std_reward": 4.877499359302879,
+          "seconds": 674.1,
+          "bonus": null,
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.049648,
+            "feat_mean": 0.1289,
+            "feat_max": 1.587,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": false
+          }
+        },
+        {
+          "seed": 44,
+          "mean_reward_100eps": 4.8,
+          "std_reward": 4.995998398718719,
+          "seconds": 632.7,
+          "bonus": null,
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.078501,
+            "feat_mean": 0.1191,
+            "feat_max": 1.893,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": false
+          }
+        },
+        {
+          "seed": 45,
+          "mean_reward_100eps": 4.0,
+          "std_reward": 4.898979485566356,
+          "seconds": 570.9,
+          "bonus": null,
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.108629,
+            "feat_mean": 0.2972,
+            "feat_max": 4.826,
+            "distinct_argmax_across_games": 2,
+            "first_tanh_saturated_fraction": 0.1344,
+            "responsive": true
+          }
+        },
+        {
+          "seed": 46,
+          "mean_reward_100eps": 4.1,
+          "std_reward": 4.9183330509431755,
+          "seconds": 608.4,
+          "bonus": null,
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.061037,
+            "feat_mean": 0.0746,
+            "feat_max": 0.865,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": false
+          }
+        }
+      ]
+    },
+    "maze_icm": {
+      "source_runs": [
+        "maze_heist_maze_heist_icm_norm_nenv16_20261024_133347",
+        "maze_heist_maze_heist_icm_norm_nenv16_20261024_134022"
+      ],
+      "cells": [
+        {
+          "seed": 42,
+          "mean_reward_100eps": 4.1,
+          "std_reward": 4.9183330509431755,
+          "seconds": 5051.2,
+          "bonus": {
+            "wrapper": "ICMWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 6.062961285077013e-06,
+            "effective_bonus": 0.0060832764563310835,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.120227,
+            "feat_mean": 0.1324,
+            "feat_max": 1.518,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": true
+          }
+        },
+        {
+          "seed": 43,
+          "mean_reward_100eps": 5.0,
+          "std_reward": 5.0,
+          "seconds": 6687.3,
+          "bonus": {
+            "wrapper": "ICMWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 6.4448590504001445e-06,
+            "effective_bonus": 0.006058367308357851,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.059686,
+            "feat_mean": 0.1022,
+            "feat_max": 1.098,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": false
+          }
+        },
+        {
+          "seed": 44,
+          "mean_reward_100eps": 3.3,
+          "std_reward": 4.702127178203498,
+          "seconds": 4854.1,
+          "bonus": {
+            "wrapper": "ICMWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 5.568005333772723e-06,
+            "effective_bonus": 0.0063020813254052645,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.10201,
+            "feat_mean": 0.1202,
+            "feat_max": 1.33,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": true
+          }
+        },
+        {
+          "seed": 45,
+          "mean_reward_100eps": 5.0,
+          "std_reward": 5.0,
+          "seconds": 4053.6,
+          "bonus": {
+            "wrapper": "ICMWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 5.818667257970308e-06,
+            "effective_bonus": 0.006087003041013834,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.074049,
+            "feat_mean": 0.112,
+            "feat_max": 1.059,
+            "distinct_argmax_across_games": 2,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": false
+          }
+        },
+        {
+          "seed": 46,
+          "mean_reward_100eps": 4.0,
+          "std_reward": 4.898979485566356,
+          "seconds": 6619.1,
+          "bonus": {
+            "wrapper": "ICMWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 5.746493630208467e-06,
+            "effective_bonus": 0.00624800324071793,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.083003,
+            "feat_mean": 0.1554,
+            "feat_max": 1.498,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": false
+          }
+        }
+      ]
+    },
+    "maze_rnd": {
+      "source_runs": [
+        "maze_heist_maze_heist_rnd_norm_nenv16_20261024_133347",
+        "maze_heist_maze_heist_rnd_norm_nenv16_20261024_134022"
+      ],
+      "cells": [
+        {
+          "seed": 42,
+          "mean_reward_100eps": 4.0,
+          "std_reward": 4.898979485566356,
+          "seconds": 3774.5,
+          "bonus": {
+            "wrapper": "RNDWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 1.2623492526465151e-05,
+            "effective_bonus": 0.005232432125612537,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.175255,
+            "feat_mean": 0.0985,
+            "feat_max": 1.025,
+            "distinct_argmax_across_games": 4,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": true
+          }
+        },
+        {
+          "seed": 43,
+          "mean_reward_100eps": 5.1,
+          "std_reward": 4.998999899979996,
+          "seconds": 5418.8,
+          "bonus": {
+            "wrapper": "RNDWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 1.1757711832213768e-05,
+            "effective_bonus": 0.005294548253711027,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.092862,
+            "feat_mean": 0.1297,
+            "feat_max": 1.162,
+            "distinct_argmax_across_games": 2,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": false
+          }
+        },
+        {
+          "seed": 44,
+          "mean_reward_100eps": 4.6,
+          "std_reward": 4.983974317750844,
+          "seconds": 4877.4,
+          "bonus": {
+            "wrapper": "RNDWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 1.3340425260535764e-05,
+            "effective_bonus": 0.0052872381199604536,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.089973,
+            "feat_mean": 0.122,
+            "feat_max": 1.578,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": false
+          }
+        },
+        {
+          "seed": 45,
+          "mean_reward_100eps": 4.2,
+          "std_reward": 4.935585071701226,
+          "seconds": 3061.4,
+          "bonus": {
+            "wrapper": "RNDWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 1.2146850759932279e-05,
+            "effective_bonus": 0.005365247697619744,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.063022,
+            "feat_mean": 0.1672,
+            "feat_max": 1.665,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0125,
+            "responsive": false
+          }
+        },
+        {
+          "seed": 46,
+          "mean_reward_100eps": 4.6,
+          "std_reward": 4.983974317750844,
+          "seconds": 5285.1,
+          "bonus": {
+            "wrapper": "RNDWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 1.138632916382626e-05,
+            "effective_bonus": 0.0052756123841430184,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.087091,
+            "feat_mean": 0.0961,
+            "feat_max": 1.396,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": false
+          }
+        }
+      ]
+    },
+    "maze_ngu": {
+      "source_runs": [
+        "maze_heist_maze_heist_ngu_norm_nenv16_20261024_133347",
+        "maze_heist_maze_heist_ngu_norm_nenv16_20261024_134022"
+      ],
+      "cells": [
+        {
+          "seed": 42,
+          "mean_reward_100eps": 4.3,
+          "std_reward": 4.950757517794624,
+          "seconds": 3922.0,
+          "bonus": {
+            "wrapper": "NGUWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 5.527277339435518e-06,
+            "effective_bonus": 0.0025434633942539447,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.037572,
+            "feat_mean": 0.2022,
+            "feat_max": 2.849,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0281,
+            "responsive": false
+          }
+        },
+        {
+          "seed": 43,
+          "mean_reward_100eps": 5.0,
+          "std_reward": 5.0,
+          "seconds": 5740.2,
+          "bonus": {
+            "wrapper": "NGUWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 4.826291719358743e-06,
+            "effective_bonus": 0.0024310049720866348,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.026351,
+            "feat_mean": 0.143,
+            "feat_max": 1.509,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": false
+          }
+        },
+        {
+          "seed": 44,
+          "mean_reward_100eps": 4.0,
+          "std_reward": 4.898979485566356,
+          "seconds": 4871.1,
+          "bonus": {
+            "wrapper": "NGUWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 5.716589800554661e-06,
+            "effective_bonus": 0.002631626554455523,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.080828,
+            "feat_mean": 0.1555,
+            "feat_max": 1.796,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": false
+          }
+        },
+        {
+          "seed": 45,
+          "mean_reward_100eps": 4.3,
+          "std_reward": 4.950757517794624,
+          "seconds": 3234.9,
+          "bonus": {
+            "wrapper": "NGUWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 5.600496242957708e-06,
+            "effective_bonus": 0.0025513904342932096,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.109112,
+            "feat_mean": 0.1435,
+            "feat_max": 1.585,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0094,
+            "responsive": true
+          }
+        },
+        {
+          "seed": 46,
+          "mean_reward_100eps": 4.4,
+          "std_reward": 4.963869458396343,
+          "seconds": 5488.2,
+          "bonus": {
+            "wrapper": "NGUWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 4.58709214254062e-06,
+            "effective_bonus": 0.0025606243286330566,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.133353,
+            "feat_mean": 0.1258,
+            "feat_max": 2.017,
+            "distinct_argmax_across_games": 2,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": true
+          }
+        }
+      ]
+    },
+    "heist_ppo": {
+      "source_runs": [
+        "maze_heist_maze_heist_ppo_norm_nenv16_20261024_144354"
+      ],
+      "cells": [
+        {
+          "seed": 42,
+          "mean_reward_100eps": 1.5,
+          "std_reward": 3.570714214271425,
+          "seconds": 1146.5,
+          "bonus": null,
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.310269,
+            "feat_mean": 0.1769,
+            "feat_max": 1.612,
+            "distinct_argmax_across_games": 2,
+            "first_tanh_saturated_fraction": 0.0031,
+            "responsive": true
+          }
+        },
+        {
+          "seed": 43,
+          "mean_reward_100eps": 2.6,
+          "std_reward": 4.386342439892261,
+          "seconds": 1137.4,
+          "bonus": null,
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.220392,
+            "feat_mean": 0.1587,
+            "feat_max": 2.403,
+            "distinct_argmax_across_games": 2,
+            "first_tanh_saturated_fraction": 0.0063,
+            "responsive": true
+          }
+        },
+        {
+          "seed": 44,
+          "mean_reward_100eps": 1.5,
+          "std_reward": 3.570714214271425,
+          "seconds": 1266.4,
+          "bonus": null,
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.319722,
+            "feat_mean": 0.2049,
+            "feat_max": 1.972,
+            "distinct_argmax_across_games": 2,
+            "first_tanh_saturated_fraction": 0.0063,
+            "responsive": true
+          }
+        },
+        {
+          "seed": 45,
+          "mean_reward_100eps": 2.8,
+          "std_reward": 4.489988864128729,
+          "seconds": 1190.7,
+          "bonus": null,
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.196675,
+            "feat_mean": 0.1729,
+            "feat_max": 2.874,
+            "distinct_argmax_across_games": 3,
+            "first_tanh_saturated_fraction": 0.0094,
+            "responsive": true
+          }
+        },
+        {
+          "seed": 46,
+          "mean_reward_100eps": 1.9,
+          "std_reward": 3.923009049186606,
+          "seconds": 1327.1,
+          "bonus": null,
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.081315,
+            "feat_mean": 0.2587,
+            "feat_max": 2.743,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0625,
+            "responsive": false
+          }
+        }
+      ]
+    },
+    "heist_icm": {
+      "source_runs": [
+        "maze_heist_maze_heist_icm_norm_nenv16_20261024_133347",
+        "maze_heist_maze_heist_icm_norm_nenv16_20261024_134022"
+      ],
+      "cells": [
+        {
+          "seed": 42,
+          "mean_reward_100eps": 2.3,
+          "std_reward": 4.208325082500163,
+          "seconds": 4039.5,
+          "bonus": {
+            "wrapper": "ICMWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 6.179792464163929e-06,
+            "effective_bonus": 0.0062034763004896265,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.085577,
+            "feat_mean": 0.2216,
+            "feat_max": 2.068,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0063,
+            "responsive": false
+          }
+        },
+        {
+          "seed": 43,
+          "mean_reward_100eps": 3.1,
+          "std_reward": 4.6249324319388725,
+          "seconds": 3516.2,
+          "bonus": {
+            "wrapper": "ICMWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 6.866026103801745e-06,
+            "effective_bonus": 0.005946180937782966,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.125069,
+            "feat_mean": 0.1245,
+            "feat_max": 2.24,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0063,
+            "responsive": true
+          }
+        },
+        {
+          "seed": 44,
+          "mean_reward_100eps": 2.6,
+          "std_reward": 4.386342439892261,
+          "seconds": 2243.7,
+          "bonus": {
+            "wrapper": "ICMWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 6.016728277125644e-06,
+            "effective_bonus": 0.006122466447384984,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.060751,
+            "feat_mean": 0.1674,
+            "feat_max": 1.902,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0031,
+            "responsive": false
+          }
+        },
+        {
+          "seed": 45,
+          "mean_reward_100eps": 1.3,
+          "std_reward": 3.3630343441600474,
+          "seconds": 6256.2,
+          "bonus": {
+            "wrapper": "ICMWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 6.098509493532725e-06,
+            "effective_bonus": 0.006045269932498995,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.129844,
+            "feat_mean": 0.1524,
+            "feat_max": 2.302,
+            "distinct_argmax_across_games": 3,
+            "first_tanh_saturated_fraction": 0.0031,
+            "responsive": true
+          }
+        },
+        {
+          "seed": 46,
+          "mean_reward_100eps": 3.0,
+          "std_reward": 4.58257569495584,
+          "seconds": 4043.5,
+          "bonus": {
+            "wrapper": "ICMWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 6.173372919628852e-06,
+            "effective_bonus": 0.0059839060732049636,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.08138,
+            "feat_mean": 0.2296,
+            "feat_max": 2.855,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": false
+          }
+        }
+      ]
+    },
+    "heist_rnd": {
+      "source_runs": [
+        "maze_heist_maze_heist_rnd_norm_nenv16_20261024_133347",
+        "maze_heist_maze_heist_rnd_norm_nenv16_20261024_134022"
+      ],
+      "cells": [
+        {
+          "seed": 42,
+          "mean_reward_100eps": 2.0,
+          "std_reward": 4.0,
+          "seconds": 4174.1,
+          "bonus": {
+            "wrapper": "RNDWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 2.3995761785068816e-05,
+            "effective_bonus": 0.007197005226248231,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.103397,
+            "feat_mean": 0.1075,
+            "feat_max": 1.643,
+            "distinct_argmax_across_games": 4,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": true
+          }
+        },
+        {
+          "seed": 43,
+          "mean_reward_100eps": 3.0,
+          "std_reward": 4.58257569495584,
+          "seconds": 3253.3,
+          "bonus": {
+            "wrapper": "RNDWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 2.2027988752802518e-05,
+            "effective_bonus": 0.007280534098770989,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.202587,
+            "feat_mean": 0.1922,
+            "feat_max": 2.371,
+            "distinct_argmax_across_games": 3,
+            "first_tanh_saturated_fraction": 0.0125,
+            "responsive": true
+          }
+        },
+        {
+          "seed": 44,
+          "mean_reward_100eps": 2.7,
+          "std_reward": 4.439594576084623,
+          "seconds": 2769.4,
+          "bonus": {
+            "wrapper": "RNDWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 2.514028778943405e-05,
+            "effective_bonus": 0.0072516304551641765,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.040905,
+            "feat_mean": 0.1076,
+            "feat_max": 1.337,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": false
+          }
+        },
+        {
+          "seed": 45,
+          "mean_reward_100eps": 3.2,
+          "std_reward": 4.66476151587624,
+          "seconds": 6278.0,
+          "bonus": {
+            "wrapper": "RNDWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 2.1436970556049374e-05,
+            "effective_bonus": 0.007192635304349337,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.056986,
+            "feat_mean": 0.1953,
+            "feat_max": 2.82,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.025,
+            "responsive": false
+          }
+        },
+        {
+          "seed": 46,
+          "mean_reward_100eps": 2.6,
+          "std_reward": 4.386342439892261,
+          "seconds": 4092.9,
+          "bonus": {
+            "wrapper": "RNDWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 2.2252970956157716e-05,
+            "effective_bonus": 0.0071737240544021905,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.090598,
+            "feat_mean": 0.1234,
+            "feat_max": 1.473,
+            "distinct_argmax_across_games": 3,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": false
+          }
+        }
+      ]
+    },
+    "heist_ngu": {
+      "source_runs": [
+        "maze_heist_maze_heist_ngu_norm_nenv16_20261024_133347",
+        "maze_heist_maze_heist_ngu_norm_nenv16_20261024_134022"
+      ],
+      "cells": [
+        {
+          "seed": 42,
+          "mean_reward_100eps": 2.4,
+          "std_reward": 4.270831300812524,
+          "seconds": 4061.4,
+          "bonus": {
+            "wrapper": "NGUWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 8.141578572475655e-06,
+            "effective_bonus": 0.0039377067085709025,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.049404,
+            "feat_mean": 0.2193,
+            "feat_max": 1.986,
+            "distinct_argmax_across_games": 1,
+            "first_tanh_saturated_fraction": 0.0187,
+            "responsive": false
+          }
+        },
+        {
+          "seed": 43,
+          "mean_reward_100eps": 2.8,
+          "std_reward": 4.489988864128729,
+          "seconds": 3430.8,
+          "bonus": {
+            "wrapper": "NGUWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 6.959464025632725e-06,
+            "effective_bonus": 0.003988907622727853,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.05922,
+            "feat_mean": 0.1514,
+            "feat_max": 2.681,
+            "distinct_argmax_across_games": 2,
+            "first_tanh_saturated_fraction": 0.0031,
+            "responsive": false
+          }
+        },
+        {
+          "seed": 44,
+          "mean_reward_100eps": 3.4,
+          "std_reward": 4.737087712930804,
+          "seconds": 2574.9,
+          "bonus": {
+            "wrapper": "NGUWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 8.298012655352803e-06,
+            "effective_bonus": 0.003831572423850117,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.095311,
+            "feat_mean": 0.069,
+            "feat_max": 1.781,
+            "distinct_argmax_across_games": 3,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": false
+          }
+        },
+        {
+          "seed": 45,
+          "mean_reward_100eps": 2.8,
+          "std_reward": 4.489988864128729,
+          "seconds": 6121.1,
+          "bonus": {
+            "wrapper": "NGUWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 6.7049951466744705e-06,
+            "effective_bonus": 0.0038337440991697285,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.072413,
+            "feat_mean": 0.1124,
+            "feat_max": 1.561,
+            "distinct_argmax_across_games": 2,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": false
+          }
+        },
+        {
+          "seed": 46,
+          "mean_reward_100eps": 2.7,
+          "std_reward": 4.439594576084623,
+          "seconds": 4039.5,
+          "bonus": {
+            "wrapper": "NGUWrapper",
+            "steps": 102400,
+            "bonus_applied": 102400,
+            "bonus_ratio": 1.0,
+            "intrinsic_mean": 6.979731171732142e-06,
+            "effective_bonus": 0.003938867631762282,
+            "effective_max": 0.05,
+            "normalized": true,
+            "norm_window": 1000,
+            "clip": 5.0,
+            "beta": 0.01,
+            "n_envs": 16
+          },
+          "response": {
+            "games": [
+              "maze",
+              "heist",
+              "bossfight",
+              "starpilot",
+              "dodgeball"
+            ],
+            "observation": "image",
+            "max_pairwise_tv": 0.071496,
+            "feat_mean": 0.1708,
+            "feat_max": 2.208,
+            "distinct_argmax_across_games": 2,
+            "first_tanh_saturated_fraction": 0.0,
+            "responsive": false
+          }
+        }
+      ]
+    }
+  },
+  "statistics_100eps": {
+    "maze_ppo": {
+      "mean": 4.2,
+      "std": 0.354,
+      "n": 5,
+      "ci95": [
+        3.761,
+        4.639
+      ]
+    },
+    "maze_icm": {
+      "mean": 4.28,
+      "std": 0.726,
+      "n": 5,
+      "ci95": [
+        3.379,
+        5.181
+      ]
+    },
+    "maze_rnd": {
+      "mean": 4.5,
+      "std": 0.424,
+      "n": 5,
+      "ci95": [
+        3.973,
+        5.027
+      ]
+    },
+    "maze_ngu": {
+      "mean": 4.4,
+      "std": 0.367,
+      "n": 5,
+      "ci95": [
+        3.944,
+        4.856
+      ]
+    },
+    "heist_ppo": {
+      "mean": 2.06,
+      "std": 0.611,
+      "n": 5,
+      "ci95": [
+        1.302,
+        2.818
+      ]
+    },
+    "heist_icm": {
+      "mean": 2.46,
+      "std": 0.723,
+      "n": 5,
+      "ci95": [
+        1.562,
+        3.358
+      ]
+    },
+    "heist_rnd": {
+      "mean": 2.7,
+      "std": 0.458,
+      "n": 5,
+      "ci95": [
+        2.131,
+        3.269
+      ]
+    },
+    "heist_ngu": {
+      "mean": 2.82,
+      "std": 0.363,
+      "n": 5,
+      "ci95": [
+        2.369,
+        3.271
+      ]
+    }
+  },
+  "vs_control": {
+    "maze_icm": {
+      "vs": "maze_ppo (same recipe, fresh)",
+      "delta_mean": 0.08,
+      "welch_p": 0.83227,
+      "hedges_g": 0.127
+    },
+    "maze_rnd": {
+      "vs": "maze_ppo (same recipe, fresh)",
+      "delta_mean": 0.3,
+      "welch_p": 0.26021,
+      "hedges_g": 0.694
+    },
+    "maze_ngu": {
+      "vs": "maze_ppo (same recipe, fresh)",
+      "delta_mean": 0.2,
+      "welch_p": 0.40606,
+      "hedges_g": 0.501
+    },
+    "heist_icm": {
+      "vs": "heist_ppo (same recipe, fresh)",
+      "delta_mean": 0.4,
+      "welch_p": 0.37311,
+      "hedges_g": 0.54
+    },
+    "heist_rnd": {
+      "vs": "heist_ppo (same recipe, fresh)",
+      "delta_mean": 0.64,
+      "welch_p": 0.10065,
+      "hedges_g": 1.071
+    },
+    "heist_ngu": {
+      "vs": "heist_ppo (same recipe, fresh)",
+      "delta_mean": 0.76,
+      "welch_p": 0.05066,
+      "hedges_g": 1.366
+    }
+  },
+  "responsiveness": {
+    "maze_ppo": {
+      "cells_measured": 5,
+      "responsive": 1,
+      "tv_mean": 0.07177
+    },
+    "maze_icm": {
+      "cells_measured": 5,
+      "responsive": 2,
+      "tv_mean": 0.087795
+    },
+    "maze_rnd": {
+      "cells_measured": 5,
+      "responsive": 1,
+      "tv_mean": 0.101641
+    },
+    "maze_ngu": {
+      "cells_measured": 5,
+      "responsive": 2,
+      "tv_mean": 0.077443
+    },
+    "heist_ppo": {
+      "cells_measured": 5,
+      "responsive": 4,
+      "tv_mean": 0.225675
+    },
+    "heist_icm": {
+      "cells_measured": 5,
+      "responsive": 2,
+      "tv_mean": 0.096524
+    },
+    "heist_rnd": {
+      "cells_measured": 5,
+      "responsive": 2,
+      "tv_mean": 0.098895
+    },
+    "heist_ngu": {
+      "cells_measured": 5,
+      "responsive": 0,
+      "tv_mean": 0.069569
+    }
+  },
+  "injected_scale": {
+    "maze_icm": {
+      "injected_per_step_mean": 0.00615575,
+      "injected_per_step_max": 0.05,
+      "n_envs_per_wrapper": [
+        16
+      ]
+    },
+    "maze_rnd": {
+      "injected_per_step_mean": 0.00529102,
+      "injected_per_step_max": 0.05,
+      "n_envs_per_wrapper": [
+        16
+      ]
+    },
+    "maze_ngu": {
+      "injected_per_step_mean": 0.00254362,
+      "injected_per_step_max": 0.05,
+      "n_envs_per_wrapper": [
+        16
+      ]
+    },
+    "heist_icm": {
+      "injected_per_step_mean": 0.00606026,
+      "injected_per_step_max": 0.05,
+      "n_envs_per_wrapper": [
+        16
+      ]
+    },
+    "heist_rnd": {
+      "injected_per_step_mean": 0.00721911,
+      "injected_per_step_max": 0.05,
+      "n_envs_per_wrapper": [
+        16
+      ]
+    },
+    "heist_ngu": {
+      "injected_per_step_mean": 0.00390616,
+      "injected_per_step_max": 0.05,
+      "n_envs_per_wrapper": [
+        16
+      ]
+    }
+  }
+}
