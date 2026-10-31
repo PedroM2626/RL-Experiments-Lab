@@ -60,6 +60,14 @@ def test_every_reference_names_an_existing_subsection(suffix):
     assert not dangling, f"references to non-existent subsections: {dangling}"
 
 
+@pytest.mark.parametrize("pattern", [r"^### 3\.6\.(\d+)\.", r"^### 15\.(\d+)\."])
+def test_subsections_appear_in_numeric_order(pattern):
+    """3.6.8 once sat after 3.6.12, and 15.3/15.2 after 15.4 -- fixed 30/10/2026."""
+    with open(README, encoding="utf-8") as f:
+        nums = [int(m.group(1)) for m in re.finditer(pattern, f.read(), re.M)]
+    assert nums and nums == sorted(nums), f"subsections out of document order: {nums}"
+
+
 def test_readme_has_no_tab_characters():
     """A macro eaten by a shell turns \text into <TAB>ext, and KaTeX renders the gap silently."""
     with open(README, encoding="utf-8") as f:
