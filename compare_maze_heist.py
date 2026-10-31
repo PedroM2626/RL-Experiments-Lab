@@ -21,14 +21,15 @@ from stable_baselines3.common.evaluation import evaluate_policy
 from procgen_wrapper import make_procgen_env
 from models.sb3_extractors import ClassicCNNExtractor
 from models.bonuses import ICMWrapper, RNDWrapper, NGUWrapper
-from response_guard import attach_response, warn_if_blind, warn_thin_recipe
+from response_guard import (RESPONSIVE_N_ENVS, RESPONSIVE_N_STEPS, add_recipe_args, guard,
+                            resolve_recipe)
 
 WRAPPERS = {'icm': ICMWrapper, 'rnd': RNDWrapper, 'ngu': NGUWrapper}
 
 
-def train_one(game, wrapper, timesteps, seed, log_dir, device, eval_eps, run_name, normalize=False, n_envs=1, n_steps=256):
-    # n_envs=1 is the published recipe; --n-envs 16 with the default n_steps=256 is the
-    # responsive recipe of README 3.6.7 (per-rank level streams, per-update batch 4096).
+def train_one(game, wrapper, timesteps, seed, log_dir, device, eval_eps, run_name, normalize=False, n_envs=RESPONSIVE_N_ENVS, n_steps=RESPONSIVE_N_STEPS):
+    # 16 x 256 (the default since 30/10/2026) is the responsive recipe of README 3.6.7
+    # (per-rank level streams, per-update batch 4096); n_envs=1 is the published recipe.
     # The 3.6.1 scaled-bonus arms were measured at 1 env -- a 16-env run is therefore a
     # NEW arm, and it writes to its own run directory (see main()).
     def make_env(rank):
@@ -118,12 +119,9 @@ def main():
                              'reward, so flipping this changes what the arm IS, not whether it works')
     parser.add_argument('--resume', type=str, default=None,
                         help='existing run directory to continue (its completed cells are kept and skipped)')
-    parser.add_argument('--n-envs', type=int, default=1,
-                        help='parallel envs per run; 1 is the published recipe, 16 is the responsive '
-                             'recipe of README 3.6.7 (per-rank level streams seed+rank)')
-    parser.add_argument('--n-steps', type=int, default=256,
-                        help='rollout length per env per update (the published 256)')
+    add_recipe_args(parser)
     args=parser.parse_args()
+    n_envs, n_steps = resolve_recipe(args)
     for w in args.arms:
         if w not in WRAPPERS and w!='ppo':
             raise SystemExit(f"--arms: unknown arm {w}")
@@ -148,7 +146,6 @@ def main():
               'n_envs': args.n_envs, 'n_steps': args.n_steps,
               'intrinsic_beta': 0.01, 'bonus_normalized': bool(args.normalize),
               'torch': torch.__version__, 'device': device}
-    warn_thin_recipe(args.n_envs)
     results={}
     done=set()
     prior=os.path.join(comp_dir,'comparison_results.json')
@@ -173,7 +170,7 @@ def main():
                 results[gk]=[c for c in results[gk] if c['seed']!=seed]
                 try:
                     mean,std,model,bonus,secs=train_one(game, w if w!='ppo' else None, args.timesteps, seed, args.log_dir, device, args.eval_eps, f"{gk}_seed{seed}", args.normalize, n_envs=args.n_envs, n_steps=args.n_steps)
-                    resp = attach_response(model, vector=False); warn_if_blind(resp, f"{gk}_seed{seed}")
+                    resp = guard(model, f"{gk}_seed{seed}", args.response_guard, vector=False)
                     print(f"{gk} seed {seed}: {mean:.2f} +/- {std:.2f} in {secs}s")
                     results[gk].append({'seed': seed, 'mean_reward': mean, 'std_reward': std,
                                         'seconds': secs, 'bonus': bonus, 'response': resp})

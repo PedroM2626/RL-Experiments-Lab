@@ -1,6 +1,6 @@
 # The Collapse of Observation-Conditioning in a Procgen Benchmark: Cause, Threshold, Anatomy
 
-A distilled narrative of README §3.6.2–§3.6.13 — the dense-probe arc, 10–14/10/2026 — written to be read start to finish in about ten minutes. The full tables, provenance and operational notes live in the README sections cited; every number here is carried by a committed artifact and recomputed by a test (`tests/test_report_md.py`, plus the section tests it points at). Total cost of the arc: **~56 GPU-hours** across ~220 runs, of which the 500k budget round is 23.
+A distilled narrative of §3.6.2–§3.6.13 ([docs/diagnostic-arc.md](docs/diagnostic-arc.md)) — the dense-probe arc, 10–14/10/2026 — written to be read start to finish in about ten minutes. The full tables, provenance and operational notes live in the sections cited (the [README](README.md) and its [`docs/`](docs/) pages, numbering unchanged); every number here is carried by a committed artifact and recomputed by a test (`tests/test_report_md.py`, plus the section tests it points at). Total cost of the arc: **~56 GPU-hours** across ~220 runs, of which the 500k budget round is 23.
 
 ---
 

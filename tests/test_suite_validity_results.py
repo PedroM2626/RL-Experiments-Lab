@@ -16,6 +16,7 @@ import re
 import numpy as np
 import pytest
 import torch
+from docs_text import open_docs
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 README = os.path.join(ROOT, "README.md")
@@ -38,7 +39,7 @@ def control():
 
 @pytest.fixture(scope="module")
 def readme():
-    with open(README, encoding="utf-8") as f:
+    with open_docs() as f:
         return f.read()
 
 

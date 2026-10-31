@@ -18,6 +18,7 @@ sys.path.insert(0, ROOT)
 
 from audit_suite_validity import merge  # noqa: E402
 from summarize_grid_nenv16 import fold  # noqa: E402
+from docs_text import open_docs
 
 RESULTS = os.path.join(ROOT, "results")
 README = os.path.join(ROOT, "README.md")
@@ -44,7 +45,7 @@ def merged():
 
 @pytest.fixture(scope="module")
 def readme():
-    with open(README, encoding="utf-8") as f:
+    with open_docs() as f:
         return f.read()
 
 

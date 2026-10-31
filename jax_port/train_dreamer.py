@@ -225,7 +225,7 @@ def train(args):
         # Flax calls.
         h0 = f0[:, :DET]
         z0 = f0[:, DET:]
-        s, kk = {"h": h0, "z": z0}, keys[0]
+        s = {"h": h0, "z": z0}
         Rs, Cs, Ls, As, Fs = [], [], [], [], []
         for t in range(IMAG_H):
             f_ = jnp.concatenate([s["h"], s["z"]], -1)
@@ -241,7 +241,7 @@ def train(args):
             Ls.append(logits)
             As.append(act)
             Fs.append(fns)
-            s, kk = ns, k2
+            s = ns
         rews = jnp.stack(Rs)
         conts = jnp.stack(Cs)
         logits = jnp.stack(Ls)

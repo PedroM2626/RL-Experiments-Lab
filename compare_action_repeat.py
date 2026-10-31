@@ -44,14 +44,15 @@ def make_repeat_env(game, num_levels, seed, k):
     return env
 
 
-def train_repeat(game, k, seed, device="auto"):
-    vec = DummyVecEnv([lambda: Monitor(make_repeat_env(game, 200, seed, k))])
+def train_repeat(game, k, seed, device="auto", n_envs=16, n_steps=256):
+    # one level stream per env (seed + rank): the responsive recipe of README 3.6.7
+    vec = DummyVecEnv([(lambda r=rank: Monitor(make_repeat_env(game, 200, seed + r, k))) for rank in range(n_envs)])
     model = PPO(
         "CnnPolicy",
         vec,
         verbose=0,
         learning_rate=3e-4,
-        n_steps=256,
+        n_steps=n_steps,
         batch_size=64,
         n_epochs=3,
         gamma=0.99,
@@ -75,22 +76,28 @@ def eval_repeat(model, game, k, seed, n_unseen=30):
 
 
 def main():
+    # imported here, not at module top: diagnose_policy_saturation imports this module for
+    # VariableRepeatEnv, and response_guard imports diagnose_policy_saturation
+    from response_guard import add_recipe_args, guard, recipe_out_path, resolve_recipe
     parser = argparse.ArgumentParser()
     parser.add_argument("--games", nargs="+", default=["jumper", "plunder"])
     parser.add_argument("--skips", nargs="+", type=int, default=[1, 2, 4, 8])
     parser.add_argument("--seeds", nargs="+", type=int, default=[42, 43, 44])
     parser.add_argument("--device", default="auto")
     parser.add_argument("--out", default="results/action_repeat_sb3_results.json")
+    add_recipe_args(parser)
     args = parser.parse_args()
+    n_envs, n_steps = resolve_recipe(args)
 
     results = {}
     for game in args.games:
         for k in args.skips:
             res_list = []
             for s in args.seeds:
-                model = train_repeat(game, k, s, device=args.device)
+                model = train_repeat(game, k, s, device=args.device, n_envs=n_envs, n_steps=n_steps)
                 stoch, det = eval_repeat(model, game, k, s)
-                res_list.append({"seed": s, "stoch": stoch, "det": det})
+                resp = guard(model, f"{game}_k{k}_seed{s}", args.response_guard, vector=False)
+                res_list.append({"seed": s, "stoch": stoch, "det": det, "response": resp})
                 print(f"[{game}] k={k} seed={s} -> stoch={stoch:.2f}, det={det:.2f}", flush=True)
 
             stochs = [r["stoch"] for r in res_list]
@@ -104,8 +111,10 @@ def main():
                 "runs": res_list,
             }
 
-    os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
-    with open(args.out, "w", encoding="utf-8") as f:
+    # a non-published recipe writes next to the published file, never into it
+    out = recipe_out_path(args.out, n_envs, n_steps)
+    os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
+    with open(out, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2)
 
 

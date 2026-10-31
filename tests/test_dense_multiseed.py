@@ -23,6 +23,7 @@ MERGED = "policy_saturation_dense_multiseed.json"
 
 sys.path.insert(0, ROOT)
 from summarize_dense_multiseed import by_arm, collect  # noqa: E402
+from docs_text import open_docs
 
 
 def _load(name):
@@ -37,7 +38,7 @@ def merged():
 
 @pytest.fixture(scope="module")
 def readme():
-    with open(README, encoding="utf-8") as f:
+    with open_docs() as f:
         return f.read()
 
 

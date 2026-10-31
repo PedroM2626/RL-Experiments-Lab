@@ -7,6 +7,7 @@ strictly between -- so the paragraph's numbers cannot drift from the data.
 """
 import json
 import os
+from docs_text import open_docs
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ART = os.path.join(BASE, "results", "occlusion_summary.json")
@@ -67,7 +68,7 @@ def test_the_within_game_reader_sits_between_the_rungs():
 
 
 def test_readme_embeds_the_figure_and_the_paragraph():
-    with open(os.path.join(BASE, "README.md"), encoding="utf-8") as f:
+    with open_docs() as f:
         readme = f.read()
-    assert "![occlusion attribution over the key cells](results/occlusion_maps.png)" in readme
+    assert "![occlusion attribution over the key cells](../results/occlusion_maps.png)" in readme
     assert "two orders of magnitude above the flat" in readme

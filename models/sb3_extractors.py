@@ -20,11 +20,9 @@ class ClassicCNNExtractor(BaseFeaturesExtractor):
             n_input_channels = int(observation_space.shape[2])
             self.is_hwc = True
             h, w = observation_space.shape[0], observation_space.shape[1]
-            dummy_shape = (1, h, w, n_input_channels)
         else:
             n_input_channels = int(observation_space.shape[0])
             self.is_hwc = False
-            dummy_shape = (1, *observation_space.shape)
         # To handle 64x64, 84x84 or any spatial dimension, use dummy tensor to calculate flatten size
         self.cnn = nn.Sequential(
             nn.Conv2d(n_input_channels, 32, kernel_size=8, stride=4),

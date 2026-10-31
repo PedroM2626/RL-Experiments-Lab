@@ -12,6 +12,7 @@ import os
 import zipfile
 
 import pytest
+from docs_text import open_docs
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODELS = os.path.join(ROOT, "results", "models")
@@ -64,7 +65,7 @@ def test_the_repros_are_complete_grid_runs():
 
 
 def test_the_provenance_table_names_the_eight_cells():
-    with open(os.path.join(ROOT, "README.md"), encoding="utf-8") as f:
+    with open_docs() as f:
         readme = f.read()
     i = readme.index("the **key-cell checkpoints**")
     seg = readme[i:i + 900]

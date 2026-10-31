@@ -15,6 +15,7 @@ import os
 import pytest
 
 from summarize_mlpscaled_grid import fold
+from docs_text import open_docs
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ART = os.path.join(BASE, "results", "suite_validity_nenv16_mlp_scaled.json")
@@ -71,7 +72,7 @@ def test_dodgeball_reads_within_game_but_not_across_games():
 
 
 def test_readme_scorecarries_the_row_and_the_note():
-    with open(os.path.join(BASE, "README.md"), encoding="utf-8") as f:
+    with open_docs() as f:
         readme = f.read()
     assert "| `mlp_scaled` † | 7/15 | 0.135081 |" in readme
     # the note is inside section 0.1 and explains what the arm is

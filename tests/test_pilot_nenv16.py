@@ -18,6 +18,7 @@ sys.path.insert(0, ROOT)
 
 import compare_new_archs as CNA  # noqa: E402
 import compare_suite as CS  # noqa: E402
+from docs_text import open_docs
 
 RESULTS = os.path.join(ROOT, "results")
 README = os.path.join(ROOT, "README.md")
@@ -40,7 +41,7 @@ def old():
 
 @pytest.fixture(scope="module")
 def readme():
-    with open(README, encoding="utf-8") as f:
+    with open_docs() as f:
         return f.read()
 
 
@@ -59,14 +60,20 @@ def test_the_artifact_is_one_pilot_not_a_mix(pilot):
     assert len(p["shards_merged"]) == 16
 
 
-def test_the_published_train_one_path_is_untouched():
-    """The producers' train_one must default to the published recipe -- the 3.6.2 audits
-    were produced by that path and their reproducibility is a published claim."""
+def test_the_published_train_one_path_stays_reachable():
+    """Since 30/10/2026 the producers default to the responsive recipe (16 x 256); the 3.6.2
+    audits were produced at 1 x 256, and their reproducibility is a published claim -- so the
+    audit's own entry point keeps 1 as its default and hands it to train_one explicitly."""
     import inspect
+    import audit_suite_validity as A
     for fn in (CS.train_one, CNA.train_one):
         sig = inspect.signature(fn)
-        assert sig.parameters["n_envs"].default == 1, fn
+        assert sig.parameters["n_envs"].default == 16, fn
         assert sig.parameters["n_steps"].default == 256, fn
+    sig = inspect.signature(A.run_arm)
+    assert (sig.parameters["n_envs"].default, sig.parameters["n_steps"].default) == (1, 256)
+    src = inspect.getsource(A.run_arm)
+    assert src.count("n_envs=n_envs, n_steps=n_steps") == 2, "run_arm must pass the recipe explicitly"
 
 
 def test_fourteen_arms_move_up_and_one_moves_down(pilot, old):

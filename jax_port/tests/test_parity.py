@@ -18,7 +18,7 @@ def test_env_parity(steps=200, seed=42):
                   distribution_mode="easy", rand_seed=seed)
     rng = np.random.default_rng(seed)
     _, d3, _ = g3.observe()
-    og = ge.reset()
+    ge.reset()
     mo, mr = 0, 0
     for _ in range(steps):
         a = np.array([rng.integers(15)])

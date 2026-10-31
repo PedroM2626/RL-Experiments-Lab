@@ -30,7 +30,6 @@ def run_side_by_side(benchmark='world_models', game='bossfight', log_dir='./logs
 
     if benchmark == 'world_models':
         configs = ['vae','ae','recon','contrastive']
-        extractor_map = None
     else:  # procgen
         configs = ['classic_pixels','attention_cbam_pixels','attention_spatial_pixels','mlp_vector']
         game = game or 'coinrun'

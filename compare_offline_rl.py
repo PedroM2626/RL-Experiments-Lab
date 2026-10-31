@@ -86,7 +86,6 @@ def collect_offline_dataset(game="bossfight", n_steps=100000, seed=42) -> Tuple[
     # In bossfight, actions 4 (left), 6 (right), 7 (up), 8 (down), 9 (fire) form effective primitives.
     favored_actions = [4, 6, 7, 8, 9, 10, 11]
 
-    ep_start = 0
     trajectories = []
     current_traj = {"obs": [], "act": [], "rew": [], "done": []}
 

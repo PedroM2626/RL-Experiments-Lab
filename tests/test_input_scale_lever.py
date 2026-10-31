@@ -11,6 +11,7 @@ import os
 import sys
 
 import pytest
+from docs_text import open_docs
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -26,7 +27,7 @@ def _load(name):
 
 @pytest.fixture(scope="module")
 def readme():
-    with open(README, encoding="utf-8") as f:
+    with open_docs() as f:
         return f.read()
 
 

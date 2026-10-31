@@ -27,6 +27,8 @@ Usage:
     warn_if_blind(resp, f"{game}_{arm}_seed{seed}")   # prints when TV < 0.1
     warn_thin_recipe(1)                              # the single-stream warning
 """
+import os
+
 import numpy as _np
 import torch
 
@@ -115,3 +117,58 @@ def warn_thin_recipe(n_envs=1):
         print(f"WARNING: training on {n_envs} env(s): the single-stream rollout is the "
               f"recipe README 3.6.4-3.6.5 measured to kill observation-conditioning "
               f"(the coverage cliff sits between 3 and 4 distinct levels per update)")
+
+
+# The training recipe every producer defaults to (30/10/2026). README 3.6.7 re-ran the
+# whole grid at 16 parallel envs x 256 steps -- per-env level streams seed + rank -- and
+# that is the recipe whose policies read their observation; the archived single-stream
+# recipe (1 x 256) stays one flag away so every published cell remains reproducible.
+RESPONSIVE_N_ENVS, RESPONSIVE_N_STEPS = 16, 256
+PUBLISHED_N_ENVS, PUBLISHED_N_STEPS = 1, 256
+
+
+def add_recipe_args(parser, n_steps=RESPONSIVE_N_STEPS):
+    """--n-envs/--n-steps (responsive defaults), --published-recipe, --no-response-guard."""
+    g = parser.add_argument_group("training recipe (README 3.6.4-3.6.7)")
+    g.add_argument("--n-envs", type=int, default=RESPONSIVE_N_ENVS,
+                   help="parallel envs, each on its own level stream (seed + rank); "
+                        "default 16, the responsive recipe of README 3.6.7")
+    g.add_argument("--n-steps", type=int, default=n_steps,
+                   help="rollout length per env per update")
+    g.add_argument("--published-recipe", action="store_true",
+                   help="train on 1 env x 256 steps, the archived recipe -- reproduces the "
+                        "published cells, whose policies do not read the screen (README 3.6.2)")
+    g.add_argument("--no-response-guard", dest="response_guard", action="store_false",
+                   help="skip the post-training cross-game response measure")
+    return parser
+
+
+def resolve_recipe(args, published_n_steps=PUBLISHED_N_STEPS):
+    """(n_envs, n_steps) for this run; warns when the recipe sits below the coverage cliff."""
+    if getattr(args, "published_recipe", False):
+        args.n_envs, args.n_steps = PUBLISHED_N_ENVS, published_n_steps
+    print(f"training recipe: {args.n_envs} env(s) x {args.n_steps} steps per update", flush=True)
+    warn_thin_recipe(args.n_envs)
+    return args.n_envs, args.n_steps
+
+
+def recipe_tag(n_envs, n_steps, published_n_steps=PUBLISHED_N_STEPS):
+    """'' for the published recipe, else e.g. '_nenv16' -- keeps artifacts of the two apart."""
+    if (n_envs, n_steps) == (PUBLISHED_N_ENVS, published_n_steps):
+        return ""
+    return f"_nenv{n_envs}" + ("" if n_steps == RESPONSIVE_N_STEPS else f"_nsteps{n_steps}")
+
+
+def recipe_out_path(path, n_envs, n_steps, published_n_steps=PUBLISHED_N_STEPS):
+    """A results path that never mixes recipes: the published file keeps its name."""
+    stem, ext = os.path.splitext(path)
+    return stem + recipe_tag(n_envs, n_steps, published_n_steps) + ext
+
+
+def guard(model, label, enabled=True, **kwargs):
+    """attach_response + warn_if_blind in one call; None when the guard is switched off."""
+    if not enabled:
+        return None
+    row = attach_response(model, **kwargs)
+    warn_if_blind(row, label)
+    return row

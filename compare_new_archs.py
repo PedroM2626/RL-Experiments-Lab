@@ -10,7 +10,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.evaluation import evaluate_policy
 from procgen_wrapper import make_procgen_env
 from models.combined_extractors import ImpalaCNNExtractor, ImpoolaCNNExtractor, LSTMAttentionExtractor, ViTExtractor, ResNet18Extractor
-from response_guard import attach_response, warn_if_blind, warn_thin_recipe
+from response_guard import RESPONSIVE_N_ENVS, RESPONSIVE_N_STEPS, add_recipe_args, guard, recipe_tag, resolve_recipe
 
 # Module scope so the validity audit covers exactly the published five (README 3.7) rather than
 # a copy of the list that could drift. Values unchanged from inside main().
@@ -22,9 +22,9 @@ NEW_ARCH_CONFIGS = [
     ('resnet18', ResNet18Extractor, dict(features_dim=512)),
 ]
 
-def train_one(game, cls, kwargs, timesteps, seed, log_dir, device, n_envs=1, n_steps=256):
-    # n_envs/n_steps default to the published recipe (1 x 256); the pilot raises them
-    # (README 3.6.6), with per-rank level streams (seed + rank) as in compare_suite.
+def train_one(game, cls, kwargs, timesteps, seed, log_dir, device, n_envs=RESPONSIVE_N_ENVS, n_steps=RESPONSIVE_N_STEPS):
+    # n_envs/n_steps default to the responsive recipe (16 x 256, README 3.6.7); n_envs=1
+    # reproduces the published cells. Per-rank level streams (seed + rank) as in compare_suite.
     def make_env(rank): return Monitor(make_procgen_env(game, num_levels=200, distribution_mode='easy', seed=seed + rank, vector=False))
     vec = DummyVecEnv([(lambda r=rank: make_env(r)) for rank in range(n_envs)])
     eval_env = DummyVecEnv([lambda: Monitor(make_procgen_env(game, num_levels=0, distribution_mode='easy', seed=seed+1000, vector=False))])
@@ -41,16 +41,17 @@ def main():
     parser.add_argument('--games', type=str, nargs='+', default=['bossfight','starpilot','dodgeball'])
     parser.add_argument('--log_dir', type=str, default='./logs_new_archs')
     parser.add_argument('--device', type=str, default='auto')
+    add_recipe_args(parser)
     args=parser.parse_args()
+    n_envs, n_steps = resolve_recipe(args)
     device='cuda' if (args.device=='auto' and torch.cuda.is_available()) else args.device if args.device!='auto' else 'cpu'
     print(f"Device: {device} torch {torch.__version__} NEW 5 architectures")
     os.makedirs(args.log_dir, exist_ok=True)
     ts=datetime.now().strftime("%Y%m%d_%H%M%S")
-    comp_dir=os.path.join(args.log_dir, f"new_archs_{'_'.join(args.games)}_{ts}")
+    comp_dir=os.path.join(args.log_dir, f"new_archs_{'_'.join(args.games)}{recipe_tag(n_envs, n_steps)}_{ts}")
     os.makedirs(comp_dir, exist_ok=True)
     configs=NEW_ARCH_CONFIGS
     results={}
-    warn_thin_recipe()  # 3.6.4/3.6.5: this producer's 1x256 default trains blind policies
     for game in args.games:
         for key, cls, kw in configs:
             gk=f"{game}_{key}"
@@ -58,8 +59,8 @@ def main():
             for seed in args.seeds:
                 print(f"\n{'='*60}\n{gk} seed {seed} {game}\n{'='*60}")
                 try:
-                    mean,std,model = train_one(game, cls, kw, args.timesteps, seed, args.log_dir, device)
-                    resp = attach_response(model, vector=False); warn_if_blind(resp, f"{gk}_seed{seed}")
+                    mean,std,model = train_one(game, cls, kw, args.timesteps, seed, args.log_dir, device, n_envs=n_envs, n_steps=n_steps)
+                    resp = guard(model, f"{gk}_seed{seed}", args.response_guard, vector=False)
                     print(f"{gk} seed {seed}: {mean:.2f} +/- {std:.2f}")
                     results[gk].append({'seed': seed, 'mean_reward': mean, 'std_reward': std, 'response': resp})
                     try: model.save(os.path.join(comp_dir, f"{gk}_seed{seed}.zip"))

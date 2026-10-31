@@ -21,6 +21,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+from docs_text import open_docs
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 RESULTS = os.path.join(BASE, "results")
@@ -162,8 +163,8 @@ def rebuild(name, title, ylabel, keys, per_seed, footnote=None):
 
 
 def readme_figures():
-    with open(README, encoding="utf-8") as f:
-        return set(re.findall(r"!\[[^\]]*\]\((results/[^)]+)\)", f.read()))
+    with open_docs() as f:
+        return set(re.findall(r"!\[[^\]]*\]\((?:\.\./)?(results/[^)]+)\)", f.read()))
 
 
 def main():

@@ -80,7 +80,7 @@ def test_effect_within_the_drift_floor_is_not_attributable(tmp_path):
     ctrl = _ctrl(tmp_path)
     for seed, value in enumerate((2.5, 2.3, 2.4, 2.4, 2.4)):
         _write_control(ctrl, "maze", "rnd", value, seed=42 + seed)   # control mean 2.4, drift 0.3
-    pub = _published(os.path.join(os.path.dirname(ctrl), "pub.json"), {
+    _published(os.path.join(os.path.dirname(ctrl), "pub.json"), {
         ("maze", "ppo"): _seeds((2.1, 2.1, 2.1, 2.1, 2.1)),
         ("maze", "rnd"): _seeds((2.3, 2.3, 2.3, 2.3, 2.3)),           # effect 0.2 < drift
     })
@@ -107,7 +107,7 @@ def test_cells_that_injected_or_lack_bookkeeping_are_rejected(tmp_path):
 def test_groups_needing_all_three_sources_are_skipped_not_guessed(tmp_path):
     ctrl = _ctrl(tmp_path)
     _write_control(ctrl, "heist", "ngu", 1.0, seed=42)
-    pub = _published(os.path.join(os.path.dirname(ctrl), "pub.json"), {("heist", "ppo"): [1.0]})
+    _published(os.path.join(os.path.dirname(ctrl), "pub.json"), {("heist", "ppo"): [1.0]})
     rep = build(ctrl, os.path.join(os.path.dirname(ctrl), "pub.json"))
     assert "heist_ngu" not in rep["groups"]
     assert rep["groups"] == {}
@@ -117,7 +117,7 @@ def test_provenance_states_that_no_control_injected_anything(tmp_path):
     ctrl = _ctrl(tmp_path)
     for seed in range(5):
         _write_control(ctrl, "maze", "rnd", 2.0 + seed * 0.1, seed=42 + seed)
-    pub = _published(os.path.join(os.path.dirname(ctrl), "pub.json"), {
+    _published(os.path.join(os.path.dirname(ctrl), "pub.json"), {
         ("maze", "ppo"): [2.0] * 5, ("maze", "rnd"): [2.1] * 5})
     prov = build(ctrl, os.path.join(os.path.dirname(ctrl), "pub.json"))["_provenance"]
     assert prov["every_control_cell_injected_nothing"] is True

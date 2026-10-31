@@ -14,6 +14,7 @@ import os
 import re
 
 import pytest
+from docs_text import open_docs
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 README = os.path.join(ROOT, "README.md")
@@ -22,7 +23,7 @@ REFERENCE = re.compile(r"\b15\.4\.(\d+)\b")
 
 
 def _headings():
-    with open(README, encoding="utf-8") as f:
+    with open_docs() as f:
         return [(int(m.group(2)), m.start()) for m in HEADING.finditer(f.read())]
 
 
@@ -63,14 +64,14 @@ def test_every_reference_names_an_existing_subsection(suffix):
 @pytest.mark.parametrize("pattern", [r"^### 3\.6\.(\d+)\.", r"^### 15\.(\d+)\."])
 def test_subsections_appear_in_numeric_order(pattern):
     """3.6.8 once sat after 3.6.12, and 15.3/15.2 after 15.4 -- fixed 30/10/2026."""
-    with open(README, encoding="utf-8") as f:
+    with open_docs() as f:
         nums = [int(m.group(1)) for m in re.finditer(pattern, f.read(), re.M)]
     assert nums and nums == sorted(nums), f"subsections out of document order: {nums}"
 
 
 def test_readme_has_no_tab_characters():
     """A macro eaten by a shell turns \text into <TAB>ext, and KaTeX renders the gap silently."""
-    with open(README, encoding="utf-8") as f:
+    with open_docs() as f:
         text = f.read()
     bad = [f"line {i}" for i, line in enumerate(text.splitlines(), 1) if "\t" in line]
     assert not bad, f"README contains TAB characters (collapsed LaTeX macros?): {bad[:5]}"
@@ -84,7 +85,7 @@ def test_readme_math_delimiters_are_balanced():
     as italic prose. Code spans are stripped first: a shell prompt or a currency sign inside
     backticks is not a math delimiter. Display math ($$) is even, so it passes untouched.
     """
-    with open(README, encoding="utf-8") as f:
+    with open_docs() as f:
         lines = f.read().splitlines()
     bad = []
     for i, line in enumerate(lines, 1):
@@ -102,7 +103,7 @@ def test_no_math_has_parentheses_inside_and_outside():
     two in the file whose content contains a parenthesis while also being wrapped in one.
     The other 31 ($...$) spans render, so the outer parens alone are not the problem.
     """
-    with open(README, encoding="utf-8") as f:
+    with open_docs() as f:
         text = f.read()
     offenders = [m.group(0) for m in re.finditer(r"\(\$[^$\n]*[()][^$\n]*\$\)", text)]
     assert not offenders, f"($...$) with inner parens render as literal text: {offenders[:5]}"

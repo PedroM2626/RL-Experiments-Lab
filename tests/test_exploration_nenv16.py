@@ -9,6 +9,7 @@ response inversion that gives the whole thing its interpretation.
 """
 import json
 import os
+from docs_text import open_docs
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ART = os.path.join(BASE, "results", "exploration_nenv16.json")
@@ -78,7 +79,7 @@ def test_the_response_column_inverts_the_heist_story():
 
 
 def test_readme_carries_the_followup_and_the_closing_answer():
-    with open(os.path.join(BASE, "README.md"), encoding="utf-8") as f:
+    with open_docs() as f:
         readme = f.read()
     sec = readme.split("### 3.6.1")[1].split("### 3.6.2")[0]
     assert "the question re-asked under the responsive recipe" in sec

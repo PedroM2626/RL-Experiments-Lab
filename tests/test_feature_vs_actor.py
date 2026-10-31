@@ -12,6 +12,7 @@ import json
 import os
 
 import pytest
+from docs_text import open_docs
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESULTS = os.path.join(ROOT, "results")
@@ -40,7 +41,7 @@ def cells():
 
 @pytest.fixture(scope="module")
 def readme():
-    with open(README, encoding="utf-8") as f:
+    with open_docs() as f:
         return f.read()
 
 

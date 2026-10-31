@@ -14,7 +14,8 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.evaluation import evaluate_policy
 from procgen_wrapper import make_procgen_env
 from models.combined_extractors import ResNet18Extractor
-from response_guard import attach_response, warn_if_blind, warn_thin_recipe
+from response_guard import (RESPONSIVE_N_ENVS, RESPONSIVE_N_STEPS, add_recipe_args, guard,
+                            recipe_out_path, resolve_recipe)
 
 CONFIGS = [
     ('resnet18', ResNet18Extractor, dict(features_dim=512), False),
@@ -30,13 +31,15 @@ def eval_model(model, game, seed, vector, n_unseen=100, n_train=15):
     unseen.close(); train.close()
     return float(m_st), float(m_dt), float(m_tr)
 
-def train_one(game, cls, kwargs, vector, timesteps, seed, log_dir, device):
-    vec = DummyVecEnv([lambda: Monitor(make_procgen_env(game, num_levels=200, distribution_mode='easy', seed=seed, vector=vector))])
+def train_one(game, cls, kwargs, vector, timesteps, seed, log_dir, device, n_envs=RESPONSIVE_N_ENVS, n_steps=RESPONSIVE_N_STEPS):
+    # one level stream per env (seed + rank): the responsive recipe of README 3.6.7
+    vec = DummyVecEnv([(lambda r=rank: Monitor(make_procgen_env(game, num_levels=200, distribution_mode='easy', seed=seed + r, vector=vector)))
+                       for rank in range(n_envs)])
     if vector:
         policy, pk = "MlpPolicy", {}
     else:
         policy, pk = "CnnPolicy", {"features_extractor_class": cls, "features_extractor_kwargs": kwargs}
-    model = PPO(policy, vec, verbose=0, learning_rate=3e-4, n_steps=256, batch_size=64, n_epochs=3,
+    model = PPO(policy, vec, verbose=0, learning_rate=3e-4, n_steps=n_steps, batch_size=64, n_epochs=3,
                 gamma=0.99, gae_lambda=0.95, clip_range=0.2, seed=seed, device=device,
                 policy_kwargs=pk, tensorboard_log=log_dir)
     model.learn(total_timesteps=timesteps)
@@ -51,11 +54,14 @@ def main():
     parser.add_argument('--log_dir', default='./logs_budget')
     parser.add_argument('--device', default='auto')
     parser.add_argument('--out', default='results/budget_results.json')
+    add_recipe_args(parser)
     args = parser.parse_args()
+    n_envs, n_steps = resolve_recipe(args)
     device = 'cuda' if (args.device == 'auto' and torch.cuda.is_available()) else ('cpu' if args.device == 'auto' else args.device)
 
     base = os.path.dirname(os.path.abspath(__file__))
-    out_path = os.path.join(base, args.out)
+    # a non-published recipe writes next to the published file, never into it
+    out_path = recipe_out_path(os.path.join(base, args.out), n_envs, n_steps)
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     zip_dir = os.path.join(base, 'logs_budget', 'budget_zips')
     os.makedirs(zip_dir, exist_ok=True)
@@ -65,16 +71,15 @@ def main():
 
     jobs = [(g, key, cls, kw, vec, b, s)
             for b in args.budgets for g in args.games for key, cls, kw, vec in CONFIGS for s in args.seeds]
-    warn_thin_recipe()  # 3.6.4/3.6.5: this benchmark trains on the single-stream recipe
     print(f"{len(jobs)} jobs ({len(args.budgets)} budgets × {args.games} × {len(CONFIGS)} configs × {args.seeds}), device={device}")
     for i, (game, key, cls, kw, vec, budget, seed) in enumerate(jobs):
         name = f"{game}_{key}_b{budget//1000}k_seed{seed}"
         if name in results and 'error' not in results[name]: continue
         print(f"\n[{i+1}/{len(jobs)}] {name}")
         try:
-            model = train_one(game, cls, kw, vec, budget, seed, args.log_dir, device)
+            model = train_one(game, cls, kw, vec, budget, seed, args.log_dir, device, n_envs, n_steps)
             m_st, m_dt, m_tr = eval_model(model, game, seed, vec)
-            resp = attach_response(model, vector=vec); warn_if_blind(resp, name)
+            resp = guard(model, name, args.response_guard, vector=vec)
             try: model.save(os.path.join(zip_dir, f"{name}.zip"))
             except Exception as e: print(f"  zip save failed: {e}")
             results[name] = {'stoch_unseen': round(m_st, 3), 'det_unseen': round(m_dt, 3),

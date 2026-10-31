@@ -16,18 +16,18 @@ from stable_baselines3.common.evaluation import evaluate_policy
 
 from procgen_wrapper import make_procgen_env
 from models.sb3_extractors import ClassicCNNExtractor, AttentionCNNExtractor
-from response_guard import attach_response, warn_if_blind, warn_thin_recipe
+from response_guard import RESPONSIVE_N_ENVS, RESPONSIVE_N_STEPS, add_recipe_args, guard, recipe_tag, resolve_recipe
 
 # For procgen vector, we use MlpPolicy
 
-def train_one(game, num_levels, distribution, use_vector, extractor_class, extractor_kwargs, timesteps, seed, log_dir, device):
-    # Env with Monitor for SB3
-    def make_env():
-        env = make_procgen_env(game, num_levels=num_levels, distribution_mode=distribution, seed=seed, frame_stack=1, vector=use_vector)
+def train_one(game, num_levels, distribution, use_vector, extractor_class, extractor_kwargs, timesteps, seed, log_dir, device, n_envs=RESPONSIVE_N_ENVS, n_steps=RESPONSIVE_N_STEPS):
+    # Env with Monitor for SB3; one level stream per env (seed + rank), README 3.6.7
+    def make_env(rank):
+        env = make_procgen_env(game, num_levels=num_levels, distribution_mode=distribution, seed=seed + rank, frame_stack=1, vector=use_vector)
         env = Monitor(env)
         return env
 
-    vec_env = DummyVecEnv([make_env])
+    vec_env = DummyVecEnv([(lambda r=rank: make_env(r)) for rank in range(n_envs)])
     eval_env = DummyVecEnv([lambda: Monitor(make_procgen_env(game, num_levels=0, distribution_mode=distribution, seed=seed+1000, frame_stack=1, vector=use_vector))])
 
     if use_vector:
@@ -42,7 +42,7 @@ def train_one(game, num_levels, distribution, use_vector, extractor_class, extra
 
     model = PPO(policy, vec_env, verbose=0,
                 learning_rate=3e-4,
-                n_steps=256,
+                n_steps=n_steps,
                 batch_size=64,
                 n_epochs=3,
                 gamma=0.99,
@@ -69,7 +69,9 @@ def main():
     parser.add_argument('--distribution', type=str, default='easy')
     parser.add_argument('--log_dir', type=str, default='./logs_procgen')
     parser.add_argument('--device', type=str, default='auto')
+    add_recipe_args(parser)
     args = parser.parse_args()
+    n_envs, n_steps = resolve_recipe(args)
 
     if args.device == 'auto':
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -79,7 +81,7 @@ def main():
     print(f"Device: {device} torch {torch.__version__}")
     os.makedirs(args.log_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    comp_dir = os.path.join(args.log_dir, f"comparison_{args.game}_{timestamp}")
+    comp_dir = os.path.join(args.log_dir, f"comparison_{args.game}{recipe_tag(n_envs, n_steps)}_{timestamp}")
     os.makedirs(comp_dir, exist_ok=True)
 
     configs = [
@@ -90,14 +92,13 @@ def main():
     ]
 
     results = {}
-    warn_thin_recipe()  # 3.6.4/3.6.5: this producer's 1x256 default trains blind policies
     for obs_type, use_vector, extractor_class, extractor_kwargs, key in configs:
         results[key] = []
         for seed in args.seeds:
             print(f"\n{'='*60}\n{key} seed {seed} ({obs_type}) game {args.game}\n{'='*60}")
             try:
-                mean, std, model = train_one(args.game, args.num_levels, args.distribution, use_vector, extractor_class, extractor_kwargs, args.timesteps, seed, args.log_dir, device)
-                resp = attach_response(model, vector=use_vector); warn_if_blind(resp, f"{key}_seed{seed}")
+                mean, std, model = train_one(args.game, args.num_levels, args.distribution, use_vector, extractor_class, extractor_kwargs, args.timesteps, seed, args.log_dir, device, n_envs=n_envs, n_steps=n_steps)
+                resp = guard(model, f"{key}_seed{seed}", args.response_guard, vector=use_vector)
                 print(f"{key} seed {seed}: {mean:.2f} +/- {std:.2f}")
                 results[key].append({'seed': seed, 'mean_reward': mean, 'std_reward': std, 'response': resp})
                 try: model.save(os.path.join(comp_dir, f"{key}_seed{seed}.zip"))

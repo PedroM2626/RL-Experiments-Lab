@@ -17,6 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 from summarize_budget500k import fold  # noqa: E402
+from docs_text import open_docs
 
 RESULTS = os.path.join(ROOT, "results")
 README = os.path.join(ROOT, "README.md")
@@ -36,7 +37,7 @@ def budget():
 
 @pytest.fixture(scope="module")
 def readme():
-    with open(README, encoding="utf-8") as f:
+    with open_docs() as f:
         return f.read()
 
 

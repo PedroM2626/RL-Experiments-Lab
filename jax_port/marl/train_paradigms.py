@@ -270,8 +270,7 @@ def train(args):
                "curve": curve}
         out_extra = {"astate": astate, "kind": "tarmac", "NA": NA, "A": A}
     else:  # mapoca
-        encoder, critic = AgentEncoder(), AttnCritic(n_actions=NA)
-        actor = PolicyHead(n_actions=NA)
+        critic = AttnCritic(n_actions=NA)
         # NOTE: inline rollout below (unified version).
         key, k0, k1, k2 = jax.random.split(key, 4)
         p_enc = AgentEncoder().init(k0, jnp.zeros((1, venv.obs_dim)))

@@ -14,12 +14,13 @@ from procgen_wrapper import make_procgen_env
 from models.world_model_extractors import VAEExtractor, AEExtractor, ReconExtractor, ContrastiveExtractor
 from models.sb3_extractors import ClassicCNNExtractor, AttentionCNNExtractor
 from compare_augment_contrastive import ContrastiveCrop, ContrastiveColor, ContrastiveNoise
-from response_guard import attach_response, warn_if_blind, warn_thin_recipe
+from response_guard import RESPONSIVE_N_ENVS, RESPONSIVE_N_STEPS, add_recipe_args, guard, recipe_tag, resolve_recipe
 
-def train_one(game, extractor_class, kwargs, timesteps, seed, log_dir, device, vector=False, n_envs=1, n_steps=256, vector_scale=False):
-    # n_envs/n_steps default to the published recipe (1 x 256), so every existing call and
-    # artifact is untouched. The pilot raises them (README 3.6.6): each env gets its own
-    # level stream (seed + rank) -- N envs on one seed would be N copies of one trajectory.
+def train_one(game, extractor_class, kwargs, timesteps, seed, log_dir, device, vector=False, n_envs=RESPONSIVE_N_ENVS, n_steps=RESPONSIVE_N_STEPS, vector_scale=False):
+    # n_envs/n_steps default to the responsive recipe (16 x 256, README 3.6.7) since
+    # 30/10/2026; n_envs=1 reproduces the published cells (the audit passes it explicitly).
+    # Each env gets its own level stream (seed + rank) -- N envs on one seed would be N
+    # copies of one trajectory.
     # vector_scale=False keeps the raw-uint8 vector the published mlp_vector arm was
     # trained on (its input-scaling defect is README 3.6.12); mlp_scaled passes True.
     def make_env(rank): return Monitor(make_procgen_env(game, num_levels=200, distribution_mode='easy', seed=seed + rank, vector=vector, vector_scale=vector_scale))
@@ -42,17 +43,15 @@ WORLD_CONFIGS = [('vae', VAEExtractor, dict(features_dim=512, latent_dim=128)), 
 PROCGEN_CONFIGS = [('classic', ClassicCNNExtractor, dict(features_dim=512), False), ('cbam', AttentionCNNExtractor, dict(features_dim=512, use_cbam=True), False), ('spatial', AttentionCNNExtractor, dict(features_dim=512, use_cbam=False), False), ('mlp_vector', None, {}, True)]
 AUGMENT_CONFIGS = [('c_aug_crop', ContrastiveCrop, dict(features_dim=512)), ('c_aug_color', ContrastiveColor, dict(features_dim=512)), ('c_aug_noise', ContrastiveNoise, dict(features_dim=512))]
 
-def run_suite(games, timesteps, seeds, log_dir, device):
+def run_suite(games, timesteps, seeds, log_dir, device, n_envs=RESPONSIVE_N_ENVS, n_steps=RESPONSIVE_N_STEPS, response_guard=True):
     ts=datetime.now().strftime("%Y%m%d_%H%M%S")
-    comp_dir=os.path.join(log_dir, f"suite_{'_'.join(games)}_{ts}")
+    comp_dir=os.path.join(log_dir, f"suite_{'_'.join(games)}{recipe_tag(n_envs, n_steps)}_{ts}")
     os.makedirs(comp_dir, exist_ok=True)
     # configs
     world_configs=WORLD_CONFIGS
     procgen_configs=PROCGEN_CONFIGS
-    augment_configs=AUGMENT_CONFIGS
 
     all_results={}
-    warn_thin_recipe()  # 3.6.4/3.6.5: this producer's 1x256 default trains blind policies
     for game in games:
         print(f"\n{'#'*70}\n# GAME {game} suite\n{'#'*70}")
         # World Models
@@ -62,8 +61,8 @@ def run_suite(games, timesteps, seeds, log_dir, device):
             for seed in seeds:
                 print(f"\n[{game}] wm {key} seed {seed}")
                 try:
-                    m,s,model = train_one(game, cls, kw, timesteps, seed, log_dir, device, vector=False)
-                    resp = attach_response(model, vector=False); warn_if_blind(resp, f"{gk}_seed{seed}")
+                    m,s,model = train_one(game, cls, kw, timesteps, seed, log_dir, device, vector=False, n_envs=n_envs, n_steps=n_steps)
+                    resp = guard(model, f"{gk}_seed{seed}", response_guard, vector=False)
                     print(f"-> {m:.2f}"); all_results[gk].append({'seed':seed,'mean_reward':m,'response':resp})
                     try: model.save(os.path.join(comp_dir, f"{gk}_seed{seed}.zip"))
                     except Exception as e: print(f"WARNING: checkpoint save failed for {gk}_seed{seed}: {e}")
@@ -76,8 +75,8 @@ def run_suite(games, timesteps, seeds, log_dir, device):
             for seed in seeds:
                 print(f"\n[{game}] cnn {key} seed {seed}")
                 try:
-                    m,s,model = train_one(game, cls, kw, timesteps, seed, log_dir, device, vector=vec)
-                    resp = attach_response(model, vector=vec); warn_if_blind(resp, f"{gk}_seed{seed}")
+                    m,s,model = train_one(game, cls, kw, timesteps, seed, log_dir, device, vector=vec, n_envs=n_envs, n_steps=n_steps)
+                    resp = guard(model, f"{gk}_seed{seed}", response_guard, vector=vec)
                     print(f"-> {m:.2f}"); all_results[gk].append({'seed':seed,'mean_reward':m,'response':resp})
                     try: model.save(os.path.join(comp_dir, f"{gk}_seed{seed}.zip"))
                     except Exception as e: print(f"WARNING: checkpoint save failed for {gk}_seed{seed}: {e}")
@@ -96,8 +95,8 @@ def run_suite(games, timesteps, seeds, log_dir, device):
             for seed in seeds:
                 print(f"\n[{game}] aug {key} seed {seed}")
                 try:
-                    m,s,model = train_one(game, cls, dict(features_dim=512), timesteps, seed, log_dir, device, vector=False)
-                    resp = attach_response(model, vector=False); warn_if_blind(resp, f"{gk}_seed{seed}")
+                    m,s,model = train_one(game, cls, dict(features_dim=512), timesteps, seed, log_dir, device, vector=False, n_envs=n_envs, n_steps=n_steps)
+                    resp = guard(model, f"{gk}_seed{seed}", response_guard, vector=False)
                     print(f"-> {m:.2f}"); all_results[gk].append({'seed':seed,'mean_reward':m,'response':resp})
                     try: model.save(os.path.join(comp_dir, f"{gk}_seed{seed}.zip"))
                     except Exception as e: print(f"WARNING: checkpoint save failed for {gk}_seed{seed}: {e}")
@@ -139,6 +138,8 @@ if __name__=='__main__':
     parser.add_argument('--seeds', type=int, nargs='+', default=[42,43,44,45,46])
     parser.add_argument('--log_dir', type=str, default='./logs_suite')
     parser.add_argument('--device', type=str, default='auto')
+    add_recipe_args(parser)
     args=parser.parse_args()
+    n_envs, n_steps = resolve_recipe(args)
     device='cuda' if (args.device=='auto' and torch.cuda.is_available()) else args.device if args.device!='auto' else 'cpu'
-    run_suite(args.games, args.timesteps, args.seeds, args.log_dir, device)
+    run_suite(args.games, args.timesteps, args.seeds, args.log_dir, device, n_envs, n_steps, args.response_guard)

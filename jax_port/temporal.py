@@ -191,7 +191,9 @@ class S4DLayer(nn.Module):
     def __call__(self, x):
         # S4D diagonal real: nucleo exp(A t), conv via FFT por canal.
         A = -jnp.exp(self.param("A_log", nn.initializers.uniform(), (self.dim,)))
-        B = self.param("B", nn.initializers.normal(), (self.dim,))
+        # B is registered (it is part of every saved parameter tree) but the kernel below
+        # never uses it; folding it in would change every published temporal result.
+        self.param("B", nn.initializers.normal(), (self.dim,))
         C = self.param("C", nn.initializers.normal(), (self.dim,))
         K = x.shape[1]
         t = jnp.arange(K)

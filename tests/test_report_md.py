@@ -27,8 +27,9 @@ def report():
 
 
 def test_the_finding_section_matches_the_audit_artifacts(report):
-    ck = _load("checkpoint_cross_game_response.json")
-    row = _load("suite_validity_starpilot.json")["arms"]
+    # the two artifacts the section cites must exist and parse
+    _load("checkpoint_cross_game_response.json")
+    _load("suite_validity_starpilot.json")
     assert "69/70" in report and "4.8e-4" in report and "47/48" in report
     # the audit artifact carries the 47/48 the report quotes
     cells = {g: _load(f"suite_validity_{g}.json")["arms"] for g in
@@ -98,7 +99,6 @@ def test_the_anatomy_section_matches_the_diagnostic(report):
 def test_the_bug_section_matches_the_rescue(report):
     for s in ("`91–98%`", "5/5", "`0.379`", "`0.275`", "3/3", "0/3", "`0.053`"):
         assert s in report, f"bug section lost: {s!r}"
-    runs = []
     for s in (42, 43, 44, 45, 46):
         fn = "probe_mlpscaled_dodgeball.json" if s == 42 else f"probe_mlpscaled_dodgeball_seed{s}.json"
         c = _load(fn)["curve"]

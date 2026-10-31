@@ -145,7 +145,6 @@ def train_recurrent(args):
     venv = SmaxVec(args.map, num_envs=N, seed=args.seed,
                    walls_cause_death=not args.no_walls)
     A, NA = venv.n_agents, venv.n_actions
-    S = N * A
     opt = make_optimizer(lr=args.lr)
     model = RecurrentAC(n_actions=NA)
     key, k0 = jax.random.split(key)

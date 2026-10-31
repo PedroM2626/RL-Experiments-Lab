@@ -133,7 +133,7 @@ def fig_top10():
             parts = os.path.basename(f)[:-5].split("__")
             if len(parts) != 4:
                 continue
-            cfg, game, seed = parts[0], parts[1], parts[2]
+            cfg, game = parts[0], parts[1]
             if cfg not in ("aug_noise", "contrastive", "impoola", "mlp",
                            "spatial"):
                 continue
