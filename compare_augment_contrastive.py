@@ -34,7 +34,7 @@ class ContrastiveColor(ContrastiveExtractor):
 
 class ContrastiveNoise(ContrastiveExtractor):
     # inherits the base additive-noise perturbation, i.e. identical to the wm_contrastive
-    # arm of compare_world_models.py — documented as a duplicate in README section 6.1
+    # arm of compare_world_models.py — documented as a duplicate in section 6.2 (docs/offline-rl-and-roadmap.md)
     pass
 
 

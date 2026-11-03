@@ -334,15 +334,21 @@ def p2_hidden_family(rows, args, out):
         game, suite, budget = key
         cells = strata[key]
         seeds = sorted({c["seed"] for c in cells})
+        # keyed by configuration, not by family: until 03/11/2026 this dict was keyed by
+        # family and seed, so every configuration of a family overwrote the previous one and
+        # each "family profile" was the last configuration read (section 21.5's correction)
         grid = {}
         for c in cells:
-            grid.setdefault(c["family"], {})[c["seed"]] = c["ret"]
-        fams = sorted(f for f, d in grid.items() if len(d) == len(seeds))
+            grid.setdefault(c["cfg"], {})[c["seed"]] = c["ret"]
+        cfgs = sorted(c for c, d in grid.items() if len(d) == len(seeds))
+        family = {c: FAMILY_OF[c] for c in cfgs}
+        fams = sorted(set(family.values()))
         if len(fams) < 4 or len(seeds) < 5:
             continue
         chance = 1.0 / len(fams)
         study[f"{game}|{suite}|{int(budget)}"] = {
-            "families": len(fams), "seeds": len(seeds), "chance_level": round(chance, 4),
+            "families": len(fams), "configurations": len(cfgs), "seeds": len(seeds),
+            "chance_level": round(chance, 4),
             "accuracy": {}}
         for j in range(1, 4):
             for k in range(1, len(seeds) - j + 1):
@@ -351,7 +357,9 @@ def p2_hidden_family(rows, args, out):
                 for meas_seeds in combinations(seeds, j):
                     rest = [s for s in seeds if s not in meas_seeds]
                     for ref in combinations(rest, k):
-                        means = {f: float(np.mean([grid[f][s] for s in ref])) for f in fams}
+                        # a family's reference profile pools every member configuration
+                        means = {f: float(np.mean([grid[c][s] for c in cfgs if family[c] == f
+                                                   for s in ref])) for f in fams}
                         ordered = sorted(fams, key=lambda f: means[f])
                         Xtr = np.array([[means[f]] for f in fams])
                         ytr = np.array(fams)
@@ -361,8 +369,9 @@ def p2_hidden_family(rows, args, out):
                                 fitted[name] = clone(ctor()).fit(Xtr, ytr)
                             except Exception:
                                 fitted[name] = None
-                        for f_true in fams:
-                            meas = np.array([[float(np.mean([grid[f_true][s]
+                        for cfg in cfgs:
+                            f_true = family[cfg]
+                            meas = np.array([[float(np.mean([grid[cfg][s]
                                                              for s in meas_seeds]))]])
                             n += 1
                             hits["lowest_mean_heuristic"] += int(f_true == ordered[0])

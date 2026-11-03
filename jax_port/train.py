@@ -76,7 +76,11 @@ def train(args, return_state=False):
     rng = np.random.default_rng(args.seed)
     key = jax.random.PRNGKey(args.seed)
     device = jax.devices()[0]
-    temporal = args.extractor in TEMPORAL
+    # "mlp" is the study's 256-D vector MLP at stack 1 and the temporal MlpStack only when
+    # a frame stack is asked for (the temporal suites pass stack=4). Until 01/11/2026 every
+    # --extractor mlp became MlpStack, so the main/budget/hard suites no longer reproduced
+    # the vector arm their archived cells (05-06/09/2026) were trained with.
+    temporal = args.extractor in TEMPORAL and not (args.extractor == "mlp" and args.stack == 1)
     # Temporal "mlp" (MlpStack) reads stacked frames, not the vector mode
     # of the study's mlp extractor: pixels like the other temporal models.
     mode = args.obs or ("vector" if args.extractor == "mlp" and not temporal

@@ -164,21 +164,24 @@ def test_the_response_scorecard_matches_the_grid(readme):
             continue
         rows.append(cells)
     data = [r for r in rows if r[0] != "architecture"]
-    # 14 rows carry the published grid (16 arms, two same-program pairs merged). Since
-    # 24/10/2026 one extra row carries the opt-in mlp_scaled arm -- the 3.6.12
-    # input-scale rescue, not one of the published sixteen -- and it is validated
-    # against its own artifact, not the grid's.
-    scaled_rows = [r for r in data
-                   if r[0].strip().rstrip(" †").strip("`") == "mlp_scaled"]
-    assert len(scaled_rows) == 1, "the opt-in mlp_scaled row must appear exactly once"
-    assert len(data) == 15, f"14 grid rows + the mlp_scaled row, got {len(data)}"
-    scaled = _load("suite_validity_nenv16_mlp_scaled.json")["responsiveness"]
-    got = scaled_rows[0][1].replace("*", "")
-    tv = float(scaled_rows[0][2].replace("*", ""))
-    assert got == f"{scaled['cells_tv_over_0p1']}/{scaled['cells']}", scaled_rows[0][0]
-    assert tv == scaled["tv_mean"], scaled_rows[0][0]
+    # 14 rows carry the published grid (16 arms, two same-program pairs merged). The opt-in
+    # arms (marked †) are not among the published sixteen and are validated against their
+    # own artifacts: mlp_scaled (24/10/2026, the 3.6.12 input-scale rescue), vit_tokens and
+    # vae_clamped (01/11/2026, 3.6.15 and 3.6.14).
+    opt_in = {"mlp_scaled": _load("suite_validity_nenv16_mlp_scaled.json")["responsiveness"],
+              "vit_tokens": _load("vit_token_pipeline.json")["grid_responsiveness"],
+              "vae_clamped": _load("vae_nan_fix.json")["responsiveness"]}
+    def _name(cells):
+        return cells[0].strip().rstrip(" †").strip("`")
+    for arm, want in opt_in.items():
+        found = [r for r in data if _name(r) == arm]
+        assert len(found) == 1, f"the opt-in {arm} row must appear exactly once"
+        assert found[0][0].endswith("†"), f"{arm} must be marked as opt-in"
+        assert found[0][1].replace("*", "") == f"{want['cells_tv_over_0p1']}/{want['cells']}", arm
+        assert float(found[0][2].replace("*", "")) == want["tv_mean"], arm
+    assert len(data) == 14 + len(opt_in), f"14 grid rows + {len(opt_in)} opt-in rows, got {len(data)}"
     for cells in data:
-        if cells[0].strip().rstrip(" †").strip("`") == "mlp_scaled":
+        if _name(cells) in opt_in:
             continue
         names = [n.strip().strip("`") for n in cells[0].split("≡")]
         got, tv = cells[1].replace("*", ""), float(cells[2].replace("*", ""))

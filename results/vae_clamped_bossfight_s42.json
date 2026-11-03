@@ -1,0 +1,213 @@
+{
+  "game": "bossfight",
+  "seed": 42,
+  "timesteps": 100000,
+  "n_envs": 16,
+  "n_steps": 256,
+  "logvar_clamp": 10.0,
+  "steps_reached": 102400,
+  "error": null,
+  "seconds": 185.7,
+  "curve": [
+    {
+      "steps": 4096,
+      "logvar_max": 3.935086488723755,
+      "mu_absmax": 3.2744569778442383,
+      "std_max": 7.153081893920898,
+      "feat_max": 5.6891093254089355,
+      "nonfinite": false
+    },
+    {
+      "steps": 8192,
+      "logvar_max": 5.796141147613525,
+      "mu_absmax": 13.414210319519043,
+      "std_max": 18.13911247253418,
+      "feat_max": 12.12499713897705,
+      "nonfinite": false
+    },
+    {
+      "steps": 12288,
+      "logvar_max": 8.521074295043945,
+      "mu_absmax": 11.685508728027344,
+      "std_max": 70.84803009033203,
+      "feat_max": 20.98619270324707,
+      "nonfinite": false
+    },
+    {
+      "steps": 16384,
+      "logvar_max": 5.156686305999756,
+      "mu_absmax": 15.082429885864258,
+      "std_max": 13.17529010772705,
+      "feat_max": 16.133939743041992,
+      "nonfinite": false
+    },
+    {
+      "steps": 20480,
+      "logvar_max": 5.124814987182617,
+      "mu_absmax": 17.540748596191406,
+      "std_max": 12.966998100280762,
+      "feat_max": 20.120040893554688,
+      "nonfinite": false
+    },
+    {
+      "steps": 24576,
+      "logvar_max": 5.233023643493652,
+      "mu_absmax": 16.718334197998047,
+      "std_max": 13.687893867492676,
+      "feat_max": 20.75020980834961,
+      "nonfinite": false
+    },
+    {
+      "steps": 28672,
+      "logvar_max": 7.899284362792969,
+      "mu_absmax": 18.597579956054688,
+      "std_max": 51.91679000854492,
+      "feat_max": 20.707128524780273,
+      "nonfinite": false
+    },
+    {
+      "steps": 32768,
+      "logvar_max": 6.046969413757324,
+      "mu_absmax": 16.417375564575195,
+      "std_max": 20.562822341918945,
+      "feat_max": 18.696897506713867,
+      "nonfinite": false
+    },
+    {
+      "steps": 36864,
+      "logvar_max": 5.846327781677246,
+      "mu_absmax": 12.76918888092041,
+      "std_max": 18.60004234313965,
+      "feat_max": 16.33835220336914,
+      "nonfinite": false
+    },
+    {
+      "steps": 40960,
+      "logvar_max": 8.1690673828125,
+      "mu_absmax": 13.31196403503418,
+      "std_max": 59.414222717285156,
+      "feat_max": 21.845932006835938,
+      "nonfinite": false
+    },
+    {
+      "steps": 45056,
+      "logvar_max": 9.670308113098145,
+      "mu_absmax": 15.094829559326172,
+      "std_max": 125.85797882080078,
+      "feat_max": 47.57263946533203,
+      "nonfinite": false
+    },
+    {
+      "steps": 49152,
+      "logvar_max": 10.0,
+      "mu_absmax": 15.957334518432617,
+      "std_max": 148.4131622314453,
+      "feat_max": 60.029300689697266,
+      "nonfinite": false
+    },
+    {
+      "steps": 53248,
+      "logvar_max": 7.11121129989624,
+      "mu_absmax": 14.7314453125,
+      "std_max": 35.00901794433594,
+      "feat_max": 33.66862106323242,
+      "nonfinite": false
+    },
+    {
+      "steps": 57344,
+      "logvar_max": 10.0,
+      "mu_absmax": 13.072307586669922,
+      "std_max": 148.4131622314453,
+      "feat_max": 67.2182388305664,
+      "nonfinite": false
+    },
+    {
+      "steps": 61440,
+      "logvar_max": 9.554635047912598,
+      "mu_absmax": 11.668331146240234,
+      "std_max": 118.78528594970703,
+      "feat_max": 37.17454147338867,
+      "nonfinite": false
+    },
+    {
+      "steps": 65536,
+      "logvar_max": 4.465607166290283,
+      "mu_absmax": 10.213154792785645,
+      "std_max": 9.32597541809082,
+      "feat_max": 18.23801040649414,
+      "nonfinite": false
+    },
+    {
+      "steps": 69632,
+      "logvar_max": 5.519318103790283,
+      "mu_absmax": 10.309539794921875,
+      "std_max": 15.794456481933594,
+      "feat_max": 19.41988754272461,
+      "nonfinite": false
+    },
+    {
+      "steps": 73728,
+      "logvar_max": 4.71657133102417,
+      "mu_absmax": 11.91628360748291,
+      "std_max": 10.572811126708984,
+      "feat_max": 19.613933563232422,
+      "nonfinite": false
+    },
+    {
+      "steps": 77824,
+      "logvar_max": 4.303095817565918,
+      "mu_absmax": 10.795367240905762,
+      "std_max": 8.598156929016113,
+      "feat_max": 19.383190155029297,
+      "nonfinite": false
+    },
+    {
+      "steps": 81920,
+      "logvar_max": 6.463557720184326,
+      "mu_absmax": 13.717084884643555,
+      "std_max": 25.32466697692871,
+      "feat_max": 25.338029861450195,
+      "nonfinite": false
+    },
+    {
+      "steps": 86016,
+      "logvar_max": 7.478204727172852,
+      "mu_absmax": 12.134413719177246,
+      "std_max": 42.060218811035156,
+      "feat_max": 23.47218894958496,
+      "nonfinite": false
+    },
+    {
+      "steps": 90112,
+      "logvar_max": 10.0,
+      "mu_absmax": 12.324444770812988,
+      "std_max": 148.4131622314453,
+      "feat_max": 82.5117416381836,
+      "nonfinite": false
+    },
+    {
+      "steps": 94208,
+      "logvar_max": 10.0,
+      "mu_absmax": 12.75283432006836,
+      "std_max": 148.4131622314453,
+      "feat_max": 115.84748840332031,
+      "nonfinite": false
+    },
+    {
+      "steps": 98304,
+      "logvar_max": 10.0,
+      "mu_absmax": 15.871033668518066,
+      "std_max": 148.4131622314453,
+      "feat_max": 89.73458862304688,
+      "nonfinite": false
+    },
+    {
+      "steps": 102400,
+      "logvar_max": 9.257461547851562,
+      "mu_absmax": 11.116684913635254,
+      "std_max": 102.384033203125,
+      "feat_max": 48.68735122680664,
+      "nonfinite": false
+    }
+  ]
+}

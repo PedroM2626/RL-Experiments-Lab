@@ -283,7 +283,8 @@ def run_cell(cell, args):
         timesteps=cell["timesteps"],
         seed=cell["seed"], num_envs=args.num_envs, rollout=args.rollout,
         minibatch=args.minibatch, eval_eps=ee[0], eval_det_eps=ee[1],
-        eval_train_eps=ee[2], eval_envs=8, out=path)
+        eval_train_eps=ee[2], eval_envs=8, out=path,
+        response=getattr(args, "response", False), response_games=None, probe_seed=1042)
     return T.train(ns)
 
 
@@ -322,6 +323,9 @@ def main():
                     help="filters cfgs (e.g. classic mlp mlp_vector ppo icm flat)")
     ap.add_argument("--lr-sens", action="store_true")
     ap.add_argument("--overwrite", action="store_true")
+    ap.add_argument("--response", action="store_true",
+                    help="attach the cross-game response measure (README 3.6.2) to every "
+                         "ppo/a2c cell -- the port-grid audit of 01/11/2026")
     ap.add_argument("--out-dir", default=os.path.join(BASE, "results_grade"))
     ap.add_argument("--tau", type=float, default=0.0,
                     help="Polyak coefficient for VDN/QMIX target nets; 0 = hard copy "

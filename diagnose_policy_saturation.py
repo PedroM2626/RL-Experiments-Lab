@@ -118,6 +118,49 @@ class ViTMaxPoolExtractor(ViTExtractor):
         return self.fc(x)
 
 
+class ViTTokensExtractor(ViTExtractor):
+    """The token-pipeline intervention (01/11/2026). 3.6.11 changed one stage at a time --
+    LayerNorm at the output, max over tokens -- and neither ignited vit/bossfight. This
+    variant changes the whole pipeline at once, to the standard modern-ViT recipe: 8x8
+    patches (64 tokens, not 16 patches of 16x16 that can each hold a whole sprite), pre-LN
+    encoder layers with dropout 0 (the published layer is post-LN with PyTorch's default
+    dropout 0.1 inside the PPO update), and a learnable CLS token read out through a final
+    LayerNorm instead of the mean over tokens. If no pipeline change ignites the cell, the
+    blindness is not a token-pipeline property; if this one does, the ablations name the stage.
+    """
+
+    def __init__(self, observation_space, features_dim=512, patch=8, dim=128, depth=4, heads=4,
+                 norm_first=True, dropout=0.0, pool="cls", out_norm=True):
+        super().__init__(observation_space, features_dim, patch=patch, dim=dim, depth=depth, heads=heads)
+        layer = nn.TransformerEncoderLayer(d_model=dim, nhead=heads, dim_feedforward=dim * 4,
+                                           dropout=dropout, batch_first=True, norm_first=norm_first)
+        self.transformer = nn.TransformerEncoder(layer, num_layers=depth, enable_nested_tensor=False)
+        self.pool = pool
+        self.cls = nn.Parameter(torch.zeros(1, 1, dim)) if pool == "cls" else None
+        self.out_norm = nn.LayerNorm(dim) if out_norm else nn.Identity()
+
+    def forward(self, o):
+        if o.dtype == torch.uint8:
+            o = o.float() / 255.0
+        elif o.max() > 1.5:
+            o = o / 255.0
+        o = to_chw(o)
+        x = self.proj(o).flatten(2).transpose(1, 2) + self.pos_emb
+        if self.cls is not None:
+            x = torch.cat([self.cls.expand(x.shape[0], -1, -1), x], dim=1)
+        x = self.transformer(x)
+        x = x[:, 0] if self.cls is not None else x.mean(dim=1)
+        return self.fc(self.out_norm(x))
+
+
+# the single-stage ablations of vit_tokens: each changes ONE stage of the published ViT
+VIT_ABLATIONS = {
+    "vit_patch8": dict(patch=8, norm_first=False, dropout=0.1, pool="mean", out_norm=False),
+    "vit_prenorm": dict(patch=16, norm_first=True, dropout=0.0, pool="mean", out_norm=False),
+    "vit_cls": dict(patch=16, norm_first=False, dropout=0.1, pool="cls", out_norm=True),
+}
+
+
 def probe_frames(game, seed, n=20, frame_stack=1, vector=False):
     """Frames from a policy-independent random walk, so the probe set is not adapted to."""
     rng = np.random.default_rng(seed)
@@ -314,14 +357,17 @@ def main():
                          "policy stays responsive")
     ap.add_argument("--device", default="cuda")
     ap.add_argument("--arch", choices=("classic", "vit", "mlp", "impoola", "vit_ln",
-                                       "mlp_scaled", "vit_maxpool"),
+                                       "mlp_scaled", "vit_maxpool", "vit_tokens",
+                                       "vit_patch8", "vit_prenorm", "vit_cls"),
                     default="classic",
                     help="which front end to probe. classic = the published extractor "
                          "(--extractor repo|layernorm applies to it); vit/impoola = those "
                          "front ends of the 16-arm comparison, probed because the grid "
                          "measures them among the non-readers; vit_ln = the 3.6.10 "
                          "counterfactual (ViT + LayerNorm on its features); vit_maxpool "
-                         "= the 3.6.11 upstream lever (max over tokens instead of mean); "
+                         "= the 3.6.11 upstream lever (max over tokens instead of mean); vit_tokens = the "
+                         "whole token pipeline changed (8x8 patches, pre-LN, no dropout, CLS readout), and "
+                         "vit_patch8/vit_prenorm/vit_cls its single-stage ablations; "
                          "mlp = the MlpPolicy over the 256-D downsampled observation "
                          "(vector obs, frame stacking unavailable there); mlp_scaled = "
                          "the 3.6.11 input-scale lever on the same vector obs (obs/255)")
@@ -370,6 +416,8 @@ def main():
         front = ViTLayerNormExtractor
     elif args.arch == "vit_maxpool":
         front = ViTMaxPoolExtractor
+    elif args.arch == "vit_tokens" or args.arch in VIT_ABLATIONS:
+        front = ViTTokensExtractor
     if vector:
         policy = "MlpPolicy"
         pk = {} if args.arch == "mlp" else {"features_extractor_class": ScaledFlattenExtractor}
@@ -378,7 +426,7 @@ def main():
         if front is None:
             front = LayerNormExtractor if args.extractor == "layernorm" else ClassicCNNExtractor
         pk = {"features_extractor_class": front,
-              "features_extractor_kwargs": dict(features_dim=512)}
+              "features_extractor_kwargs": dict(features_dim=512, **VIT_ABLATIONS.get(args.arch, {}))}
     model = PPO(policy, venv, verbose=0, learning_rate=3e-4, n_steps=args.n_steps,
                 batch_size=64,
                 n_epochs=3, gamma=0.99, gae_lambda=0.95, clip_range=0.2, seed=args.seed,

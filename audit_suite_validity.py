@@ -35,8 +35,8 @@ import time
 import compare_new_archs as CNA
 import compare_suite as CS
 from compare_augment_contrastive import ContrastivePixelDrop
-from diagnose_policy_saturation import cross_game_response
-from models.world_model_extractors import ReconBottleneckExtractor
+from diagnose_policy_saturation import ViTTokensExtractor, cross_game_response
+from models.world_model_extractors import ReconBottleneckExtractor, VAEExtractor
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 # (arm, family, extractor class, kwargs, vector, vector_scale) -- assembled from the
@@ -48,17 +48,24 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 ARMS = ([(k, "world_model", cls, kw, False, False) for k, cls, kw in CS.WORLD_CONFIGS]
         + [(k, "procgen_cnn", cls, kw, vec, False) for k, cls, kw, vec in CS.PROCGEN_CONFIGS]
         + [("mlp_scaled", "procgen_cnn", None, {}, True, True)]
+        + [("vae_clamped", "world_model", VAEExtractor,
+            dict(features_dim=512, latent_dim=128, logvar_clamp=10.0), False, False)]
         + [("recon_bottleneck", "world_model", ReconBottleneckExtractor,
             dict(features_dim=512, latent_dim=128), False, False)]
         + [(k, "augment", cls, kw, False, False) for k, cls, kw in CS.AUGMENT_CONFIGS]
         + [("c_aug_noise_drop", "augment", ContrastivePixelDrop, dict(features_dim=512), False, False)]
-        + [(k, "new_arch", cls, kw, False, False) for k, cls, kw in CNA.NEW_ARCH_CONFIGS])
+        + [(k, "new_arch", cls, kw, False, False) for k, cls, kw in CNA.NEW_ARCH_CONFIGS]
+        + [("vit_tokens", "new_arch", ViTTokensExtractor, dict(features_dim=512), False, False)])
 BY_NAME = {a[0]: a for a in ARMS}
 # the three opt-in arms added after the audit: the 3.6.12 input-scale lever and the two
 # genuinely-distinct variants of the same-program pairs (README 3.6.2). They are available
 # by name so a future grid can measure 17 distinct front ends; the default audit and every
 # merged artifact still cover exactly the published sixteen.
-EXTRA_ARMS = {"mlp_scaled", "recon_bottleneck", "c_aug_noise_drop"}
+# vae_clamped (01/11/2026) is the published vae with logvar bounded to [-10, 10] -- the fix
+# diagnose_vae_nan.py names for the arm's NaN.
+# vit_tokens (01/11/2026) is the ViT with its whole token pipeline changed (8x8 patches,
+# pre-LN, no dropout, CLS readout; diagnose_policy_saturation.ViTTokensExtractor).
+EXTRA_ARMS = {"mlp_scaled", "recon_bottleneck", "c_aug_noise_drop", "vae_clamped", "vit_tokens"}
 PUBLISHED_ARMS = [a[0] for a in ARMS if a[0] not in EXTRA_ARMS]
 
 

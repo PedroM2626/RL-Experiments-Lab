@@ -1,0 +1,213 @@
+{
+  "game": "bossfight",
+  "seed": 42,
+  "timesteps": 100000,
+  "n_envs": 16,
+  "n_steps": 256,
+  "logvar_clamp": null,
+  "steps_reached": 98304,
+  "error": "Expected parameter logits (Tensor of shape (64, 15)) of distribution Categorical(logits: torch.Size([64, 15])) to satisfy the constraint IndependentConstraint(Real(), 1), but found invalid values:",
+  "seconds": 71.4,
+  "curve": [
+    {
+      "steps": 4096,
+      "logvar_max": 3.935086488723755,
+      "mu_absmax": 3.2744569778442383,
+      "std_max": 7.153081893920898,
+      "feat_max": 5.6891093254089355,
+      "nonfinite": false
+    },
+    {
+      "steps": 8192,
+      "logvar_max": 5.796141147613525,
+      "mu_absmax": 13.414210319519043,
+      "std_max": 18.13911247253418,
+      "feat_max": 12.12499713897705,
+      "nonfinite": false
+    },
+    {
+      "steps": 12288,
+      "logvar_max": 8.521074295043945,
+      "mu_absmax": 11.685508728027344,
+      "std_max": 70.84803009033203,
+      "feat_max": 20.98619270324707,
+      "nonfinite": false
+    },
+    {
+      "steps": 16384,
+      "logvar_max": 6.03102970123291,
+      "mu_absmax": 14.808647155761719,
+      "std_max": 20.39959144592285,
+      "feat_max": 16.043928146362305,
+      "nonfinite": false
+    },
+    {
+      "steps": 20480,
+      "logvar_max": 6.703834533691406,
+      "mu_absmax": 16.20542335510254,
+      "std_max": 28.557432174682617,
+      "feat_max": 18.462230682373047,
+      "nonfinite": false
+    },
+    {
+      "steps": 24576,
+      "logvar_max": 3.6268324851989746,
+      "mu_absmax": 17.020240783691406,
+      "std_max": 6.1313581466674805,
+      "feat_max": 19.069124221801758,
+      "nonfinite": false
+    },
+    {
+      "steps": 28672,
+      "logvar_max": 10.942442893981934,
+      "mu_absmax": 21.882583618164062,
+      "std_max": 237.7504119873047,
+      "feat_max": 65.3555679321289,
+      "nonfinite": false
+    },
+    {
+      "steps": 32768,
+      "logvar_max": 12.250633239746094,
+      "mu_absmax": 14.132535934448242,
+      "std_max": 457.28948974609375,
+      "feat_max": 81.04279327392578,
+      "nonfinite": false
+    },
+    {
+      "steps": 36864,
+      "logvar_max": 4.954222202301025,
+      "mu_absmax": 13.920642852783203,
+      "std_max": 11.906817436218262,
+      "feat_max": 22.756324768066406,
+      "nonfinite": false
+    },
+    {
+      "steps": 40960,
+      "logvar_max": 11.432868003845215,
+      "mu_absmax": 20.239303588867188,
+      "std_max": 303.819580078125,
+      "feat_max": 72.30067443847656,
+      "nonfinite": false
+    },
+    {
+      "steps": 45056,
+      "logvar_max": 11.399765014648438,
+      "mu_absmax": 19.752883911132812,
+      "std_max": 298.8323059082031,
+      "feat_max": 42.356773376464844,
+      "nonfinite": false
+    },
+    {
+      "steps": 49152,
+      "logvar_max": 10.042515754699707,
+      "mu_absmax": 15.09997844696045,
+      "std_max": 151.60186767578125,
+      "feat_max": 55.10842514038086,
+      "nonfinite": false
+    },
+    {
+      "steps": 53248,
+      "logvar_max": 7.404371738433838,
+      "mu_absmax": 16.533058166503906,
+      "std_max": 40.53581237792969,
+      "feat_max": 19.593116760253906,
+      "nonfinite": false
+    },
+    {
+      "steps": 57344,
+      "logvar_max": 4.873310565948486,
+      "mu_absmax": 13.880581855773926,
+      "std_max": 11.434731483459473,
+      "feat_max": 15.070882797241211,
+      "nonfinite": false
+    },
+    {
+      "steps": 61440,
+      "logvar_max": 8.92452621459961,
+      "mu_absmax": 12.5795259475708,
+      "std_max": 86.68345642089844,
+      "feat_max": 39.181392669677734,
+      "nonfinite": false
+    },
+    {
+      "steps": 65536,
+      "logvar_max": 11.4298095703125,
+      "mu_absmax": 20.14207649230957,
+      "std_max": 303.3553161621094,
+      "feat_max": 96.38467407226562,
+      "nonfinite": false
+    },
+    {
+      "steps": 69632,
+      "logvar_max": 9.992471694946289,
+      "mu_absmax": 31.992721557617188,
+      "std_max": 147.85556030273438,
+      "feat_max": 96.30065155029297,
+      "nonfinite": false
+    },
+    {
+      "steps": 73728,
+      "logvar_max": 5.04695987701416,
+      "mu_absmax": 20.57665252685547,
+      "std_max": 12.471923828125,
+      "feat_max": 27.002790451049805,
+      "nonfinite": false
+    },
+    {
+      "steps": 77824,
+      "logvar_max": 5.237697601318359,
+      "mu_absmax": 16.342586517333984,
+      "std_max": 13.71992015838623,
+      "feat_max": 22.202381134033203,
+      "nonfinite": false
+    },
+    {
+      "steps": 81920,
+      "logvar_max": 7.446141719818115,
+      "mu_absmax": 19.35161018371582,
+      "std_max": 41.39130401611328,
+      "feat_max": 27.93701171875,
+      "nonfinite": false
+    },
+    {
+      "steps": 86016,
+      "logvar_max": 124.18262481689453,
+      "mu_absmax": 76.19674682617188,
+      "std_max": 9.24515837947559e+26,
+      "feat_max": 3.15527831138499e+26,
+      "nonfinite": false
+    },
+    {
+      "steps": 90112,
+      "logvar_max": 124.8065185546875,
+      "mu_absmax": 76.20030212402344,
+      "std_max": 1.2629645971478695e+27,
+      "feat_max": 4.979218209482214e+26,
+      "nonfinite": false
+    },
+    {
+      "steps": 94208,
+      "logvar_max": 126.03235626220703,
+      "mu_absmax": 72.00665283203125,
+      "std_max": 2.331194148233264e+27,
+      "feat_max": 5.242080254248879e+26,
+      "nonfinite": false
+    },
+    {
+      "steps": 98304,
+      "logvar_max": 126.0323715209961,
+      "mu_absmax": 72.00665283203125,
+      "std_max": 2.331211857107575e+27,
+      "feat_max": 1.3228841966918084e+27,
+      "nonfinite": false
+    },
+    {
+      "steps": 98304,
+      "logvar_max": 177.47828674316406,
+      "mu_absmax": 87.23295593261719,
+      "std_max": "inf",
+      "feat_max": "inf",
+      "nonfinite": true
+    }
+  ]
+}

@@ -100,31 +100,33 @@ Three readings follow. In `bossfight` and `dodgeball` the slope is indistinguish
 
 ### 21.5. P2 — the Inverse Problem: Is the Architecture Identifiable from its Return?
 
-The hidden parameter is now the **configuration family** that generated a cell. Within one stratum $(\text{game}, \text{suite}, \text{budget})$ the protocol is identical for every cell, so the only observable left is the measured return. The reference profile of each family is built by averaging $k$ seeds; the query is a return averaged over $j$ held-out seeds. Recovery is scored against the $1/F$ chance level.
+The hidden parameter is now the **configuration family** that generated a cell. Within one stratum $(\text{game}, \text{suite}, \text{budget})$ the protocol is identical for every cell, so the only observable left is the measured return. The reference profile of each family is built by averaging $k$ seeds of every member configuration; the query is one configuration's return averaged over $j$ held-out seeds, and it is scored correct when the nearest family profile is its own. Recovery is scored against the $1/F$ chance level.
 
-| Stratum | Families $F$ | Chance $1/F$ | Accuracy at $k{=}1$ | Accuracy at $k{=}4$ | Wilson 95 % CI ($k{=}4$) |
-|---|---:|---:|---:|---:|---|
-| `bossfight` / `hard` | 6 | 0.167 | 0.158 | 0.200 | [0.095, 0.373] |
-| `bossfight` / `main` | 9 | 0.111 | 0.094 | 0.222 | [0.125, 0.363] |
-| `dodgeball` / `main` | 9 | 0.111 | 0.133 | **0.289** | [0.177, 0.434] |
-| `starpilot` / `main` | 9 | 0.111 | 0.128 | 0.200 | [0.109, 0.338] |
+> **Correction (03/11/2026).** As first published, this subsection's numbers came from a `p2_hidden_family` that keyed each profile by family and seed, so every configuration of a family overwrote the previous one: each "family" was in fact the last configuration read (`cnn_attention` = `spatial`, `cnn_deep` = `resnet18`, `world_model` = `vae`, `augmentation` = `aug_noise`), and the task actually scored was "which of these $F$ configurations is this". The function now pools every member configuration into its family's profile and queries every configuration; the tables below are the regenerated `results/symbolic_regression.json` (every other metric of this section reproduced identically in the same run). The published pooled values were `0.133` at $k{=}1, j{=}1$ and `0.203` at $k{=}4, j{=}1$, with a monotone rise in $k$; corrected, they are `0.113` and `0.119`, and the rise disappears. The conclusion is unchanged and stronger: the return does not identify the family. §21.9 re-runs both versions side by side (`results/response_identification.json`, `P2_published_defect`).
+
+| Stratum | Families $F$ | Configurations | Chance $1/F$ | Accuracy at $k{=}1$ | Accuracy at $k{=}4$ | Wilson 95 % CI ($k{=}4$) |
+|---|---:|---:|---:|---:|---:|---|
+| `bossfight` / `hard` | 6 | 11 | 0.167 | 0.145 | 0.127 | [0.063, 0.240] |
+| `bossfight` / `main` | 9 | 16 | 0.111 | 0.094 | 0.138 | [0.079, 0.230] |
+| `dodgeball` / `main` | 9 | 16 | 0.111 | 0.134 | 0.138 | [0.079, 0.230] |
+| `starpilot` / `main` | 9 | 16 | 0.111 | 0.113 | 0.113 | [0.060, 0.200] |
 
 Pooled across strata, as a function of how many seeds the reference averages ($k$) and how many the measurement averages ($j$):
 
 | Reference seeds $k$ | $j{=}1$ | $j{=}2$ | $j{=}3$ |
 |---:|---:|---:|---:|
-| 1 | 0.133 | 0.145 | 0.152 |
-| 2 | 0.155 | 0.141 | 0.157 |
-| 3 | 0.172 | 0.173 | — |
-| 4 | **0.203** | — | — |
+| 1 | 0.113 | 0.126 | 0.144 |
+| 2 | 0.122 | 0.133 | 0.137 |
+| 3 | 0.126 | 0.132 | — |
+| 4 | 0.119 | — | — |
 
 ![Identifiability of the hidden family](../results/symbolic_regression_identifiability.png)
 
-**A single measured return barely identifies the architecture that produced it.** At $k{=}1, j{=}1$ — the situation of anyone reading one benchmark number — accuracy is 0.133 against a chance level of 0.111–0.167. The best cell of the grid, $k{=}4, j{=}1$ at 0.203, still overlaps chance for the $F{=}6$ stratum. Accuracy improves monotonically in $k$ (cleaner reference profiles) and only weakly in $j$ (a less noisy query), which locates the loss precisely: **the between-family differences at this budget are smaller than the between-seed noise within a family.**
+**A single measured return does not identify the architecture family that produced it.** At $k{=}1, j{=}1$ — the situation of anyone reading one benchmark number — accuracy is 0.113 against a chance level of 0.111–0.167, and no cell of the grid leaves that band: every stratum's $k{=}4$ interval contains its chance level. More reference seeds buy nothing ($0.113 \to 0.122 \to 0.126 \to 0.119$ at $j{=}1$), and averaging the query helps only slightly ($0.113 \to 0.144$ at $k{=}1$). That locates the loss: **the between-family differences at this budget are smaller than the between-seed and between-configuration noise within a family.**
 
-This is the identifiability counterpart of section 3.8's "no top-1 vs top-2 difference is statistically significant with 5 seeds", and it is the stronger statement: it is not that the ranking cannot be *tested* at $n{=}5$, but that the generating configuration cannot be *recovered* from a single run at all. The degenerate "always predict the lowest-mean family" heuristic scores a constant 0.111 / 0.167 — exactly $1/F$ — confirming the chance floor is computed correctly.
+This is the identifiability counterpart of section 3.8's "no top-1 vs top-2 difference is statistically significant with 5 seeds", and it is the stronger statement: it is not that the ranking cannot be *tested* at $n{=}5$, but that the generating family cannot be *recovered* from a single run at all. The degenerate "always predict the family with the lowest mean" heuristic scores 0.063–0.138 — the share of the stratum's configurations that happen to belong to that family — so the nearest-centroid rule is not beating even a trivial floor by a margin.
 
-*Caveat, stated rather than hidden:* the $(\text{reference}, \text{measurement})$ splits within a stratum reuse seeds, so the $n \le 3960$ predictions are not independent draws and the Wilson intervals are optimistic. They are reported as a spread indicator, not as a confirmatory test.
+*Caveat, stated rather than hidden:* the $(\text{reference}, \text{measurement})$ splits within a stratum reuse seeds, so the $n \le 7080$ predictions are not independent draws and the Wilson intervals are optimistic. They are reported as a spread indicator, not as a confirmatory test.
 
 ### 21.6. P3 — Inverting the Law for Budget
 
@@ -165,3 +167,48 @@ py -3.10 symbolic_regression.py --quick    # small search, for a fast local chec
 ```
 
 Dependencies are pinned in `requirements.txt`: `gplearn==0.4.2` with `scikit-learn==1.5.2`. The cap is not cosmetic — gplearn 0.4.2 calls an estimator helper that scikit-learn removed in 1.6, so with a current sklearn `SymbolicRegressor.fit` raises `AttributeError` instead of searching. That failure is caught by the CI test above rather than mid-study.
+
+### 21.9. The Same Questions with the Response as the Target (`response_identification.py`, 03/11/2026)
+
+Sections 21.3–21.6 asked their three questions of the *return*. Section 3.6 then established that return is not what separates the visual front ends and that the cross-game response measure is. This section asks P2, P1 and P3 again with the response as the observable, on the two grids that carry it:
+
+- **SB3 `16×256`:** the §3.6.7 grid. 16 arms × `bossfight`/`starpilot`/`dodgeball` × seeds `42–46`, `100k`, with the `250k`/`500k` sweeps of §3.6.8/§3.6.13 for the budget law.
+- **Port `64×128`:** the port's `main` suite re-trained with the response attached (§15.5).
+
+Program-identical aliases count as one class: SB3 `recon` = `ae` and `c_aug_noise` = `contrastive`; port `ae` = `recon` = `classic` and `contrastive` = `aug_noise`. No observable can separate two runs of the same program. Identification uses a nearest-centroid rule with each observable z-scored by the spread of the reference centroids. It is scored at the architecture level (`13–14` classes per game, chance `0.071–0.077`) and at the family level of §21.5 (`8–9` families, chance `0.111–0.125`), where every member architecture is pooled into its family's centroid. The splits reuse seeds exactly as in §21.5, so the Wilson intervals are again optimistic spread indicators, not tests.
+
+**P2 — identification.** Pooled accuracy for one measurement against a one-seed reference ($k{=}1, j{=}1$, Wilson 95 % CI) and against a four-seed reference ($k{=}4, j{=}1$):
+
+| Grid | Level | Chance | Return, $k{=}1$ | Response, $k{=}1$ | Both, $k{=}1$ | Return, $k{=}4$ | Response, $k{=}4$ | Both, $k{=}4$ |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| SB3 `16×256` | architecture | 0.073 | 0.084 [0.067, 0.105] | **0.176** [0.151, 0.203] | 0.135 | 0.083 | **0.215** | 0.107 |
+| SB3 `16×256` | family | 0.111 | 0.115 [0.095, 0.138] | **0.220** [0.193, 0.249] | 0.167 | 0.112 | **0.288** | 0.151 |
+| port `64×128` | architecture | 0.077 | 0.085 [0.067, 0.106] | 0.120 [0.100, 0.145] | 0.101 | 0.103 | 0.128 | 0.174 |
+| port `64×128` | family | 0.125 | 0.171 [0.146, 0.199] | 0.169 [0.145, 0.197] | 0.181 | 0.154 | 0.174 | 0.221 |
+
+1. **On the SB3 grid the response identifies the architecture and the return does not.** One response measurement names the generating architecture at `0.176`, `2.4×` chance, rising to `0.215` with a four-seed reference. One return measurement sits at chance (`0.084`, interval containing `0.073`), and more reference seeds do not move it (`0.083`). Adding the return to the response *lowers* accuracy (`0.135`), because the nearest-centroid rule weights a pure-noise dimension equally with the informative one. At the family level the gap is the same: response `0.220–0.288` against return `0.112–0.115`, at chance `0.111`.
+2. **On the port grid the response loses most of that power.** At 64 × 128, `208/240` cells read (§15.5), so what is left to separate is the depth of reading. That ordering is weaker and does not transfer between stacks (ρ = `0.30`). The response still clears chance at the architecture level (`0.120`, interval `[0.100, 0.145]` against `0.077`), but only `1.6×`. At the family level return and response tie at `0.17`, modestly above `0.125`. The response is a sharp architecture measure where the recipe leaves some arms blind and others reading, and a blunt one once the recipe makes everyone read.
+
+**P1 / P3 — the budget law.** The SB3 arms measured at three budgets (`classic`, `cbam`, `vit`, `mlp_vector`; `starpilot`/`dodgeball` at `100k`/`250k`/`500k`, `bossfight` at `100k`/`500k`) give a slope per decade of budget for each observable, with a seed-bootstrap 95 % interval:
+
+| Arm | Game | Return slope / decade [95 % CI] | Response slope / decade [95 % CI] | Budget for mean TV `0.5` |
+|---|---|---:|---:|---:|
+| `classic` | `starpilot` | −0.17 [−1.94, 1.45] | **+0.52** [0.42, 0.63] | `277k` (inside support) |
+| `classic` | `dodgeball` | +0.25 [−0.88, 1.65] | **+0.29** [0.21, 0.38] | `1.59M` (extrapolated) |
+| `classic` | `bossfight` | +0.03 [0.00, 0.09] | **+0.27** [0.17, 0.38] | `826k` (extrapolated) |
+| `cbam` | `starpilot` | +0.49 [−0.67, 1.56] | **+0.62** [0.47, 0.75] | `240k` (inside support) |
+| `cbam` | `dodgeball` | −0.65 [−2.49, 0.96] | **+0.31** [0.22, 0.40] | `1.15M` (extrapolated) |
+| `cbam` | `bossfight` | **+1.20** [0.31, 1.95] | **+0.33** [0.15, 0.53] | `765k` (extrapolated) |
+
+3. **The response has a budget law; the return does not.** For the two readers, all six response slopes are positive with intervals that exclude zero (`+0.27` to `+0.62` TV per decade). Only one of the twelve return series in the sweep, `cbam`/`bossfight`, has a return slope whose interval excludes zero. The non-readers have no response law to find: `vit` stays at TV `0.000` on `bossfight` at every budget, and `mlp_vector` on `dodgeball` falls (`−0.07` per decade). Cross-validated by seed over the 80 reader cells, a linear fit with game intercepts alone explains the response at $R^2$ `0.247`. Adding a per-game slope on $\log_{10} N$ raises it to **`0.738`**. The same two fits on the return give `0.560` and `0.526`: game identity explains the return, and budget adds nothing.
+4. **The symbolic search, at §21.2's settings, does not recover that law.** gplearn's fitness is MAE plus parsimony × program length. With §21.2's parsimony (`0.005`, sized for returns of order 1), a target on the TV scale pays more per node than any node can earn, and the first full run returned the constant `0.336` (cross-validated $R^2$ `−0.026`). The search therefore now runs on the z-scored target. It finds game indicators for both targets (`sub(is_starpilot, 0.289)` for the response, $R^2$ `0.234`; return $R^2$ `0.571`) but not the budget-by-game interaction the linear fit uses. The evidence for the response law is the bootstrap slopes and the cross-validated linear fit. The symbolic search is reported as the negative it is.
+5. **P3 now lands inside or near the measured support.** Inverting each reader's response line for mean TV `0.5` gives `240k`–`277k` on `starpilot`, inside the measured span, and `765k`–`1.59M` elsewhere, `1.5×`–`3.2×` beyond `500k`. The return inversions of §21.6 landed `3.6×` to `4.7` million× beyond the budget of the cell that achieved the target. A law whose inversion stays within a few × of its data is one a next experiment can test.
+
+**What changes in the study's account.** §21.5 and §21.6 concluded that the benchmark, read through its return, does not identify the architecture or the budget. Read through the response, on the grid where the recipe leaves the front ends room to differ, it identifies both: the architecture at `2.4–2.9×` chance, and the budget through a per-decade law that holds for every reader on every game. That is the identification counterpart of §3.6.7's scorecard. The port grid marks its boundary: when every front end reads, the response stops ranking them sharply.
+
+| Artifact | Content |
+|---|---|
+| `response_identification.py` | producer: P2 on both grids, the §21.5 defect re-run, P1/P3 slopes, linear and symbolic fits; `--check` re-derives and compares |
+| `results/response_identification.json` | every number in this subsection, with `_provenance` (grids, alias merges, search settings) |
+| `jax_port/port_response_grid.json` | the port grid's per-cell returns and responses (§15.5) |
+| `tests/test_response_identification.py` | gates the artifact's freshness and the numbers quoted here |

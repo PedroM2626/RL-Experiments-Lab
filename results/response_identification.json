@@ -1,0 +1,1962 @@
+{
+  "_provenance": {
+    "produced_by": "response_identification.py",
+    "question": "section 21's P1/P2/P3 with the cross-game response measure as the observable",
+    "grids": {
+      "sb3_16x256": "results/suite_validity_nenv16_grid.json",
+      "port_64x128": "jax_port/port_response_grid.json"
+    },
+    "aliases_merged": {
+      "sb3_16x256": {
+        "recon": "ae",
+        "c_aug_noise": "contrastive"
+      },
+      "port_64x128": {
+        "ae": "classic",
+        "recon": "classic",
+        "contrastive": "aug_noise"
+      }
+    },
+    "search": {
+      "pop": 1000,
+      "gens": 40,
+      "parsimony": 0.005,
+      "seed": 0
+    }
+  },
+  "P2_identification": {
+    "sb3_16x256": {
+      "architecture|return": {
+        "per_game": {
+          "bossfight": {
+            "labels": 13,
+            "chance": 0.0769,
+            "k1_j1": 0.0846,
+            "k4_j1": 0.1077,
+            "k4_j1_ci95_wilson": [
+              0.0532,
+              0.206
+            ]
+          },
+          "starpilot": {
+            "labels": 14,
+            "chance": 0.0714,
+            "k1_j1": 0.0607,
+            "k4_j1": 0.0714,
+            "k4_j1_ci95_wilson": [
+              0.0309,
+              0.1566
+            ]
+          },
+          "dodgeball": {
+            "labels": 14,
+            "chance": 0.0714,
+            "k1_j1": 0.1071,
+            "k4_j1": 0.0714,
+            "k4_j1_ci95_wilson": [
+              0.0309,
+              0.1566
+            ]
+          }
+        },
+        "pooled": {
+          "k_1_j_1": {
+            "accuracy": 0.0841,
+            "n": 820,
+            "ci95_wilson": [
+              0.067,
+              0.1051
+            ]
+          },
+          "k_1_j_2": {
+            "accuracy": 0.0748,
+            "n": 1230,
+            "ci95_wilson": [
+              0.0614,
+              0.0909
+            ]
+          },
+          "k_1_j_3": {
+            "accuracy": 0.0744,
+            "n": 820,
+            "ci95_wilson": [
+              0.0583,
+              0.0944
+            ]
+          },
+          "k_2_j_1": {
+            "accuracy": 0.0911,
+            "n": 1230,
+            "ci95_wilson": [
+              0.0762,
+              0.1084
+            ]
+          },
+          "k_2_j_2": {
+            "accuracy": 0.0797,
+            "n": 1230,
+            "ci95_wilson": [
+              0.0658,
+              0.0961
+            ]
+          },
+          "k_2_j_3": {
+            "accuracy": 0.0829,
+            "n": 410,
+            "ci95_wilson": [
+              0.0599,
+              0.1136
+            ]
+          },
+          "k_3_j_1": {
+            "accuracy": 0.0817,
+            "n": 820,
+            "ci95_wilson": [
+              0.0649,
+              0.1025
+            ]
+          },
+          "k_3_j_2": {
+            "accuracy": 0.0854,
+            "n": 410,
+            "ci95_wilson": [
+              0.062,
+              0.1164
+            ]
+          },
+          "k_4_j_1": {
+            "accuracy": 0.0829,
+            "n": 205,
+            "ci95_wilson": [
+              0.0524,
+              0.1288
+            ]
+          }
+        },
+        "mean_chance": 0.0732
+      },
+      "architecture|response": {
+        "per_game": {
+          "bossfight": {
+            "labels": 13,
+            "chance": 0.0769,
+            "k1_j1": 0.1692,
+            "k4_j1": 0.2,
+            "k4_j1_ci95_wilson": [
+              0.1208,
+              0.3127
+            ]
+          },
+          "starpilot": {
+            "labels": 14,
+            "chance": 0.0714,
+            "k1_j1": 0.1786,
+            "k4_j1": 0.2714,
+            "k4_j1_ci95_wilson": [
+              0.1812,
+              0.3854
+            ]
+          },
+          "dodgeball": {
+            "labels": 14,
+            "chance": 0.0714,
+            "k1_j1": 0.1786,
+            "k4_j1": 0.1714,
+            "k4_j1_ci95_wilson": [
+              0.1009,
+              0.2762
+            ]
+          }
+        },
+        "pooled": {
+          "k_1_j_1": {
+            "accuracy": 0.1756,
+            "n": 820,
+            "ci95_wilson": [
+              0.1511,
+              0.2031
+            ]
+          },
+          "k_1_j_2": {
+            "accuracy": 0.1911,
+            "n": 1230,
+            "ci95_wilson": [
+              0.1701,
+              0.214
+            ]
+          },
+          "k_1_j_3": {
+            "accuracy": 0.189,
+            "n": 820,
+            "ci95_wilson": [
+              0.1637,
+              0.2172
+            ]
+          },
+          "k_2_j_1": {
+            "accuracy": 0.178,
+            "n": 1230,
+            "ci95_wilson": [
+              0.1577,
+              0.2004
+            ]
+          },
+          "k_2_j_2": {
+            "accuracy": 0.2049,
+            "n": 1230,
+            "ci95_wilson": [
+              0.1833,
+              0.2283
+            ]
+          },
+          "k_2_j_3": {
+            "accuracy": 0.2073,
+            "n": 410,
+            "ci95_wilson": [
+              0.1709,
+              0.2492
+            ]
+          },
+          "k_3_j_1": {
+            "accuracy": 0.2,
+            "n": 820,
+            "ci95_wilson": [
+              0.174,
+              0.2287
+            ]
+          },
+          "k_3_j_2": {
+            "accuracy": 0.2268,
+            "n": 410,
+            "ci95_wilson": [
+              0.1889,
+              0.2698
+            ]
+          },
+          "k_4_j_1": {
+            "accuracy": 0.2146,
+            "n": 205,
+            "ci95_wilson": [
+              0.164,
+              0.2758
+            ]
+          }
+        },
+        "mean_chance": 0.0732
+      },
+      "architecture|both": {
+        "per_game": {
+          "bossfight": {
+            "labels": 13,
+            "chance": 0.0769,
+            "k1_j1": 0.1538,
+            "k4_j1": 0.0923,
+            "k4_j1_ci95_wilson": [
+              0.043,
+              0.1871
+            ]
+          },
+          "starpilot": {
+            "labels": 14,
+            "chance": 0.0714,
+            "k1_j1": 0.1071,
+            "k4_j1": 0.1143,
+            "k4_j1_ci95_wilson": [
+              0.0591,
+              0.2096
+            ]
+          },
+          "dodgeball": {
+            "labels": 14,
+            "chance": 0.0714,
+            "k1_j1": 0.1464,
+            "k4_j1": 0.1143,
+            "k4_j1_ci95_wilson": [
+              0.0591,
+              0.2096
+            ]
+          }
+        },
+        "pooled": {
+          "k_1_j_1": {
+            "accuracy": 0.1354,
+            "n": 820,
+            "ci95_wilson": [
+              0.1136,
+              0.1605
+            ]
+          },
+          "k_1_j_2": {
+            "accuracy": 0.1415,
+            "n": 1230,
+            "ci95_wilson": [
+              0.1231,
+              0.1621
+            ]
+          },
+          "k_1_j_3": {
+            "accuracy": 0.1402,
+            "n": 820,
+            "ci95_wilson": [
+              0.1182,
+              0.1657
+            ]
+          },
+          "k_2_j_1": {
+            "accuracy": 0.1382,
+            "n": 1230,
+            "ci95_wilson": [
+              0.12,
+              0.1586
+            ]
+          },
+          "k_2_j_2": {
+            "accuracy": 0.1463,
+            "n": 1230,
+            "ci95_wilson": [
+              0.1277,
+              0.1672
+            ]
+          },
+          "k_2_j_3": {
+            "accuracy": 0.1439,
+            "n": 410,
+            "ci95_wilson": [
+              0.1132,
+              0.1812
+            ]
+          },
+          "k_3_j_1": {
+            "accuracy": 0.1585,
+            "n": 820,
+            "ci95_wilson": [
+              0.1351,
+              0.1851
+            ]
+          },
+          "k_3_j_2": {
+            "accuracy": 0.161,
+            "n": 410,
+            "ci95_wilson": [
+              0.1286,
+              0.1997
+            ]
+          },
+          "k_4_j_1": {
+            "accuracy": 0.1073,
+            "n": 205,
+            "ci95_wilson": [
+              0.0719,
+              0.1571
+            ]
+          }
+        },
+        "mean_chance": 0.0732
+      },
+      "family|return": {
+        "per_game": {
+          "bossfight": {
+            "labels": 9,
+            "chance": 0.1111,
+            "k1_j1": 0.1231,
+            "k4_j1": 0.1231,
+            "k4_j1_ci95_wilson": [
+              0.0637,
+              0.2245
+            ]
+          },
+          "starpilot": {
+            "labels": 9,
+            "chance": 0.1111,
+            "k1_j1": 0.1,
+            "k4_j1": 0.0714,
+            "k4_j1_ci95_wilson": [
+              0.0309,
+              0.1566
+            ]
+          },
+          "dodgeball": {
+            "labels": 9,
+            "chance": 0.1111,
+            "k1_j1": 0.1214,
+            "k4_j1": 0.1429,
+            "k4_j1_ci95_wilson": [
+              0.0795,
+              0.2434
+            ]
+          }
+        },
+        "pooled": {
+          "k_1_j_1": {
+            "accuracy": 0.1146,
+            "n": 820,
+            "ci95_wilson": [
+              0.0946,
+              0.1383
+            ]
+          },
+          "k_1_j_2": {
+            "accuracy": 0.1382,
+            "n": 1230,
+            "ci95_wilson": [
+              0.12,
+              0.1586
+            ]
+          },
+          "k_1_j_3": {
+            "accuracy": 0.1439,
+            "n": 820,
+            "ci95_wilson": [
+              0.1215,
+              0.1696
+            ]
+          },
+          "k_2_j_1": {
+            "accuracy": 0.1244,
+            "n": 1230,
+            "ci95_wilson": [
+              0.1071,
+              0.144
+            ]
+          },
+          "k_2_j_2": {
+            "accuracy": 0.1252,
+            "n": 1230,
+            "ci95_wilson": [
+              0.1079,
+              0.1449
+            ]
+          },
+          "k_2_j_3": {
+            "accuracy": 0.1439,
+            "n": 410,
+            "ci95_wilson": [
+              0.1132,
+              0.1812
+            ]
+          },
+          "k_3_j_1": {
+            "accuracy": 0.1305,
+            "n": 820,
+            "ci95_wilson": [
+              0.1091,
+              0.1553
+            ]
+          },
+          "k_3_j_2": {
+            "accuracy": 0.1317,
+            "n": 410,
+            "ci95_wilson": [
+              0.1024,
+              0.1679
+            ]
+          },
+          "k_4_j_1": {
+            "accuracy": 0.1122,
+            "n": 205,
+            "ci95_wilson": [
+              0.0759,
+              0.1627
+            ]
+          }
+        },
+        "mean_chance": 0.1111
+      },
+      "family|response": {
+        "per_game": {
+          "bossfight": {
+            "labels": 9,
+            "chance": 0.1111,
+            "k1_j1": 0.2308,
+            "k4_j1": 0.2923,
+            "k4_j1_ci95_wilson": [
+              0.1958,
+              0.412
+            ]
+          },
+          "starpilot": {
+            "labels": 9,
+            "chance": 0.1111,
+            "k1_j1": 0.1893,
+            "k4_j1": 0.2857,
+            "k4_j1_ci95_wilson": [
+              0.1932,
+              0.4005
+            ]
+          },
+          "dodgeball": {
+            "labels": 9,
+            "chance": 0.1111,
+            "k1_j1": 0.2393,
+            "k4_j1": 0.2857,
+            "k4_j1_ci95_wilson": [
+              0.1932,
+              0.4005
+            ]
+          }
+        },
+        "pooled": {
+          "k_1_j_1": {
+            "accuracy": 0.2195,
+            "n": 820,
+            "ci95_wilson": [
+              0.1925,
+              0.2491
+            ]
+          },
+          "k_1_j_2": {
+            "accuracy": 0.2398,
+            "n": 1230,
+            "ci95_wilson": [
+              0.2168,
+              0.2645
+            ]
+          },
+          "k_1_j_3": {
+            "accuracy": 0.2463,
+            "n": 820,
+            "ci95_wilson": [
+              0.2181,
+              0.277
+            ]
+          },
+          "k_2_j_1": {
+            "accuracy": 0.2504,
+            "n": 1230,
+            "ci95_wilson": [
+              0.227,
+              0.2754
+            ]
+          },
+          "k_2_j_2": {
+            "accuracy": 0.2488,
+            "n": 1230,
+            "ci95_wilson": [
+              0.2254,
+              0.2737
+            ]
+          },
+          "k_2_j_3": {
+            "accuracy": 0.2829,
+            "n": 410,
+            "ci95_wilson": [
+              0.2415,
+              0.3284
+            ]
+          },
+          "k_3_j_1": {
+            "accuracy": 0.2732,
+            "n": 820,
+            "ci95_wilson": [
+              0.2438,
+              0.3047
+            ]
+          },
+          "k_3_j_2": {
+            "accuracy": 0.2512,
+            "n": 410,
+            "ci95_wilson": [
+              0.2117,
+              0.2954
+            ]
+          },
+          "k_4_j_1": {
+            "accuracy": 0.2878,
+            "n": 205,
+            "ci95_wilson": [
+              0.2302,
+              0.3532
+            ]
+          }
+        },
+        "mean_chance": 0.1111
+      },
+      "family|both": {
+        "per_game": {
+          "bossfight": {
+            "labels": 9,
+            "chance": 0.1111,
+            "k1_j1": 0.1808,
+            "k4_j1": 0.1846,
+            "k4_j1_ci95_wilson": [
+              0.1089,
+              0.2955
+            ]
+          },
+          "starpilot": {
+            "labels": 9,
+            "chance": 0.1111,
+            "k1_j1": 0.1571,
+            "k4_j1": 0.1143,
+            "k4_j1_ci95_wilson": [
+              0.0591,
+              0.2096
+            ]
+          },
+          "dodgeball": {
+            "labels": 9,
+            "chance": 0.1111,
+            "k1_j1": 0.1643,
+            "k4_j1": 0.1571,
+            "k4_j1_ci95_wilson": [
+              0.0901,
+              0.2599
+            ]
+          }
+        },
+        "pooled": {
+          "k_1_j_1": {
+            "accuracy": 0.1671,
+            "n": 820,
+            "ci95_wilson": [
+              0.1431,
+              0.1941
+            ]
+          },
+          "k_1_j_2": {
+            "accuracy": 0.1935,
+            "n": 1230,
+            "ci95_wilson": [
+              0.1724,
+              0.2165
+            ]
+          },
+          "k_1_j_3": {
+            "accuracy": 0.2073,
+            "n": 820,
+            "ci95_wilson": [
+              0.181,
+              0.2364
+            ]
+          },
+          "k_2_j_1": {
+            "accuracy": 0.1862,
+            "n": 1230,
+            "ci95_wilson": [
+              0.1654,
+              0.2089
+            ]
+          },
+          "k_2_j_2": {
+            "accuracy": 0.1943,
+            "n": 1230,
+            "ci95_wilson": [
+              0.1732,
+              0.2174
+            ]
+          },
+          "k_2_j_3": {
+            "accuracy": 0.2146,
+            "n": 410,
+            "ci95_wilson": [
+              0.1776,
+              0.2569
+            ]
+          },
+          "k_3_j_1": {
+            "accuracy": 0.189,
+            "n": 820,
+            "ci95_wilson": [
+              0.1637,
+              0.2172
+            ]
+          },
+          "k_3_j_2": {
+            "accuracy": 0.2024,
+            "n": 410,
+            "ci95_wilson": [
+              0.1664,
+              0.244
+            ]
+          },
+          "k_4_j_1": {
+            "accuracy": 0.1512,
+            "n": 205,
+            "ci95_wilson": [
+              0.1086,
+              0.2066
+            ]
+          }
+        },
+        "mean_chance": 0.1111
+      }
+    },
+    "port_64x128": {
+      "architecture|return": {
+        "per_game": {
+          "bossfight": {
+            "labels": 13,
+            "chance": 0.0769,
+            "k1_j1": 0.0692,
+            "k4_j1": 0.0923,
+            "k4_j1_ci95_wilson": [
+              0.043,
+              0.1871
+            ]
+          },
+          "starpilot": {
+            "labels": 13,
+            "chance": 0.0769,
+            "k1_j1": 0.0808,
+            "k4_j1": 0.0462,
+            "k4_j1_ci95_wilson": [
+              0.0158,
+              0.1271
+            ]
+          },
+          "dodgeball": {
+            "labels": 13,
+            "chance": 0.0769,
+            "k1_j1": 0.1038,
+            "k4_j1": 0.1692,
+            "k4_j1_ci95_wilson": [
+              0.0972,
+              0.2782
+            ]
+          }
+        },
+        "pooled": {
+          "k_1_j_1": {
+            "accuracy": 0.0846,
+            "n": 780,
+            "ci95_wilson": [
+              0.0671,
+              0.1062
+            ]
+          },
+          "k_1_j_2": {
+            "accuracy": 0.0949,
+            "n": 1170,
+            "ci95_wilson": [
+              0.0794,
+              0.113
+            ]
+          },
+          "k_1_j_3": {
+            "accuracy": 0.0962,
+            "n": 780,
+            "ci95_wilson": [
+              0.0774,
+              0.1189
+            ]
+          },
+          "k_2_j_1": {
+            "accuracy": 0.0949,
+            "n": 1170,
+            "ci95_wilson": [
+              0.0794,
+              0.113
+            ]
+          },
+          "k_2_j_2": {
+            "accuracy": 0.1051,
+            "n": 1170,
+            "ci95_wilson": [
+              0.0888,
+              0.124
+            ]
+          },
+          "k_2_j_3": {
+            "accuracy": 0.0949,
+            "n": 390,
+            "ci95_wilson": [
+              0.0696,
+              0.128
+            ]
+          },
+          "k_3_j_1": {
+            "accuracy": 0.1115,
+            "n": 780,
+            "ci95_wilson": [
+              0.0913,
+              0.1356
+            ]
+          },
+          "k_3_j_2": {
+            "accuracy": 0.1359,
+            "n": 390,
+            "ci95_wilson": [
+              0.1054,
+              0.1735
+            ]
+          },
+          "k_4_j_1": {
+            "accuracy": 0.1026,
+            "n": 195,
+            "ci95_wilson": [
+              0.0674,
+              0.1531
+            ]
+          }
+        },
+        "mean_chance": 0.0769
+      },
+      "architecture|response": {
+        "per_game": {
+          "bossfight": {
+            "labels": 13,
+            "chance": 0.0769,
+            "k1_j1": 0.1192,
+            "k4_j1": 0.0923,
+            "k4_j1_ci95_wilson": [
+              0.043,
+              0.1871
+            ]
+          },
+          "starpilot": {
+            "labels": 13,
+            "chance": 0.0769,
+            "k1_j1": 0.1346,
+            "k4_j1": 0.1385,
+            "k4_j1_ci95_wilson": [
+              0.0746,
+              0.2427
+            ]
+          },
+          "dodgeball": {
+            "labels": 13,
+            "chance": 0.0769,
+            "k1_j1": 0.1077,
+            "k4_j1": 0.1538,
+            "k4_j1_ci95_wilson": [
+              0.0858,
+              0.2606
+            ]
+          }
+        },
+        "pooled": {
+          "k_1_j_1": {
+            "accuracy": 0.1205,
+            "n": 780,
+            "ci95_wilson": [
+              0.0995,
+              0.1452
+            ]
+          },
+          "k_1_j_2": {
+            "accuracy": 0.0923,
+            "n": 1170,
+            "ci95_wilson": [
+              0.077,
+              0.1103
+            ]
+          },
+          "k_1_j_3": {
+            "accuracy": 0.1013,
+            "n": 780,
+            "ci95_wilson": [
+              0.082,
+              0.1244
+            ]
+          },
+          "k_2_j_1": {
+            "accuracy": 0.1291,
+            "n": 1170,
+            "ci95_wilson": [
+              0.1111,
+              0.1495
+            ]
+          },
+          "k_2_j_2": {
+            "accuracy": 0.1342,
+            "n": 1170,
+            "ci95_wilson": [
+              0.1158,
+              0.1549
+            ]
+          },
+          "k_2_j_3": {
+            "accuracy": 0.1256,
+            "n": 390,
+            "ci95_wilson": [
+              0.0964,
+              0.1622
+            ]
+          },
+          "k_3_j_1": {
+            "accuracy": 0.1474,
+            "n": 780,
+            "ci95_wilson": [
+              0.1243,
+              0.174
+            ]
+          },
+          "k_3_j_2": {
+            "accuracy": 0.1462,
+            "n": 390,
+            "ci95_wilson": [
+              0.1145,
+              0.1847
+            ]
+          },
+          "k_4_j_1": {
+            "accuracy": 0.1282,
+            "n": 195,
+            "ci95_wilson": [
+              0.0884,
+              0.1824
+            ]
+          }
+        },
+        "mean_chance": 0.0769
+      },
+      "architecture|both": {
+        "per_game": {
+          "bossfight": {
+            "labels": 13,
+            "chance": 0.0769,
+            "k1_j1": 0.1038,
+            "k4_j1": 0.1538,
+            "k4_j1_ci95_wilson": [
+              0.0858,
+              0.2606
+            ]
+          },
+          "starpilot": {
+            "labels": 13,
+            "chance": 0.0769,
+            "k1_j1": 0.0846,
+            "k4_j1": 0.1692,
+            "k4_j1_ci95_wilson": [
+              0.0972,
+              0.2782
+            ]
+          },
+          "dodgeball": {
+            "labels": 13,
+            "chance": 0.0769,
+            "k1_j1": 0.1154,
+            "k4_j1": 0.2,
+            "k4_j1_ci95_wilson": [
+              0.1208,
+              0.3127
+            ]
+          }
+        },
+        "pooled": {
+          "k_1_j_1": {
+            "accuracy": 0.1013,
+            "n": 780,
+            "ci95_wilson": [
+              0.082,
+              0.1244
+            ]
+          },
+          "k_1_j_2": {
+            "accuracy": 0.1111,
+            "n": 1170,
+            "ci95_wilson": [
+              0.0944,
+              0.1304
+            ]
+          },
+          "k_1_j_3": {
+            "accuracy": 0.1128,
+            "n": 780,
+            "ci95_wilson": [
+              0.0925,
+              0.1369
+            ]
+          },
+          "k_2_j_1": {
+            "accuracy": 0.1256,
+            "n": 1170,
+            "ci95_wilson": [
+              0.1079,
+              0.1459
+            ]
+          },
+          "k_2_j_2": {
+            "accuracy": 0.1427,
+            "n": 1170,
+            "ci95_wilson": [
+              0.1239,
+              0.1639
+            ]
+          },
+          "k_2_j_3": {
+            "accuracy": 0.1564,
+            "n": 390,
+            "ci95_wilson": [
+              0.1237,
+              0.1958
+            ]
+          },
+          "k_3_j_1": {
+            "accuracy": 0.1513,
+            "n": 780,
+            "ci95_wilson": [
+              0.1278,
+              0.1781
+            ]
+          },
+          "k_3_j_2": {
+            "accuracy": 0.1487,
+            "n": 390,
+            "ci95_wilson": [
+              0.1168,
+              0.1875
+            ]
+          },
+          "k_4_j_1": {
+            "accuracy": 0.1744,
+            "n": 195,
+            "ci95_wilson": [
+              0.1275,
+              0.2338
+            ]
+          }
+        },
+        "mean_chance": 0.0769
+      },
+      "family|return": {
+        "per_game": {
+          "bossfight": {
+            "labels": 8,
+            "chance": 0.125,
+            "k1_j1": 0.1615,
+            "k4_j1": 0.1846,
+            "k4_j1_ci95_wilson": [
+              0.1089,
+              0.2955
+            ]
+          },
+          "starpilot": {
+            "labels": 8,
+            "chance": 0.125,
+            "k1_j1": 0.1846,
+            "k4_j1": 0.1077,
+            "k4_j1_ci95_wilson": [
+              0.0532,
+              0.206
+            ]
+          },
+          "dodgeball": {
+            "labels": 8,
+            "chance": 0.125,
+            "k1_j1": 0.1654,
+            "k4_j1": 0.1692,
+            "k4_j1_ci95_wilson": [
+              0.0972,
+              0.2782
+            ]
+          }
+        },
+        "pooled": {
+          "k_1_j_1": {
+            "accuracy": 0.1705,
+            "n": 780,
+            "ci95_wilson": [
+              0.1457,
+              0.1985
+            ]
+          },
+          "k_1_j_2": {
+            "accuracy": 0.1821,
+            "n": 1170,
+            "ci95_wilson": [
+              0.161,
+              0.2052
+            ]
+          },
+          "k_1_j_3": {
+            "accuracy": 0.1897,
+            "n": 780,
+            "ci95_wilson": [
+              0.1638,
+              0.2188
+            ]
+          },
+          "k_2_j_1": {
+            "accuracy": 0.1598,
+            "n": 1170,
+            "ci95_wilson": [
+              0.1399,
+              0.1819
+            ]
+          },
+          "k_2_j_2": {
+            "accuracy": 0.194,
+            "n": 1170,
+            "ci95_wilson": [
+              0.1724,
+              0.2177
+            ]
+          },
+          "k_2_j_3": {
+            "accuracy": 0.2103,
+            "n": 390,
+            "ci95_wilson": [
+              0.1727,
+              0.2534
+            ]
+          },
+          "k_3_j_1": {
+            "accuracy": 0.1551,
+            "n": 780,
+            "ci95_wilson": [
+              0.1314,
+              0.1822
+            ]
+          },
+          "k_3_j_2": {
+            "accuracy": 0.2128,
+            "n": 390,
+            "ci95_wilson": [
+              0.1751,
+              0.2561
+            ]
+          },
+          "k_4_j_1": {
+            "accuracy": 0.1538,
+            "n": 195,
+            "ci95_wilson": [
+              0.1099,
+              0.2111
+            ]
+          }
+        },
+        "mean_chance": 0.125
+      },
+      "family|response": {
+        "per_game": {
+          "bossfight": {
+            "labels": 8,
+            "chance": 0.125,
+            "k1_j1": 0.1846,
+            "k4_j1": 0.1231,
+            "k4_j1_ci95_wilson": [
+              0.0637,
+              0.2245
+            ]
+          },
+          "starpilot": {
+            "labels": 8,
+            "chance": 0.125,
+            "k1_j1": 0.1692,
+            "k4_j1": 0.2462,
+            "k4_j1_ci95_wilson": [
+              0.1576,
+              0.3631
+            ]
+          },
+          "dodgeball": {
+            "labels": 8,
+            "chance": 0.125,
+            "k1_j1": 0.1538,
+            "k4_j1": 0.1538,
+            "k4_j1_ci95_wilson": [
+              0.0858,
+              0.2606
+            ]
+          }
+        },
+        "pooled": {
+          "k_1_j_1": {
+            "accuracy": 0.1692,
+            "n": 780,
+            "ci95_wilson": [
+              0.1446,
+              0.1972
+            ]
+          },
+          "k_1_j_2": {
+            "accuracy": 0.1803,
+            "n": 1170,
+            "ci95_wilson": [
+              0.1594,
+              0.2034
+            ]
+          },
+          "k_1_j_3": {
+            "accuracy": 0.1962,
+            "n": 780,
+            "ci95_wilson": [
+              0.1698,
+              0.2255
+            ]
+          },
+          "k_2_j_1": {
+            "accuracy": 0.1769,
+            "n": 1170,
+            "ci95_wilson": [
+              0.1561,
+              0.1998
+            ]
+          },
+          "k_2_j_2": {
+            "accuracy": 0.1889,
+            "n": 1170,
+            "ci95_wilson": [
+              0.1675,
+              0.2123
+            ]
+          },
+          "k_2_j_3": {
+            "accuracy": 0.2077,
+            "n": 390,
+            "ci95_wilson": [
+              0.1704,
+              0.2507
+            ]
+          },
+          "k_3_j_1": {
+            "accuracy": 0.1897,
+            "n": 780,
+            "ci95_wilson": [
+              0.1638,
+              0.2188
+            ]
+          },
+          "k_3_j_2": {
+            "accuracy": 0.2179,
+            "n": 390,
+            "ci95_wilson": [
+              0.1798,
+              0.2616
+            ]
+          },
+          "k_4_j_1": {
+            "accuracy": 0.1744,
+            "n": 195,
+            "ci95_wilson": [
+              0.1275,
+              0.2338
+            ]
+          }
+        },
+        "mean_chance": 0.125
+      },
+      "family|both": {
+        "per_game": {
+          "bossfight": {
+            "labels": 8,
+            "chance": 0.125,
+            "k1_j1": 0.1462,
+            "k4_j1": 0.1538,
+            "k4_j1_ci95_wilson": [
+              0.0858,
+              0.2606
+            ]
+          },
+          "starpilot": {
+            "labels": 8,
+            "chance": 0.125,
+            "k1_j1": 0.1923,
+            "k4_j1": 0.2769,
+            "k4_j1_ci95_wilson": [
+              0.1829,
+              0.3958
+            ]
+          },
+          "dodgeball": {
+            "labels": 8,
+            "chance": 0.125,
+            "k1_j1": 0.2038,
+            "k4_j1": 0.2308,
+            "k4_j1_ci95_wilson": [
+              0.1451,
+              0.3464
+            ]
+          }
+        },
+        "pooled": {
+          "k_1_j_1": {
+            "accuracy": 0.1808,
+            "n": 780,
+            "ci95_wilson": [
+              0.1553,
+              0.2093
+            ]
+          },
+          "k_1_j_2": {
+            "accuracy": 0.2026,
+            "n": 1170,
+            "ci95_wilson": [
+              0.1805,
+              0.2266
+            ]
+          },
+          "k_1_j_3": {
+            "accuracy": 0.2192,
+            "n": 780,
+            "ci95_wilson": [
+              0.1916,
+              0.2496
+            ]
+          },
+          "k_2_j_1": {
+            "accuracy": 0.1863,
+            "n": 1170,
+            "ci95_wilson": [
+              0.1651,
+              0.2096
+            ]
+          },
+          "k_2_j_2": {
+            "accuracy": 0.2316,
+            "n": 1170,
+            "ci95_wilson": [
+              0.2084,
+              0.2567
+            ]
+          },
+          "k_2_j_3": {
+            "accuracy": 0.2641,
+            "n": 390,
+            "ci95_wilson": [
+              0.2228,
+              0.31
+            ]
+          },
+          "k_3_j_1": {
+            "accuracy": 0.1962,
+            "n": 780,
+            "ci95_wilson": [
+              0.1698,
+              0.2255
+            ]
+          },
+          "k_3_j_2": {
+            "accuracy": 0.2205,
+            "n": 390,
+            "ci95_wilson": [
+              0.1822,
+              0.2643
+            ]
+          },
+          "k_4_j_1": {
+            "accuracy": 0.2205,
+            "n": 195,
+            "ci95_wilson": [
+              0.168,
+              0.2838
+            ]
+          }
+        },
+        "mean_chance": 0.125
+      }
+    }
+  },
+  "P2_published_defect": {
+    "bossfight|hard": {
+      "families": 6,
+      "chance": 0.1667,
+      "published_k1_j1": 0.175,
+      "corrected_k1_j1": 0.15,
+      "published_k4_j1": 0.2,
+      "corrected_k4_j1": 0.1273,
+      "published_profile_was_config": {
+        "augmentation": "aug_noise",
+        "cnn_attention": "spatial",
+        "cnn_classic": "classic",
+        "contrastive": "contrastive",
+        "mlp_vector": "mlp",
+        "world_model": "vae"
+      }
+    },
+    "bossfight|main": {
+      "families": 9,
+      "chance": 0.1111,
+      "published_k1_j1": 0.0833,
+      "corrected_k1_j1": 0.0906,
+      "published_k4_j1": 0.2222,
+      "corrected_k4_j1": 0.1375,
+      "published_profile_was_config": {
+        "augmentation": "aug_noise",
+        "cnn_attention": "spatial",
+        "cnn_classic": "classic",
+        "cnn_deep": "resnet18",
+        "cnn_recurrent": "lstm_attention",
+        "cnn_vit": "vit",
+        "contrastive": "contrastive",
+        "mlp_vector": "mlp",
+        "world_model": "vae"
+      }
+    },
+    "dodgeball|main": {
+      "families": 9,
+      "chance": 0.1111,
+      "published_k1_j1": 0.1444,
+      "corrected_k1_j1": 0.1344,
+      "published_k4_j1": 0.2889,
+      "corrected_k4_j1": 0.1375,
+      "published_profile_was_config": {
+        "augmentation": "aug_noise",
+        "cnn_attention": "spatial",
+        "cnn_classic": "classic",
+        "cnn_deep": "resnet18",
+        "cnn_recurrent": "lstm_attention",
+        "cnn_vit": "vit",
+        "contrastive": "contrastive",
+        "mlp_vector": "mlp",
+        "world_model": "vae"
+      }
+    },
+    "starpilot|main": {
+      "families": 9,
+      "chance": 0.1111,
+      "published_k1_j1": 0.1333,
+      "corrected_k1_j1": 0.1125,
+      "published_k4_j1": 0.2,
+      "corrected_k4_j1": 0.1125,
+      "published_profile_was_config": {
+        "augmentation": "aug_noise",
+        "cnn_attention": "spatial",
+        "cnn_classic": "classic",
+        "cnn_deep": "resnet18",
+        "cnn_recurrent": "lstm_attention",
+        "cnn_vit": "vit",
+        "contrastive": "contrastive",
+        "mlp_vector": "mlp",
+        "world_model": "vae"
+      }
+    },
+    "_pooled": {
+      "published": {
+        "k_1_j_1": 0.1303,
+        "k_1_j_2": 0.1424,
+        "k_1_j_3": 0.15,
+        "k_2_j_1": 0.1646,
+        "k_2_j_2": 0.1444,
+        "k_2_j_3": 0.1727,
+        "k_3_j_1": 0.1879,
+        "k_3_j_2": 0.1848,
+        "k_4_j_1": 0.2303
+      },
+      "corrected": {
+        "k_1_j_1": 0.1195,
+        "k_1_j_2": 0.1373,
+        "k_1_j_3": 0.1602,
+        "k_2_j_1": 0.1333,
+        "k_2_j_2": 0.1497,
+        "k_2_j_3": 0.1542,
+        "k_3_j_1": 0.1381,
+        "k_3_j_2": 0.1458,
+        "k_4_j_1": 0.1288
+      },
+      "published_artifact": {
+        "k_1_j_1": 0.133,
+        "k_1_j_2": 0.1449,
+        "k_1_j_3": 0.1515,
+        "k_2_j_1": 0.1545,
+        "k_2_j_2": 0.1407,
+        "k_2_j_3": 0.1568,
+        "k_3_j_1": 0.1723,
+        "k_3_j_2": 0.1727,
+        "k_4_j_1": 0.203
+      },
+      "fixed_artifact": {
+        "k_1_j_1": 0.1125,
+        "k_1_j_2": 0.1256,
+        "k_1_j_3": 0.1441,
+        "k_2_j_1": 0.1218,
+        "k_2_j_2": 0.1332,
+        "k_2_j_3": 0.1373,
+        "k_3_j_1": 0.1263,
+        "k_3_j_2": 0.1318,
+        "k_4_j_1": 0.1186
+      }
+    }
+  },
+  "P1_P3_budget_law": {
+    "classic": {
+      "return": {
+        "bossfight": {
+          "budgets": [
+            100000,
+            500000
+          ],
+          "means": {
+            "100000": 0.0,
+            "500000": 0.02
+          },
+          "slope_per_decade": 0.0286,
+          "ci95": [
+            0.0,
+            0.0858
+          ],
+          "excludes_zero": false
+        },
+        "starpilot": {
+          "budgets": [
+            100000,
+            250000,
+            500000
+          ],
+          "means": {
+            "100000": 3.06,
+            "250000": 3.04,
+            "500000": 2.94
+          },
+          "slope_per_decade": -0.1653,
+          "ci95": [
+            -1.9414,
+            1.4506
+          ],
+          "excludes_zero": false
+        },
+        "dodgeball": {
+          "budgets": [
+            100000,
+            250000,
+            500000
+          ],
+          "means": {
+            "100000": 0.8,
+            "250000": 1.04,
+            "500000": 0.96
+          },
+          "slope_per_decade": 0.2485,
+          "ci95": [
+            -0.8784,
+            1.6486
+          ],
+          "excludes_zero": false
+        }
+      },
+      "response": {
+        "bossfight": {
+          "budgets": [
+            100000,
+            500000
+          ],
+          "means": {
+            "100000": 0.2538,
+            "500000": 0.4415
+          },
+          "slope_per_decade": 0.2685,
+          "ci95": [
+            0.1664,
+            0.3849
+          ],
+          "excludes_zero": true,
+          "budget_for_tv_0p5": 826000,
+          "budget_for_tv_0p5_extrapolated": true
+        },
+        "starpilot": {
+          "budgets": [
+            100000,
+            250000,
+            500000
+          ],
+          "means": {
+            "100000": 0.2806,
+            "250000": 0.4511,
+            "500000": 0.6483
+          },
+          "slope_per_decade": 0.521,
+          "ci95": [
+            0.4175,
+            0.6344
+          ],
+          "excludes_zero": true,
+          "budget_for_tv_0p5": 277000,
+          "budget_for_tv_0p5_extrapolated": false
+        },
+        "dodgeball": {
+          "budgets": [
+            100000,
+            250000,
+            500000
+          ],
+          "means": {
+            "100000": 0.146,
+            "250000": 0.2673,
+            "500000": 0.3506
+          },
+          "slope_per_decade": 0.2933,
+          "ci95": [
+            0.209,
+            0.382
+          ],
+          "excludes_zero": true,
+          "budget_for_tv_0p5": 1593000,
+          "budget_for_tv_0p5_extrapolated": true
+        }
+      }
+    },
+    "cbam": {
+      "return": {
+        "bossfight": {
+          "budgets": [
+            100000,
+            500000
+          ],
+          "means": {
+            "100000": 0.3,
+            "500000": 1.14
+          },
+          "slope_per_decade": 1.2018,
+          "ci95": [
+            0.314,
+            1.9457
+          ],
+          "excludes_zero": true
+        },
+        "starpilot": {
+          "budgets": [
+            100000,
+            250000,
+            500000
+          ],
+          "means": {
+            "100000": 2.54,
+            "250000": 2.36,
+            "500000": 2.92
+          },
+          "slope_per_decade": 0.4916,
+          "ci95": [
+            -0.6723,
+            1.5597
+          ],
+          "excludes_zero": false
+        },
+        "dodgeball": {
+          "budgets": [
+            100000,
+            250000,
+            500000
+          ],
+          "means": {
+            "100000": 1.76,
+            "250000": 1.76,
+            "500000": 1.28
+          },
+          "slope_per_decade": -0.6508,
+          "ci95": [
+            -2.4949,
+            0.9626
+          ],
+          "excludes_zero": false
+        }
+      },
+      "response": {
+        "bossfight": {
+          "budgets": [
+            100000,
+            500000
+          ],
+          "means": {
+            "100000": 0.212,
+            "500000": 0.4398
+          },
+          "slope_per_decade": 0.3259,
+          "ci95": [
+            0.1463,
+            0.5324
+          ],
+          "excludes_zero": true,
+          "budget_for_tv_0p5": 765000,
+          "budget_for_tv_0p5_extrapolated": true
+        },
+        "starpilot": {
+          "budgets": [
+            100000,
+            250000,
+            500000
+          ],
+          "means": {
+            "100000": 0.2539,
+            "250000": 0.5381,
+            "500000": 0.6818
+          },
+          "slope_per_decade": 0.6176,
+          "ci95": [
+            0.4716,
+            0.7544
+          ],
+          "excludes_zero": true,
+          "budget_for_tv_0p5": 240000,
+          "budget_for_tv_0p5_extrapolated": false
+        },
+        "dodgeball": {
+          "budgets": [
+            100000,
+            250000,
+            500000
+          ],
+          "means": {
+            "100000": 0.1742,
+            "250000": 0.2804,
+            "500000": 0.3943
+          },
+          "slope_per_decade": 0.3124,
+          "ci95": [
+            0.2178,
+            0.4
+          ],
+          "excludes_zero": true,
+          "budget_for_tv_0p5": 1149000,
+          "budget_for_tv_0p5_extrapolated": true
+        }
+      }
+    },
+    "vit": {
+      "return": {
+        "bossfight": {
+          "budgets": [
+            100000,
+            500000
+          ],
+          "means": {
+            "100000": 0.78,
+            "500000": 0.64
+          },
+          "slope_per_decade": -0.2003,
+          "ci95": [
+            -1.8027,
+            1.4021
+          ],
+          "excludes_zero": false
+        },
+        "starpilot": {
+          "budgets": [
+            100000,
+            250000,
+            500000
+          ],
+          "means": {
+            "100000": 2.9,
+            "250000": 2.36,
+            "500000": 2.8
+          },
+          "slope_per_decade": -0.2065,
+          "ci95": [
+            -2.9755,
+            1.656
+          ],
+          "excludes_zero": false
+        },
+        "dodgeball": {
+          "budgets": [
+            100000,
+            250000,
+            500000
+          ],
+          "means": {
+            "100000": 2.04,
+            "250000": 1.36,
+            "500000": 1.48
+          },
+          "slope_per_decade": -0.8486,
+          "ci95": [
+            -1.8287,
+            0.2365
+          ],
+          "excludes_zero": false
+        }
+      },
+      "response": {
+        "bossfight": {
+          "budgets": [
+            100000,
+            500000
+          ],
+          "means": {
+            "100000": 0.0,
+            "500000": 0.0
+          },
+          "slope_per_decade": -0.0,
+          "ci95": [
+            -0.0,
+            -0.0
+          ],
+          "excludes_zero": true
+        },
+        "starpilot": {
+          "budgets": [
+            100000,
+            250000,
+            500000
+          ],
+          "means": {
+            "100000": 0.0743,
+            "250000": 0.0787,
+            "500000": 0.059
+          },
+          "slope_per_decade": -0.0202,
+          "ci95": [
+            -0.0888,
+            0.047
+          ],
+          "excludes_zero": false
+        },
+        "dodgeball": {
+          "budgets": [
+            100000,
+            250000,
+            500000
+          ],
+          "means": {
+            "100000": 0.0001,
+            "250000": 0.0,
+            "500000": 0.0
+          },
+          "slope_per_decade": -0.0001,
+          "ci95": [
+            -0.0003,
+            -0.0
+          ],
+          "excludes_zero": true
+        }
+      }
+    },
+    "mlp_vector": {
+      "return": {
+        "bossfight": {
+          "budgets": [
+            100000,
+            500000
+          ],
+          "means": {
+            "100000": 0.3,
+            "500000": 0.9
+          },
+          "slope_per_decade": 0.8584,
+          "ci95": [
+            -0.3147,
+            1.9743
+          ],
+          "excludes_zero": false
+        },
+        "starpilot": {
+          "budgets": [
+            100000,
+            250000,
+            500000
+          ],
+          "means": {
+            "100000": 2.36,
+            "250000": 2.84,
+            "500000": 2.74
+          },
+          "slope_per_decade": 0.5783,
+          "ci95": [
+            -0.636,
+            2.071
+          ],
+          "excludes_zero": false
+        },
+        "dodgeball": {
+          "budgets": [
+            100000,
+            250000,
+            500000
+          ],
+          "means": {
+            "100000": 1.64,
+            "250000": 1.24,
+            "500000": 1.16
+          },
+          "slope_per_decade": -0.7034,
+          "ci95": [
+            -1.911,
+            0.4587
+          ],
+          "excludes_zero": false
+        }
+      },
+      "response": {
+        "bossfight": {
+          "budgets": [
+            100000,
+            500000
+          ],
+          "means": {
+            "100000": 0.1098,
+            "500000": 0.1557
+          },
+          "slope_per_decade": 0.0657,
+          "ci95": [
+            -0.0411,
+            0.183
+          ],
+          "excludes_zero": false
+        },
+        "starpilot": {
+          "budgets": [
+            100000,
+            250000,
+            500000
+          ],
+          "means": {
+            "100000": 0.0586,
+            "250000": 0.1204,
+            "500000": 0.0916
+          },
+          "slope_per_decade": 0.0528,
+          "ci95": [
+            0.0079,
+            0.0943
+          ],
+          "excludes_zero": true
+        },
+        "dodgeball": {
+          "budgets": [
+            100000,
+            250000,
+            500000
+          ],
+          "means": {
+            "100000": 0.0497,
+            "250000": 0.0021,
+            "500000": 0.0001
+          },
+          "slope_per_decade": -0.0736,
+          "ci95": [
+            -0.0954,
+            -0.0486
+          ],
+          "excludes_zero": true
+        }
+      }
+    }
+  },
+  "P1_symbolic": {
+    "cells": 80,
+    "arms": [
+      "classic",
+      "cbam"
+    ],
+    "features": [
+      "log10_N",
+      "is_bossfight",
+      "is_starpilot",
+      "is_dodgeball"
+    ],
+    "target_scaling": "z-scored for the search, scores in original units",
+    "return": {
+      "r2": 0.5708,
+      "mae": 0.592,
+      "rmse": 0.8233,
+      "expression_z": "add(is_starpilot, sub(-0.292, is_bossfight))",
+      "linear_game_only": {
+        "r2": 0.5596,
+        "mae": 0.6717,
+        "rmse": 0.8339
+      },
+      "linear_per_game_slope": {
+        "r2": 0.526,
+        "mae": 0.6832,
+        "rmse": 0.8652
+      }
+    },
+    "response": {
+      "r2": 0.2336,
+      "mae": 0.1247,
+      "rmse": 0.1512,
+      "expression_z": "sub(is_starpilot, 0.289)",
+      "linear_game_only": {
+        "r2": 0.2467,
+        "mae": 0.1252,
+        "rmse": 0.1499
+      },
+      "linear_per_game_slope": {
+        "r2": 0.7375,
+        "mae": 0.073,
+        "rmse": 0.0885
+      }
+    }
+  }
+}

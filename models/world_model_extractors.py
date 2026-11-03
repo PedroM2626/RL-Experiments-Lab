@@ -129,9 +129,14 @@ class VAEExtractor(_ExtractorBase):
     Note that no reconstruction or KL term enters the PPO objective (module docstring), so
     `dream()` shows what the *architecture* can decode, not what training taught it.
     """
-    def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 512, latent_dim: int = 128):
+    def __init__(self, observation_space: gym.spaces.Box, features_dim: int = 512, latent_dim: int = 128,
+                 logvar_clamp=None):
         super().__init__(observation_space, features_dim)
         self.latent_dim = latent_dim
+        # None is the published arm: an unbounded logvar head with no KL term, which PPO can
+        # drive to overflow (the NaN of README 3.6.2/3.6.7, diagnosed by diagnose_vae_nan.py).
+        # A float L bounds logvar to [-L, L] -- the opt-in `vae_clamped` arm.
+        self.logvar_clamp = logvar_clamp
         self.fc_mu = nn.Linear(self.n_flat, latent_dim)
         self.fc_logvar = nn.Linear(self.n_flat, latent_dim)
         self.fc_out = nn.Sequential(nn.Linear(latent_dim, features_dim), nn.ReLU())
@@ -141,15 +146,20 @@ class VAEExtractor(_ExtractorBase):
         flat = self.encode(observations)
         return self.fc_mu(flat), self.fc_logvar(flat)
 
+    def clamp_logvar(self, logvar: torch.Tensor) -> torch.Tensor:
+        if self.logvar_clamp is None:
+            return logvar
+        return logvar.clamp(-self.logvar_clamp, self.logvar_clamp)
+
     def dream(self, observations: torch.Tensor) -> torch.Tensor:
         """Decodes observations: enc(o) -> sample(z) -> dec(z) to inspect reconstruction fidelity."""
         mu, logvar = self._posterior(observations)
-        z = mu + torch.randn_like(mu) * torch.exp(0.5 * logvar)
+        z = mu + torch.randn_like(mu) * torch.exp(0.5 * self.clamp_logvar(logvar))
         return self.decoder(z)
 
     def forward(self, observations: torch.Tensor) -> torch.Tensor:
         mu, logvar = self._posterior(observations)
-        std = torch.exp(0.5 * logvar)
+        std = torch.exp(0.5 * self.clamp_logvar(logvar))
         eps = torch.randn_like(std)
         z = mu + eps * std  # Reparameterization trick
         return self.fc_out(z)

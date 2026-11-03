@@ -366,6 +366,33 @@ We benchmarked `classic` (feedforward NatureCNN), `recurrent_lstm`, `regularized
 > Across $n=5$ seeds, **`recurrent_lstm` retains the highest mean unseen return ($3.90$ vs $3.20$, $+22\%$ relative advantage) with a positive effect size ($d = +0.57$)**. However, due to high inter-level variance in procedural generation, the 95% Student's $t$ confidence intervals overlap ($[2.48, 5.32]$ vs $[1.58, 4.82]$). 
 > This contextualizes the exploratory single-seed pilot: the single-seed point estimate ($4.00$ vs $2.50$, $+60\%$) substantially exaggerated the true advantage. While temporal state-carry provides a consistent, measurable directional benefit in occluded POMDP environments ($d=+0.57$), procedural variance necessitates multi-seed aggregation to prevent over-claiming statistical separation. S5 SSMs also achieve a positive effect size ($d=+0.33$), whereas hidden-state LayerNorm regularization (`regularized_recurrent_lstm`) reduces return variance ($\pm 0.91$ vs $\pm 1.14$) at the expense of peak return.
 
+### 15.5. The Port Grid Under the Response Measure (01–03/11/2026, Suite `main`, 240 Cells)
+
+§15.4.2 established parity on *returns*. §3.6 then showed that the SB3 study's returns came from policies that do not read the screen, and that only the cross-game response measure separates the front ends. That left a question about this port: does its grid — trained at **64 envs × 128 steps** (minibatch 1024), far above the per-update coverage cliff of §3.6.5 — read its observation, and does the response rank its configurations the way it ranks the SB3 arms?
+
+**Protocol.** `jax_port/audit_port_response.sh` re-trains the whole `main` suite — `16` configurations × `bossfight`/`starpilot`/`dodgeball` × seeds `42–46`, `100k` steps, the grid's own recipe and `--eval-full` protocol — with `run_grade --response`, which attaches the port of the §3.6.2 instrument (`jax_port/response.py`: maximum pairwise TV of the policy over the initial frames of `maze`/`heist`/`bossfight`/`starpilot`/`dodgeball`, responsive at TV ≥ `0.1`) to every cell. The cells are re-trained, not re-evaluated: the archived grid saved no weights. `jax_port/summarize_port_response.py` extracts one row per cell into `jax_port/port_response_cells.json` and folds them into `jax_port/port_response_grid.json` (`--check` re-folds from the committed rows).
+
+**A regression found on the way.** The first pass failed on all `15` `mlp` cells. Since the temporal-suite fix of 07/09/2026 (`5a9febe`, one day after the archived `main` cells were trained), `train.py` built every `--extractor mlp` as the temporal `MlpStack`, so the `main`/`budget`/`hard` suites no longer reproduced the 256-D vector MLP their archived cells were trained with. `train.py` now selects `MlpStack` only when a frame stack is requested (`stack > 1`, the temporal suites), and the 15 cells were re-run under the fix: **240/240 cells, 0 errors** (`8291 s` for the first pass, `529 s` for the `mlp` re-run).
+
+**1. The port grid reads its observation.** **`208/240`** cells clear TV `0.1` (TV mean `0.162441`; `bossfight` `61/80`, `starpilot` `77/80`, `dodgeball` `70/80`), against `170/239` on the SB3 `16×256` grid of §3.6.7. Six configurations read on every cell (`spatial`, `ae`, `vae`, `recon`, `mlp`, `aug_noise`), and the floor is `resnet18` at `8/15` (TV `0.101212`), then `impoola` `9/15` and `lstm_attention` `10/15`. The two SB3 defects of §3.6.14–§3.6.15 do not appear here. `vae` trains all 15 cells without a `NaN`, and `vit` reads on `12/15`, including `bossfight` (TV `0.096–0.213`), the one game where even the SB3 token-pipeline fix stays blind. That is not a recipe effect on the same network: the port's `ViTTiny` already uses pre-LN blocks without dropout and a LayerNorm before its pooling, two of the three stages §3.6.15 changed. Recipe and implementation are confounded in this comparison and are reported as such.
+
+**2. The re-run reproduces the archived returns as a distribution.** Mean return `1.213042` against the archived `1.219292`, per-game means `0.058`/`2.408`/`1.173` against `0.060`/`2.468`/`1.131`, with a mean absolute per-cell difference of `0.192583`. GPU training is not bitwise deterministic, so individual cells move by seed-noise amounts and the grid-level numbers of §15.4.2 stand.
+
+**3. The response ordering does not transfer between stacks.** Across the 16 configurations shared with the SB3 grid, the Spearman rank correlation of the response means is **ρ = `0.30`** (p = `0.25`); of the responsive-cell counts, `0.29`. Once almost every arm reads, what is left to rank is the depth of reading, and that depends on the implementation and the recipe as much as on the architecture's name. Section 21.9 quantifies the consequence: on this grid the response identifies the architecture far less sharply than on the SB3 grid.
+
+| Configuration | Responsive cells | TV mean | Configuration | Responsive cells | TV mean |
+|---|---:|---:|---|---:|---:|
+| `spatial` | **15/15** | 0.215331 | `cbam` | 14/15 | 0.146605 |
+| `ae` | **15/15** | 0.185005 | `aug_crop` | 13/15 | 0.151243 |
+| `vae` | **15/15** | 0.183952 | `impala` | 12/15 | 0.181940 |
+| `recon` | **15/15** | 0.175529 | `vit` | 12/15 | 0.161541 |
+| `mlp` | **15/15** | 0.164382 | `aug_color` | 12/15 | 0.139134 |
+| `aug_noise` | **15/15** | 0.162804 | `lstm_attention` | 10/15 | 0.138890 |
+| `contrastive` | 14/15 | 0.186324 | `impoola` | 9/15 | 0.121799 |
+| `classic` | 14/15 | 0.183362 | `resnet18` | 8/15 | 0.101212 |
+
+Reproduce (WSL, the venv of §15.1): `bash jax_port/audit_port_response.sh` (resume-safe through `$OUT/master.json`; `PY` and `OUT` override the venv and the run directory, default `/root/rg_response`; ~2.5 h on the RTX 4070), then `python jax_port/summarize_port_response.py --raw /root/rg_response/main`. `tests/test_response_identification.py` gates the fold and the numbers above.
+
 ## 16. Process References (Beyond Section 10)
 
 - Gate PA0 and Environment: PPA `deadsnakes` (Python 3.10 on Ubuntu 24.04); wheel `procgen-0.10.7-cp310-cp310-manylinux`; `jax[cuda12]`; pins: `numpy==1.26.4`, `gym==0.26.2`, `flax==0.10.7`, `optax==0.2.8`, `JAX==0.6.2`.

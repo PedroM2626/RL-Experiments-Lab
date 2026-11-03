@@ -29,7 +29,8 @@ PUBLISHED = (
 def test_audit_covers_exactly_the_sixteen_published_arms():
     """Since 24/10/2026 the registry also carries opt-in arms added after the audit
     (mlp_scaled, the 3.6.12 input-scale lever; recon_bottleneck and
-    c_aug_noise_drop, the distinct variants of the same-program pairs). The DEFAULT
+    c_aug_noise_drop, the distinct variants of the same-program pairs; since 01/11/2026
+    vae_clamped and vit_tokens, the 3.6.14/3.6.15 fixes). The DEFAULT
     audit must still cover exactly the published sixteen, and every extra arm must
     be declared in EXTRA_ARMS so the two sets cannot drift apart."""
     assert len(PUBLISHED_ARMS) == 16, (
@@ -39,7 +40,7 @@ def test_audit_covers_exactly_the_sixteen_published_arms():
         f"published-only: {sorted(set(PUBLISHED) - set(PUBLISHED_ARMS))}")
     assert set(BY_NAME) == set(PUBLISHED) | EXTRA_ARMS
     assert len(BY_NAME) == len(set(BY_NAME)), "duplicate arm name"
-    assert EXTRA_ARMS == {"mlp_scaled", "recon_bottleneck", "c_aug_noise_drop"}
+    assert EXTRA_ARMS == {"mlp_scaled", "recon_bottleneck", "c_aug_noise_drop", "vae_clamped", "vit_tokens"}
 
 
 def test_audit_reuses_the_producers_and_does_not_rebuild_ppo():

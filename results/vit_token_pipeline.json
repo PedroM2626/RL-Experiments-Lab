@@ -1,0 +1,281 @@
+{
+  "_provenance": {
+    "produced_by": "summarize_vit_tokens.py",
+    "question": "is vit/bossfight's never-ignite a token-pipeline property, and which stage",
+    "arms": "vit_tokens = 8x8 patches + pre-LN/dropout 0 + CLS readout with final LayerNorm; vit_patch8 / vit_prenorm / vit_cls change one stage each (diagnose_policy_saturation.VIT_ABLATIONS)",
+    "probe": "--game bossfight --timesteps 100000 --probe-every 500 --n-envs 16 --n-steps 256 --cross-game",
+    "alive_threshold": 5e-05
+  },
+  "reference_classic_bossfight": {
+    "within_game_max": 0.184762,
+    "within_game_final": 0.184762,
+    "alive_probes": 201,
+    "probes": 201,
+    "survives": true,
+    "cross_game_tv": 0.275485,
+    "distinct_argmax_across_games": 3
+  },
+  "probes": {
+    "vit": {
+      "42": {
+        "within_game_max": 0.000792,
+        "within_game_final": 2e-06,
+        "alive_probes": 33,
+        "probes": 201,
+        "survives": false,
+        "cross_game_tv": 2.6e-05,
+        "distinct_argmax_across_games": 1
+      }
+    },
+    "vit_ln": {
+      "42": {
+        "within_game_max": 0.001299,
+        "within_game_final": 1e-06,
+        "alive_probes": 33,
+        "probes": 201,
+        "survives": false,
+        "cross_game_tv": 1.4e-05,
+        "distinct_argmax_across_games": 1
+      },
+      "43": {
+        "within_game_max": 0.006816,
+        "within_game_final": 4e-06,
+        "alive_probes": 83,
+        "probes": 201,
+        "survives": false,
+        "cross_game_tv": 5.5e-05,
+        "distinct_argmax_across_games": 1
+      },
+      "44": {
+        "within_game_max": 0.003702,
+        "within_game_final": 0.0,
+        "alive_probes": 73,
+        "probes": 201,
+        "survives": false,
+        "cross_game_tv": 1.3e-05,
+        "distinct_argmax_across_games": 1
+      }
+    },
+    "vit_maxpool": {
+      "42": {
+        "within_game_max": 0.004846,
+        "within_game_final": 0.004347,
+        "alive_probes": 201,
+        "probes": 201,
+        "survives": true,
+        "cross_game_tv": 0.000138,
+        "distinct_argmax_across_games": 1
+      },
+      "43": {
+        "within_game_max": 0.053488,
+        "within_game_final": 0.005846,
+        "alive_probes": 193,
+        "probes": 201,
+        "survives": true,
+        "cross_game_tv": 0.00012,
+        "distinct_argmax_across_games": 1
+      },
+      "44": {
+        "within_game_max": 0.001866,
+        "within_game_final": 3e-06,
+        "alive_probes": 58,
+        "probes": 201,
+        "survives": false,
+        "cross_game_tv": 9e-06,
+        "distinct_argmax_across_games": 1
+      }
+    },
+    "vit_tokens": {
+      "42": {
+        "within_game_max": 0.059735,
+        "within_game_final": 0.027669,
+        "alive_probes": 201,
+        "probes": 201,
+        "survives": true,
+        "cross_game_tv": 0.000151,
+        "distinct_argmax_across_games": 1
+      },
+      "43": {
+        "within_game_max": 0.00728,
+        "within_game_final": 0.001375,
+        "alive_probes": 184,
+        "probes": 201,
+        "survives": true,
+        "cross_game_tv": 0.000506,
+        "distinct_argmax_across_games": 1
+      },
+      "44": {
+        "within_game_max": 0.004038,
+        "within_game_final": 0.000339,
+        "alive_probes": 201,
+        "probes": 201,
+        "survives": true,
+        "cross_game_tv": 4.7e-05,
+        "distinct_argmax_across_games": 1
+      }
+    },
+    "vit_patch8": {
+      "42": {
+        "within_game_max": 0.001329,
+        "within_game_final": 8.2e-05,
+        "alive_probes": 111,
+        "probes": 201,
+        "survives": true,
+        "cross_game_tv": 6.6e-05,
+        "distinct_argmax_across_games": 1
+      },
+      "43": {
+        "within_game_max": 0.002895,
+        "within_game_final": 3e-06,
+        "alive_probes": 90,
+        "probes": 201,
+        "survives": false,
+        "cross_game_tv": 3e-06,
+        "distinct_argmax_across_games": 1
+      }
+    },
+    "vit_prenorm": {
+      "42": {
+        "within_game_max": 0.001495,
+        "within_game_final": 0.0,
+        "alive_probes": 33,
+        "probes": 201,
+        "survives": false,
+        "cross_game_tv": 4e-06,
+        "distinct_argmax_across_games": 1
+      },
+      "43": {
+        "within_game_max": 0.0056,
+        "within_game_final": 0.0,
+        "alive_probes": 41,
+        "probes": 201,
+        "survives": false,
+        "cross_game_tv": 0.0,
+        "distinct_argmax_across_games": 1
+      }
+    },
+    "vit_cls": {
+      "42": {
+        "within_game_max": 0.003558,
+        "within_game_final": 4e-06,
+        "alive_probes": 74,
+        "probes": 201,
+        "survives": false,
+        "cross_game_tv": 7.2e-05,
+        "distinct_argmax_across_games": 1
+      },
+      "43": {
+        "within_game_max": 0.00337,
+        "within_game_final": 5e-06,
+        "alive_probes": 107,
+        "probes": 201,
+        "survives": false,
+        "cross_game_tv": 7.4e-05,
+        "distinct_argmax_across_games": 1
+      }
+    }
+  },
+  "probe_summary": {
+    "vit": {
+      "runs": 1,
+      "survive": 0,
+      "cross_game_readers": 0
+    },
+    "vit_ln": {
+      "runs": 3,
+      "survive": 0,
+      "cross_game_readers": 0
+    },
+    "vit_maxpool": {
+      "runs": 3,
+      "survive": 2,
+      "cross_game_readers": 0
+    },
+    "vit_tokens": {
+      "runs": 3,
+      "survive": 3,
+      "cross_game_readers": 0
+    },
+    "vit_patch8": {
+      "runs": 2,
+      "survive": 1,
+      "cross_game_readers": 0
+    },
+    "vit_prenorm": {
+      "runs": 2,
+      "survive": 0,
+      "cross_game_readers": 0
+    },
+    "vit_cls": {
+      "runs": 2,
+      "survive": 0,
+      "cross_game_readers": 0
+    }
+  },
+  "grid": {
+    "starpilot": {
+      "returns": [
+        2.9,
+        2.6,
+        2.5,
+        2.6,
+        2.1
+      ],
+      "tvs": [
+        0.22739,
+        0.188973,
+        0.166705,
+        0.43055,
+        0.164966
+      ],
+      "error_seeds": []
+    },
+    "bossfight": {
+      "returns": [
+        0.0,
+        0.2,
+        1.2,
+        0.1,
+        0.0
+      ],
+      "tvs": [
+        0.000151,
+        0.000506,
+        4.7e-05,
+        0.001081,
+        0.064695
+      ],
+      "error_seeds": []
+    },
+    "dodgeball": {
+      "returns": [
+        1.8,
+        0.6,
+        1.8,
+        1.0,
+        2.0
+      ],
+      "tvs": [
+        0.097052,
+        0.1596,
+        0.232604,
+        0.113898,
+        0.318461
+      ],
+      "error_seeds": []
+    }
+  },
+  "grid_responsiveness": {
+    "cells": 15,
+    "cells_tv_over_0p1": 9,
+    "tv_mean": 0.144445
+  },
+  "published_vit_responsiveness": {
+    "argmax_over_1": 1,
+    "cells": 15,
+    "error_cells": 0,
+    "tv_mean": 0.02479,
+    "tv_min": 0.0,
+    "cells_tv_over_0p1": 1
+  }
+}
